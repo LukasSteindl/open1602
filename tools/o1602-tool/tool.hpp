@@ -39,6 +39,7 @@ inline constexpr std::string_view kFlags[] = {
     "--sheet",
     "--together",
     "--via-own",
+    "--scores",
     "--summary",
     "--towns",
     "--town-maps",

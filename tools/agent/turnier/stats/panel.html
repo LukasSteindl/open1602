@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Turnier-Stats</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* OBS browser source: 1920x1080, transparent; the 2x2 game windows lie beneath.
+     ?layout=quadrants (default)  one card per window, at the bottom left of its map
+     ?layout=center               the four cards as a 2x2 block in the middle of the stream
+     ?layout=list                 the cards one below the other on a dark page
+     ?x=10&y=368                  offset of the cards in their window (quadrants), in px
+     ?scale=1                     size of the cards */
+  :root {
+    --bg: rgba(12, 16, 26, 0.80);
+    --fg: #f2f4f8;
+    --dim: #a9b2c3;
+    --up: #5fd68a;
+    --down: #ff6b6b;
+    --line: rgba(255, 255, 255, 0.10);
+  }
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; }
+  body {
+    width: 100vw; height: 100vh; position: relative;
+    font-family: "Segoe UI", system-ui, sans-serif; color: var(--fg);
+    font-variant-numeric: tabular-nums;
+  }
+  body.list { background: #0c101a; overflow: auto; height: auto; min-height: 100vh; }
+  .card {
+    position: absolute; width: 300px; box-sizing: border-box;
+    padding: 8px 12px 9px 12px; border-radius: 8px;
+    background: var(--bg); border-left: 5px solid var(--c);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    transform-origin: top left; transition: opacity 0.4s;
+  }
+  body.stale .card { opacity: 0.55; }
+  body.list .card, body.center .card { position: static; }
+  body.list #cards { display: flex; flex-direction: column; gap: 10px; padding: 16px; align-items: flex-start; }
+  body.center #cards {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    display: grid; grid-template-columns: 300px 300px; gap: 8px;
+  }
+  .head { display: flex; align-items: baseline; gap: 8px; }
+  .name { font-size: 19px; font-weight: 700; letter-spacing: 0.2px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--c); align-self: center;
+         box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5); }
+  .model { margin-left: auto; font-size: 12px; color: var(--dim); border: 1px solid var(--line);
+           border-radius: 4px; padding: 0 5px; }
+  .row { display: flex; gap: 14px; margin-top: 4px; font-size: 15px; white-space: nowrap; }
+  .row .k { color: var(--dim); font-size: 12px; margin-right: 3px; }
+  .v { font-weight: 600; }
+  .bal.up { color: var(--up); }
+  .bal.down { color: var(--down); }
+  .tok { margin-top: 5px; padding-top: 4px; border-top: 1px solid var(--line); font-size: 13px; }
+  .tok .cache { color: var(--dim); font-size: 12px; }
+  .row.eff { margin-top: 3px; font-size: 13px; gap: 10px; }
+  .flash { animation: flash 1.2s ease-out; }
+  @keyframes flash { from { color: #fff7c2; } }
+  #foot { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); font-size: 12px;
+          color: var(--dim); background: var(--bg); padding: 2px 8px; border-radius: 4px; display: none; }
+  body.list #foot { position: static; transform: none; display: inline-block; margin: 0 16px 16px; }
+</style>
+</head>
+<body>
+<div id="cards"></div>
+<div id="foot"></div>
+<script>
+  const q = new URLSearchParams(location.search);
+  const layout = q.get("layout") || "quadrants";
+  // Default: bottom left of each window's map, above the game's bottom bar (the agents' "say" line
+  // runs along the top left, the player list sits bottom right).
+  const offX = +(q.get("x") ?? 10), offY = +(q.get("y") ?? 368), scale = +(q.get("scale") ?? 1);
+  document.body.classList.add(layout);
+  const de = new Intl.NumberFormat("de-AT");
+  const de1 = new Intl.NumberFormat("de-AT", { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+
+  function big(n) {
+    if (n == null) return "n/a";
+    if (n >= 1e6) return de1.format(n / 1e6) + " M";
+    if (n >= 1e3) return de1.format(n / 1e3) + " k";
+    return de.format(n);
+  }
+  function signed(n) { return (n > 0 ? "+" : n < 0 ? "−" : "±") + de.format(Math.abs(n)); }
+  function gameTime(ms) {
+    if (ms == null) return "";
+    const s = Math.floor(ms / 1000);
+    return `${Math.floor(s / 3600)}:${String(Math.floor(s / 60) % 60).padStart(2, "0")}`;
+  }
+
+  const cards = {};
+  function card(a) {
+    if (cards[a.name]) return cards[a.name];
+    const el = document.createElement("div");
+    el.className = "card";
+    el.style.setProperty("--c", a.color);
+    el.innerHTML = `
+      <div class="head"><span class="dot"></span><span class="name"></span><span class="model"></span></div>
+      <div class="row">
+        <span><span class="k">Einwohner</span><span class="v" data-f="inh"></span></span>
+        <span><span class="k">Gold</span><span class="v" data-f="money"></span></span>
+        <span><span class="k">Bilanz</span><span class="v bal" data-f="bal"></span></span>
+      </div>
+      <div class="tok"><span class="k">Tokens</span> In <span class="v" data-f="tin"></span>
+        <span class="cache" data-f="tcache"></span> · Out <span class="v" data-f="tout"></span></div>
+      <div class="row eff"><span class="k">pro Mio. Tokens</span>
+        <span><span class="k">Einwohner</span><span class="v" data-f="einh"></span></span>
+        <span><span class="k">Gold</span><span class="v" data-f="emoney"></span></span>
+      </div>`;
+    el.querySelector(".name").textContent = a.name;
+    el.querySelector(".model").textContent = a.model;
+    if (layout === "quadrants") {
+      const col = a.window[1] === "r" ? 1 : 0, row = a.window[0] === "b" ? 1 : 0;
+      el.style.left = `calc(${col * 50}vw + ${offX}px)`;
+      el.style.top = `calc(${row * 50}vh + ${offY}px)`;
+    }
+    if (scale !== 1) el.style.transform = `scale(${scale})`;
+    document.getElementById("cards").appendChild(el);
+    return (cards[a.name] = el);
+  }
+  function set(el, f, text, cls) {
+    const span = el.querySelector(`[data-f="${f}"]`);
+    if (span.textContent !== text) {
+      const first = span.textContent === "";
+      span.textContent = text;
+      if (!first) { span.classList.remove("flash"); void span.offsetWidth; span.classList.add("flash"); }
+    }
+    if (cls !== undefined) span.className = "v bal " + cls;
+  }
+
+  // Quadrant order on the stream: ClaudeJev tl, Sol tr, SolJev bl, Claude br.
+  const order = { tl: 0, tr: 1, bl: 2, br: 3 };
+  async function tick() {
+    try {
+      const r = await fetch("stats.json?key=" + encodeURIComponent(q.get("key") || ""), { cache: "no-store" });
+      const d = await r.json();
+      const agents = [...d.agents].sort((x, y) => order[x.window] - order[y.window]);
+      for (const a of agents) {
+        const el = card(a), g = a.game, t = a.tokens;
+        set(el, "inh", g ? de.format(g.inhabitants) : "–");
+        set(el, "money", g ? de.format(g.money) : "–");
+        set(el, "bal", g ? signed(g.balance) + "/min" : "–", g ? (g.balance >= 0 ? "up" : "down") : "");
+        set(el, "tin", t ? big(t.input) : "n/a");
+        set(el, "tcache", t && t.input ? `(${Math.round(100 * t.cached / t.input)} % Cache)` : "");
+        set(el, "tout", t ? big(t.output) : "n/a");
+        // Efficiency: per million tokens the model processed (input with cache + output).
+        const mtok = t ? (t.input + t.output) / 1e6 : 0;
+        set(el, "einh", g && mtok > 0 ? de1.format(g.inhabitants / mtok) : "n/a");
+        set(el, "emoney", g && mtok > 0 ? de.format(Math.round(g.money / mtok)) : "n/a");
+      }
+      const foot = document.getElementById("foot");
+      foot.textContent = `Spielzeit ${gameTime(d.game_time_ms)} · Stand ${d.updated}` +
+        (d.errors.length ? " · " + d.errors.join(" · ") : "");
+      document.body.classList.toggle("stale", d.errors.some(e => e.startsWith("game")));
+    } catch (e) {
+      document.body.classList.add("stale");
+    }
+  }
+  tick();
+  setInterval(tick, 5000);
+</script>
+</body>
+</html>

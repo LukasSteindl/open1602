@@ -29,6 +29,7 @@
 #include "o1602/core/text.hpp"
 #include "o1602/sim/climates.hpp"
 #include "o1602/sim/computer_orders.hpp"
+#include "o1602/sim/mission.hpp"
 #include "o1602/sim/new_game.hpp"
 #include "o1602/sim/package_islands.hpp"
 #include "o1602/sim/save_game.hpp"
@@ -458,11 +459,62 @@ int own_islands(const sim::World& world, const assets::BuildingTable& buildings)
     return 0;
 }
 
+/// `state --scores` of a .o1602: per human player one line with the figures its own 'state' shows
+/// (money, inhabitants, taxes, running costs, military, trade and the balance per minute), and the
+/// inhabitants of each class; for a scoreboard of a multiplayer game (tools/agent/turnier/stats).
+int own_scores(const sim::World& world, const assets::BuildingTable& buildings) {
+    auto game = assets::GameDirectory::from_environment();
+    if (!game) {
+        return fail(game.error());
+    }
+    auto figures = assets::FigureTable::load(*game);
+    if (!figures) {
+        return fail(figures.error());
+    }
+    std::printf("time_ms %llu\n", static_cast<unsigned long long>(world.time_ms()));
+    for (std::size_t i = 0; i < world.players().size(); ++i) {
+        const sim::Player& p = world.players()[i];
+        if (p.role != sim::PlayerRole::Human) {
+            continue;
+        }
+        const auto f = sim::player_figures(world, buildings, *figures, static_cast<sim::PlayerId>(i));
+        std::array<std::uint64_t, 5> classes{};
+        std::size_t cities = 0;
+        for (const sim::City& c : world.cities()) {
+            if (c.owner != i) {
+                continue;
+            }
+            ++cities;
+            for (std::size_t k = 0; k < c.inhabitants.size() && k < classes.size(); ++k) {
+                classes[k] += c.inhabitants[k];
+            }
+        }
+        std::printf("score player %zu money %d inhabitants %llu taxes %lld running_costs %lld military %lld "
+                    "sales %lld purchases %lld balance %lld cities %zu classes %llu,%llu,%llu,%llu,%llu name %s\n",
+                    i, p.money, static_cast<unsigned long long>(f.inhabitants), static_cast<long long>(f.taxes),
+                    static_cast<long long>(f.running_costs), static_cast<long long>(f.military),
+                    static_cast<long long>(f.sales), static_cast<long long>(f.purchases),
+                    static_cast<long long>(f.balance), cities, static_cast<unsigned long long>(classes[0]),
+                    static_cast<unsigned long long>(classes[1]), static_cast<unsigned long long>(classes[2]),
+                    static_cast<unsigned long long>(classes[3]), static_cast<unsigned long long>(classes[4]),
+                    core::cp1252_to_utf8(p.name).c_str());
+    }
+    return 0;
+}
+
 int cmd_state(const Args& args) {
     if (args.positional.size() != 1) {
         return usage();
     }
     const auto mods = args.options.find("--mods");
+    if (args.flag("--scores")) {
+        auto own = read_own_save(fs::path(args.positional[0]), mods != args.options.end() ? &mods->second : nullptr);
+        if (!own) {
+            std::fprintf(stderr, "error: --scores reads only Open1602's own savegames (.o1602)\n");
+            return 1;
+        }
+        return *own ? own_scores((*own)->world, (*own)->buildings) : fail(own->error());
+    }
     if (auto own = read_own_save(fs::path(args.positional[0]), mods != args.options.end() ? &mods->second : nullptr)) {
         return *own ? own_state((*own)->world, (*own)->buildings, args.flag("--buildings"), args.flag("--summary"),
                                 args.flag("--towns"), args.flag("--town-maps"))
