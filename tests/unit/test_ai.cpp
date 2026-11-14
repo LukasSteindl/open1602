@@ -1308,6 +1308,48 @@ TEST_CASE("ai: computers sign trade treaties with each other and leave their pea
     CHECK(d.relation(kComputer, kTrader).trade == with_trader);
 }
 
+TEST_CASE("ai: a computer's colony plan counts its own gold once") {
+    // With its goal gold, a computer that has no gold vein wants a colony for it once its budget
+    // carries one. Its colony plan keeps the colony's 2000 gold; holding 3000, the goal's colony is
+    // still carried by that kept gold and is not refused as if it cost the gold a second time.
+    Game g;
+    assets::ResidentClass pioneers;
+    pioneers.max_per_house = 2;
+    pioneers.tax = 1;
+    g.buildings.set_resident_classes({pioneers});
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    found_city(g, s);
+    for (const sim::City& c : g.world.cities()) {
+        if (c.owner == kComputer) {
+            g.world.city(c.island, c.index)->inhabitants = {400};
+        }
+    }
+    g.world.player(kComputer)->money = 3000;
+    const std::vector<std::uint8_t> bytes = saved(s.computers());
+    annokit::core::ByteReader in(bytes);
+    sim::StateIn reader(in);
+    sim::ai::State state;
+    sim::ai::Loader loader(reader, s.computers().state_version());
+    loader(state);
+    REQUIRE(reader.ok());
+    sim::ai::AiPlayer* p = nullptr;
+    for (sim::ai::AiPlayer& k : state.players) {
+        if (k.player == kComputer) {
+            p = &k;
+        }
+    }
+    REQUIRE(p != nullptr);
+    p->strategy.goal = sim::ai::goal::kGold;
+    p->settle.active = false;
+    p->settle.ship = 0;
+    sim::ai::Engine engine(s, state);
+    p->settle.plan_crop = 0;
+    CHECK(engine.goal_crop(*p) == assets::ware::kGold);
+    // The plan holds its gold: the goal's colony is the same one, carried by the same gold.
+    p->settle.plan_crop = assets::ware::kGold;
+    CHECK(engine.goal_crop(*p) == assets::ware::kGold);
+}
+
 TEST_CASE("ai: below the hardest level a computer knows a partner's Kontor as a human would") {
     // A human opens a partner's Kontor window on an island they have discovered and see there its
     // offer: stock less what it keeps and what carriers have reserved, nothing under a ton. The
