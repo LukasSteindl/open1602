@@ -214,6 +214,8 @@ public:
     /// How many cities a computer founds at most (Rules::computer_cities): four as in the original,
     /// or the world's islands shared among its players, by the difficulty.
     [[nodiscard]] std::uint32_t city_limit() const;
+    /// What an improved computer's goal asks a colony for (gold, ore), 0 for nothing (ai_settle.cpp).
+    [[nodiscard]] std::uint8_t goal_crop(const AiPlayer& p) const;
 
     // ai_logistics.cpp
     /// Whether `p` knows partner city `c`'s Kontor, its prices and offer: on an island it discovered,
@@ -365,8 +367,6 @@ private:
     [[nodiscard]] bool island_contested(const AiPlayer& p, std::uint16_t island) const;
     /// A vein of the ware (ore, gold) on the island outside every city's land.
     [[nodiscard]] bool free_deposit(std::uint16_t island, std::uint8_t w) const;
-    /// What an improved computer's goal asks a colony for (gold, ore), 0 for nothing.
-    [[nodiscard]] std::uint8_t goal_crop(const AiPlayer& p) const;
     /// Whether the ore veins of its own islands run low while it mines iron (improved computers).
     [[nodiscard]] bool ore_running_out(const AiPlayer& p) const;
     void task_settle_area(AiPlayer& p);
@@ -757,8 +757,12 @@ private:
     /// The gold a plan under way keeps: a founding's while its ship loads or sails; 0 for the
     /// original's computers and the pirates.
     [[nodiscard]] std::int64_t reserved(const AiPlayer& p) const;
-    /// Whether the budget allows the plan (Budget::allows); a refusal is logged as `what`.
-    [[nodiscard]] bool can_commit(const AiPlayer& p, const Commitment& c, Spend what) const;
+    /// Whether the budget allows the plan (Budget::allows); a refusal is logged as `what`. `own` is
+    /// gold that reserved() keeps for this very plan, not counted twice.
+    [[nodiscard]] bool can_commit(const AiPlayer& p, const Commitment& c, Spend what, std::int64_t own = 0) const;
+    /// The gold reserved() keeps for the colony plan (colony_plan), which a colony's budget test
+    /// counts as its own.
+    [[nodiscard]] std::int64_t planned_colony_gold(const AiPlayer& p) const;
     /// What `amount` (1/32 t) of `w` costs bought, at the price the computer's cities paid lately.
     [[nodiscard]] std::int64_t price_paid(const AiPlayer& p, std::uint8_t w, std::uint64_t amount) const;
     /// What the home city gains a minute once it has `good`: the taxes of the inhabitants it lets

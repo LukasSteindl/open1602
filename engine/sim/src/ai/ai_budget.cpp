@@ -159,8 +159,14 @@ std::int64_t Engine::reserved(const AiPlayer& p) const {
     return p.settle.active || p.settle.ship != 0 || p.settle.plan_crop != 0 ? std::int64_t{colony_money(p)} : 0;
 }
 
-bool Engine::can_commit(const AiPlayer& p, const Commitment& c, Spend what) const {
-    const Budget b = gold_budget(p);
+std::int64_t Engine::planned_colony_gold(const AiPlayer& p) const {
+    // As colony_plan weighs its candidates: the plan's gold is the colony's own.
+    return rivals() && !p.pirates && p.settle.plan_crop != 0 ? std::int64_t{colony_money(p)} : 0;
+}
+
+bool Engine::can_commit(const AiPlayer& p, const Commitment& c, Spend what, std::int64_t own) const {
+    Budget b = gold_budget(p);
+    b.reserved -= own;
     const Refusal r = b.refusal(c);
     if (r != Refusal::None && logging()) {
         // Logged once a game minute per kind of plan, to measure which check refuses what.

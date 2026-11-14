@@ -1417,7 +1417,9 @@ std::int64_t Engine::colony_deficit(const AiPlayer& p) const {
 std::uint8_t Engine::goal_crop(const AiPlayer& p) const {
     // What the goal of an improved computer asks a colony for: gold or ore it has none of, once
     // its budget carries a colony that brings nothing within the horizon (a mine pays off late).
-    if (!rivals() || p.pirates || !can_commit(p, colony_commitment(p, 0), Spend::GoalColony)) {
+    // Open1602: the colony plan's own gold counts for its colony, not twice: counted twice, the goal's
+    // crop fell out of the candidates whenever a plan held, and the plan went with it.
+    if (!rivals() || p.pirates || !can_commit(p, colony_commitment(p, 0), Spend::GoalColony, planned_colony_gold(p))) {
         return 0;
     }
     if (p.strategy.goal == goal::kGold && !crop_available(p, ware::kGold)) {
@@ -1534,7 +1536,7 @@ bool Engine::wants_room(const AiPlayer& p) const {
     }
     // An improved rival settles for room once its budget carries a colony that opens no class.
     if (rivals()) {
-        return can_commit(p, colony_commitment(p, 0), Spend::RoomColony);
+        return can_commit(p, colony_commitment(p, 0), Spend::RoomColony, planned_colony_gold(p));
     }
     const auto n = static_cast<std::int32_t>(p.cities);
     return player(p).money >= kRoomMoney && net_income(p) >= kRoomIncome * n;
