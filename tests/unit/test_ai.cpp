@@ -1351,6 +1351,40 @@ TEST_CASE("ai: below the hardest level a computer knows a partner's Kontor as a 
     }
 }
 
+TEST_CASE("ai: a crop counts as grown by a computer only where its farm finds a site") {
+    // The computer's island grows tobacco fully. Once its tobacco farm found no site there after
+    // repeated tries, an improved computer no longer counts the crop as its own and may found a
+    // colony for it; the original's computers count the island's crops as before.
+    for (const bool original : {true, false}) {
+        Game g;
+        sim::Rules rules;
+        rules.bugs.classic_ai = original;
+        sim::Simulation s(g.world, g.buildings, g.figures, rules);
+        found_city(g, s);
+        const std::vector<std::uint8_t> bytes = saved(s.computers());
+        annokit::core::ByteReader in(bytes);
+        sim::StateIn reader(in);
+        sim::ai::State state;
+        sim::ai::Loader loader(reader, s.computers().state_version());
+        loader(state);
+        REQUIRE(reader.ok());
+        sim::ai::AiPlayer* p = nullptr;
+        for (sim::ai::AiPlayer& k : state.players) {
+            if (k.player == kComputer) {
+                p = &k;
+            }
+        }
+        REQUIRE(p != nullptr);
+        REQUIRE(!p->plans.empty());
+        sim::ai::Engine engine(s, state);
+        CHECK(engine.crop_available(*p, assets::ware::kTobaccoField));
+        p->plans.front().slots[sim::ai::kSlotTobacco].fail_level = 2;
+        CHECK(engine.crop_available(*p, assets::ware::kTobaccoField) == original);
+        // Another crop of the island still counts.
+        CHECK(engine.crop_available(*p, assets::ware::kSpiceField));
+    }
+}
+
 TEST_CASE("ai: a computer at war takes a human's peace offer, unless it is still angry") {
     for (const bool angry : {false, true}) {
         Game g;
