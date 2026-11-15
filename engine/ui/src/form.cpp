@@ -18,11 +18,6 @@ constexpr std::int32_t kEntryGap = 12;  ///< between an entry's label and its va
 constexpr std::int32_t kKnob = 14;      ///< a slider's knob, wide
 constexpr std::int32_t kTrack = 6;      ///< a slider's track, high
 
-/// Width and height of text in design units.
-double text_width(const Font* font, std::string_view s) {
-    return font != nullptr ? font->width(s) / font->design_scale() : 9.0 * static_cast<double>(s.size());
-}
-
 Form::Widget make(Form::Widget::Kind kind, Form::Id id, Rect r, std::string text = {}) {
     Form::Widget w;
     w.kind = kind;
@@ -50,6 +45,27 @@ Rect tooltip_box(const Rect& anchor, std::size_t lines, double widest) {
 }
 
 }  // namespace
+
+double text_width(const Font* font, std::string_view text) {
+    return font != nullptr ? font->width(text) / font->design_scale() : 9.0 * static_cast<double>(text.size());
+}
+
+std::vector<std::string> paragraph_lines(const Font* font, std::string_view text, std::int32_t width) {
+    if (font != nullptr) {
+        const double room = std::max(0.0, (width - 2.0 * kPadding) * font->design_scale());
+        return wrap_text(*font, text, static_cast<std::uint32_t>(room));
+    }
+    std::vector<std::string> lines;
+    std::size_t start = 0;
+    for (;;) {
+        const std::size_t end = std::min(text.find('\n', start), text.size());
+        lines.emplace_back(text.substr(start, end - start));
+        if (end >= text.size()) {
+            return lines;
+        }
+        start = end + 1;
+    }
+}
 
 std::vector<std::string> wrap_lines(const Font* font, std::string_view text, double width) {
     std::vector<std::string> lines;
@@ -442,11 +458,10 @@ std::vector<DrawItem> Form::draw(const std::array<const Font*, kFontSlots>& font
             case Widget::Kind::Paragraph: {
                 std::vector<std::string> lines;
                 if (font != nullptr) {
-                    const double room = std::max(0.0, (w.rect.w - 2.0 * kPadding) * font->design_scale());
-                    lines = wrap_text(*font, w.text, static_cast<std::uint32_t>(room));
+                    lines = paragraph_lines(font, w.text, w.rect.w);
                     const auto fit = static_cast<std::size_t>(std::max(w.rect.h / w.line, 0));
                     if (lines.size() > fit && !w.value.empty()) {
-                        lines = wrap_text(*font, w.value, static_cast<std::uint32_t>(room));
+                        lines = paragraph_lines(font, w.value, w.rect.w);
                     }
                 } else {
                     lines = {w.text};

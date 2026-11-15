@@ -1047,49 +1047,76 @@ void Hud::draw_question() {
 namespace {
 
 // The question's window in design units, built as the settings' windows (ui::Form): a heading,
-// buttons 44 high, the answer of Enter highlighted.
+// buttons 44 high, the answer of Enter highlighted. A long line widens the window a little (up to
+// kQuestionMaxW); what is still longer is wrapped, and the window grows downwards.
 constexpr std::int32_t kQuestionButtonW = 320;
 constexpr std::int32_t kQuestionButtonH = 44;
 constexpr std::int32_t kQuestionGap = 8;
 constexpr std::int32_t kQuestionSwatch = 28;
 constexpr std::int32_t kQuestionMargin = 24;
-constexpr std::int32_t kQuestionTextY = 54;  ///< the question's lines after the first
+constexpr std::int32_t kQuestionTextTop = 23;  ///< the heading's first line
+constexpr std::int32_t kQuestionBodyGap = 9;   ///< between the heading and the text below it
 constexpr std::int32_t kQuestionLine = 22;
+constexpr std::int32_t kQuestionMinW = 560;
+constexpr std::int32_t kQuestionMaxW = 680;
 constexpr std::int32_t kYesNoW = 180;
 constexpr ui::Form::Id kQuestionYes = 1;
 constexpr ui::Form::Id kQuestionNo = 2;
 constexpr ui::Form::Id kQuestionOption = 10;
+
+/// A box this wide (design units) wraps no line of a question.
+constexpr std::int32_t kUnwrapped = 100000;
+
+/// The width a text box needs to show each of the text's lines unwrapped, design units.
+std::int32_t unwrapped_width(const ui::Font* font, std::string_view text) {
+    double widest = 0.0;
+    for (const std::string& line : ui::paragraph_lines(font, text, kUnwrapped)) {
+        widest = std::max(widest, ui::text_width(font, line));
+    }
+    return static_cast<std::int32_t>(std::ceil(widest)) + 1 + 2 * ui::kTextPadding;
+}
 
 }  // namespace
 
 ui::Rect Hud::layout_question() {
     const double s = m_menu_active ? m_menu_scale : m_regions.scale;
     const ui::Rect& v = m_menu_active ? m_regions.full : m_regions.game_view;
+    ui::Form& f = m_question_form;
+    f.set_scale(s);
+    const ui::Font* font = f.font(m_renderer->fonts(s));
     // Yes and no side by side; options one under the other, in two columns when there are more
     // than seven.
     const std::size_t n = m_choices.size();
     const std::string& q = *m_question;
     const std::size_t nl = q.find('\n');
-    const auto more_lines =
-        nl == std::string::npos ? 0 : static_cast<std::int32_t>(std::count(q.begin(), q.end(), '\n'));
-    const std::int32_t top = std::max(100, kQuestionTextY + more_lines * kQuestionLine + 2 * kQuestionGap);
+    const std::string_view heading = std::string_view(q).substr(0, nl);
+    const std::string_view body = nl == std::string::npos ? std::string_view{} : std::string_view(q).substr(nl + 1);
     const std::int32_t columns = n > 7 ? 2 : 1;
     const auto rows = n == 0 ? 1
                              : static_cast<std::int32_t>((n + static_cast<std::size_t>(columns) - 1) /
                                                          static_cast<std::size_t>(columns));
     const std::int32_t cell = kQuestionSwatch + kQuestionGap + kQuestionButtonW;
     const std::int32_t row_width = columns * cell + (columns - 1) * 2 * kQuestionGap;
-    const std::int32_t width = std::max(560, row_width + 2 * kQuestionMargin);
+    // A little wider for a long line, never wider than the screen; the buttons always fit.
+    const std::int32_t text_needs =
+        std::max(unwrapped_width(font, heading), body.empty() ? 0 : unwrapped_width(font, body));
+    const std::int32_t widest = std::min(kQuestionMaxW, static_cast<std::int32_t>(v.w / s));
+    const std::int32_t width =
+        std::max({kQuestionMinW, row_width + 2 * kQuestionMargin, std::min(text_needs + 2 * kQuestionMargin, widest)});
+    const std::int32_t text_w = width - 2 * kQuestionMargin;
+    const auto heading_lines = static_cast<std::int32_t>(ui::paragraph_lines(font, heading, text_w).size());
+    const auto body_lines =
+        body.empty() ? 0 : static_cast<std::int32_t>(ui::paragraph_lines(font, body, text_w).size());
+    const std::int32_t body_y = kQuestionTextTop + heading_lines * kQuestionLine + kQuestionBodyGap;
+    const std::int32_t top = std::max(100, body_y + body_lines * kQuestionLine + 2 * kQuestionGap);
     const std::int32_t height = top + rows * (kQuestionButtonH + kQuestionGap) - kQuestionGap + kQuestionMargin;
-    ui::Form& f = m_question_form;
-    f.set_scale(s);
     f.clear();
     f.panel(ui::Rect{0, 0, width, height});
-    f.label(ui::Rect{kQuestionMargin, 14, width - 2 * kQuestionMargin, 40}, q.substr(0, nl), ui::Align::Left,
-            ui::Form::Tone::Heading);
-    if (nl != std::string::npos) {
-        f.paragraph(ui::Rect{kQuestionMargin, kQuestionTextY, width - 2 * kQuestionMargin, more_lines * kQuestionLine},
-                    q.substr(nl + 1), ui::Form::Tone::Normal, kQuestionLine);
+    f.paragraph(ui::Rect{kQuestionMargin, kQuestionTextTop, text_w, heading_lines * kQuestionLine},
+                std::string(heading), ui::Form::Tone::Heading, kQuestionLine);
+    if (!body.empty()) {
+        f.paragraph(ui::Rect{kQuestionMargin, body_y, text_w, body_lines * kQuestionLine}, std::string(body),
+                    ui::Form::Tone::Normal, kQuestionLine);
     }
     if (n == 0) {
         // Enter answers yes: that button is highlighted.

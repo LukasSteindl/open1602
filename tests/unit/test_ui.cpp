@@ -794,6 +794,15 @@ TEST_CASE("ui: wrap_lines keeps every character of what players write") {
     CHECK(joined == text);
 }
 
+TEST_CASE("ui: paragraph_lines and text_width measure what a paragraph shows") {
+    using Lines = std::vector<std::string>;
+    // Without a font every byte is 9 units wide and only line breaks split the text.
+    CHECK(ui::text_width(nullptr, "abcd") == 36.0);
+    CHECK((ui::paragraph_lines(nullptr, "", 100) == Lines{""}));
+    CHECK((ui::paragraph_lines(nullptr, "ab cd ef", 10) == Lines{"ab cd ef"}));
+    CHECK((ui::paragraph_lines(nullptr, "first line\nsecond line", 10) == Lines{"first line", "second line"}));
+}
+
 TEST_CASE("ui: key bindings: a key by its place works on every layout, by meaning where it is printed") {
     // SDL numbers: scancode 26 is the key at W on a US keyboard; on AZERTY it prints Z.
     constexpr std::int32_t kScanW = 26;
