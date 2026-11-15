@@ -1047,8 +1047,8 @@ void Hud::draw_question() {
 namespace {
 
 // The question's window in design units, built as the settings' windows (ui::Form): a heading,
-// buttons 44 high, the answer of Enter highlighted. The window is as wide as its longest line
-// needs (at least kQuestionMinW, at most kQuestionMaxW or the screen); longer lines are wrapped.
+// buttons 44 high, the answer of Enter highlighted. The window keeps its width; longer lines are
+// wrapped and it grows downwards.
 constexpr std::int32_t kQuestionButtonW = 320;
 constexpr std::int32_t kQuestionButtonH = 44;
 constexpr std::int32_t kQuestionGap = 8;
@@ -1058,24 +1058,10 @@ constexpr std::int32_t kQuestionTextTop = 23;  ///< the heading's first line
 constexpr std::int32_t kQuestionBodyGap = 9;   ///< between the heading and the text below it
 constexpr std::int32_t kQuestionLine = 22;
 constexpr std::int32_t kQuestionMinW = 560;
-constexpr std::int32_t kQuestionMaxW = 860;
-constexpr std::int32_t kQuestionScreenMargin = 16;  ///< kept free on each side of the screen
 constexpr std::int32_t kYesNoW = 180;
 constexpr ui::Form::Id kQuestionYes = 1;
 constexpr ui::Form::Id kQuestionNo = 2;
 constexpr ui::Form::Id kQuestionOption = 10;
-
-/// A box this wide (design units) wraps no line of a question.
-constexpr std::int32_t kUnwrapped = 100000;
-
-/// The width a text box needs to show each of the text's lines unwrapped, design units.
-std::int32_t unwrapped_width(const ui::Font* font, std::string_view text) {
-    double widest = 0.0;
-    for (const std::string& line : ui::paragraph_lines(font, text, kUnwrapped)) {
-        widest = std::max(widest, ui::text_width(font, line));
-    }
-    return static_cast<std::int32_t>(std::ceil(widest)) + 1 + 2 * ui::kTextPadding;
-}
 
 }  // namespace
 
@@ -1098,12 +1084,7 @@ ui::Rect Hud::layout_question() {
                                                          static_cast<std::size_t>(columns));
     const std::int32_t cell = kQuestionSwatch + kQuestionGap + kQuestionButtonW;
     const std::int32_t row_width = columns * cell + (columns - 1) * 2 * kQuestionGap;
-    // As wide as the text needs, but no wider than the screen shows; the buttons always fit.
-    const std::int32_t screen = static_cast<std::int32_t>(v.w / s) - 2 * kQuestionScreenMargin;
-    const std::int32_t text_needs =
-        std::max(unwrapped_width(font, heading), body.empty() ? 0 : unwrapped_width(font, body));
-    const std::int32_t width = std::max({kQuestionMinW, row_width + 2 * kQuestionMargin,
-                                         std::min({text_needs + 2 * kQuestionMargin, kQuestionMaxW, screen})});
+    const std::int32_t width = std::max(kQuestionMinW, row_width + 2 * kQuestionMargin);
     const std::int32_t text_w = width - 2 * kQuestionMargin;
     const auto heading_lines = static_cast<std::int32_t>(ui::paragraph_lines(font, heading, text_w).size());
     const auto body_lines =
