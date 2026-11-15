@@ -512,7 +512,9 @@ Improved computers weigh the way at sea:
   less the running costs of the crop's chain, plus the houses of the home city that rise with the
   good. The rank refuses nothing. The plan keeps its gold and a ship that no supply run takes from
   then on; another crop takes its place only while no ship is kept for it, and the plan ends when
-  its crop is no longer wanted or its budget no longer carries it.
+  its crop is no longer wanted or its budget no longer carries it. An island of its own grows a crop for it
+  only while the city's farm for the crop finds a site there: one that found none after repeated
+  tries (until land changes) no longer counts, and the colony for the crop may be founded.
 - **Colony crops.** An improved computer founds its next colony for the good its people use, make
   too little of and run out of soonest, where none of its cities has an island for it yet (alcohol
   from wine, else sugar; tobacco; spices; cocoa), after its goal's gold or ore. The original goes

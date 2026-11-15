@@ -1034,11 +1034,32 @@ bool Engine::crop_available(const AiPlayer& p, std::uint8_t crop) const {
         if (o == nullptr || o->role != PlayerRole::Computer || (rivals() && c.owner != p.player)) {
             continue;
         }
-        if (grows(c.island, crop)) {
+        if (grows(c.island, crop) && !(rivals() && crop_blocked(p, c, crop))) {
             return true;
         }
     }
     return false;
+}
+
+bool Engine::crop_blocked(const AiPlayer& p, const City& c, std::uint8_t crop) const {
+    // Open1602: an improved computer's city whose island grows the crop but whose farm for it found
+    // no site there after repeated tries (the plan's slot blocked, as home_shortfall reads it) makes
+    // little of it: counted as the crop's city, the computer bought the good for hours and never
+    // founded the colony that would grow it.
+    static constexpr auto kFarms =
+        std::to_array<std::pair<std::uint8_t, std::uint8_t>>({{ware::kSpiceField, kSlotSpices},
+                                                              {ware::kTobaccoField, kSlotTobacco},
+                                                              {ware::kWineField, kSlotWine},
+                                                              {ware::kCocoaField, kSlotCocoa},
+                                                              {ware::kCottonField, kSlotCotton},
+                                                              {ware::kSugarField, kSlotSugar}});
+    const auto farm = std::ranges::find(kFarms, crop, &std::pair<std::uint8_t, std::uint8_t>::first);
+    if (farm == kFarms.end()) {
+        return false;
+    }
+    const auto plan =
+        std::ranges::find_if(p.plans, [&](const CityPlan& r) { return r.island == c.island && r.city == c.index; });
+    return plan != p.plans.end() && plan->slots[farm->second].fail_level >= 2;
 }
 
 std::vector<std::uint8_t> Engine::colony_candidates(AiPlayer& p) {

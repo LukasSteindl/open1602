@@ -224,6 +224,9 @@ public:
     /// What `c`'s Kontor offers of `w`: below the hardest level what its window shows (stock less
     /// what it keeps and what is reserved there, nothing under a ton), else stock less what it keeps.
     [[nodiscard]] std::uint64_t kontor_offer(const City& c, std::uint8_t w) const;
+    /// Whether a city of the computer (of any computer for the original's) lies on an island that
+    /// grows `crop` fully (ai_settle.cpp).
+    [[nodiscard]] bool crop_available(const AiPlayer& p, std::uint8_t crop) const;
 
 private:
     // ---- ai_core.cpp ----
@@ -404,7 +407,8 @@ private:
     /// island for room to grow, though every crop it asks for grows already.
     [[nodiscard]] bool wants_room(const AiPlayer& p) const;
     [[nodiscard]] std::uint8_t choose_colony_crop(AiPlayer& p);
-    [[nodiscard]] bool crop_available(const AiPlayer& p, std::uint8_t crop) const;
+    /// Improved computers: whether city `c`'s farm for `crop` found no site after repeated tries.
+    [[nodiscard]] bool crop_blocked(const AiPlayer& p, const City& c, std::uint8_t crop) const;
     /// Whether the island grows `crop`: a full field (128), or for ore a big or small vein.
     [[nodiscard]] bool grows(std::uint16_t island, std::uint8_t crop) const;
     /// The taxes a minute of `people` of class k in `city`, at its tax rate (consumption.hpp, tax_income).
