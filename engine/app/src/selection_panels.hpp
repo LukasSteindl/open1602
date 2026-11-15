@@ -145,6 +145,12 @@ protected:
     ui::Panel m_panel;
 };
 
+/// The house window (SIEDLER.GAD): the number of the class's inhabitants on a line of its own above
+/// the class name, starting where the name starts, as in the History Edition. The older layout
+/// ends the number left of the portrait, so that from five digits on it runs out of the panel into
+/// the game view. Layouts that already place the number so (or have no such gadgets) stay as they are.
+void fit_class_count(assets::GadgetLayout& layout);
+
 /// All windows of the selections, loaded once.
 class SelectionPanels {
 public:

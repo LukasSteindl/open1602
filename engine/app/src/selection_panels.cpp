@@ -1720,6 +1720,28 @@ private:
 
 }  // namespace
 
+void fit_class_count(assets::GadgetLayout& layout) {
+    // Ids of SettlerPanel::kClassCount and kClassName.
+    constexpr std::int32_t kCount = 36013;
+    constexpr std::int32_t kName = 36014;
+    // One text line of the panel's font in design units: the gap between the two lines.
+    constexpr std::int32_t kLineHeight = 22;
+    const std::optional<std::size_t> count = layout.index_of(kCount);
+    const std::optional<std::size_t> name = layout.index_of(kName);
+    if (!count || !name) {
+        return;
+    }
+    assets::Gadget& c = layout.gadgets[*count];
+    const assets::Gadget& n = layout.gadgets[*name];
+    if (c.kind != assets::GadgetKind::TextRight || n.kind != assets::GadgetKind::TextLeft) {
+        return;
+    }
+    c.kind = assets::GadgetKind::TextLeft;
+    c.pos = {n.pos[0], n.pos[1] - kLineHeight};
+    c.size = n.size;
+    c.offset = n.offset;
+}
+
 // ---- The set -------------------------------------------------------------------------------------
 
 SelectionPanels::SelectionPanels(const assets::GameDirectory& game) {
@@ -1785,6 +1807,7 @@ SelectionPanels::SelectionPanels(const assets::GameDirectory& game) {
         m_panels["MKSOLDAT"] = make_group_panel(std::move(*l), false);
     }
     if (auto l = load("SIEDLER.GAD")) {
+        fit_class_count(*l);
         m_panels["SIEDLER"] = std::make_unique<SettlerPanel>(std::move(*l));
     }
     if (auto l = load("SHIPLIST.GAD")) {
