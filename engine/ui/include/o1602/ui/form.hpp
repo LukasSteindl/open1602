@@ -49,6 +49,11 @@ inline constexpr std::int32_t kTextPadding = 8;
 /// as a hyphen or a line break), as it is meant for what players write. Without a font every byte is
 /// 9 units wide. Empty text is one empty line.
 [[nodiscard]] std::vector<std::string> wrap_lines(const Font* font, std::string_view text, double width);
+/// The width of the text in design units. Without a font every byte is 9 units wide.
+[[nodiscard]] double text_width(const Font* font, std::string_view text);
+/// The lines that Form::paragraph() shows of the text in a box `width` design units wide (all of
+/// them, as if the box were high enough). Without a font the text is split at its line breaks only.
+[[nodiscard]] std::vector<std::string> paragraph_lines(const Font* font, std::string_view text, std::int32_t width);
 /// Where the bottom of the cell of text goes, design units, so that its ink sits in the middle of
 /// the line from `y`, `height` high (the digits' ink, Font::ink_drop()).
 [[nodiscard]] std::int32_t text_bottom(const Font* font, std::int32_t y, std::int32_t height);
