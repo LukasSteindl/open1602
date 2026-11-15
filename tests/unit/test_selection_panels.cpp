@@ -1033,10 +1033,13 @@ TEST_CASE("selection panels: the trade cart button asks where a cart goes, then 
     REQUIRE(route != nullptr);
     CHECK(route->op == sim::RouteEdit::Op::Start);
     out.clear();
+    CHECK(!w->steps_back());
     w->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, 59004}, selected, c, out);
     w->refresh(selected, c);
     CHECK(&w->panel() != root);
     CHECK(w->panel().layout().find(45002) != nullptr);
+    // A right click on the exchange goes back to the cart's page, the cart stays selected.
+    CHECK(w->steps_back());
 
     // "Set route": the stops are clicked on the map one after another, from the first free one;
     // a click beside a city or Escape ends it.
@@ -1571,17 +1574,23 @@ TEST_CASE("selection panels: at the pirates' Kontor a ship trades and deals with
     // With the trade treaty players start with, the trade page opens and stays open.
     t.world.diplomacy().relation(kLocal, kOther).trade = sim::Treaty::Signed;
     t.world.diplomacy().relation(kOther, kLocal).trade = sim::Treaty::Signed;
+    // A right click on the trade page goes back to the ship's page, not out of the selection.
+    CHECK(!p->steps_back());
     p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, 38005}, s, c, out);
     p->refresh(s, c);
     CHECK(&p->panel() != root);
+    CHECK(p->steps_back());
     CHECK(p->back());
     CHECK(&p->panel() == root);
+    CHECK(!p->steps_back());
     // The pirates' own page too.
     p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, 38019}, s, c, out);
     p->refresh(s, c);
     const ui::Panel* pirates = &p->panel();
     CHECK(pirates != root);
+    CHECK(p->steps_back());
     CHECK(p->back());
+    CHECK(&p->panel() == root);
     // Without a treaty, no trade.
     t.world.diplomacy().relation(kLocal, kOther).trade = sim::Treaty::None;
     t.world.diplomacy().relation(kOther, kLocal).trade = sim::Treaty::None;
