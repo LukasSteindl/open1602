@@ -110,7 +110,7 @@ public:
     /// Escape: back one page or out of picking; false if there is nothing to go back from.
     virtual bool back() { return false; }
     /// Whether a right click goes back a page (as back()) instead of out to the player status: on
-    /// pages that lead somewhere, such as a ship's trade route editor (Open1602).
+    /// pages that lead somewhere, such as a ship's exchange of goods or trade route editor (Open1602).
     [[nodiscard]] virtual bool steps_back() const { return false; }
     /// The window was opened anew (lists start at their first page).
     virtual void opened() {}
