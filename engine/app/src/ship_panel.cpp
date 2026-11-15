@@ -651,11 +651,10 @@ public:
                 return true;
         }
     }
-    /// The route editor, its pickers and choosing a stop: a right click goes back step by step to
-    /// the ship's page, where the route is started.
-    [[nodiscard]] bool steps_back() const override {
-        return picking() || m_page == Page::Route || m_page == Page::PickOwn || m_page == Page::PickForeign;
-    }
+    /// Every page beyond the ship's own (the exchange of goods at a Kontor, trading, the pirates,
+    /// the route editor and its pickers) and choosing a stop: a right click goes back step by step
+    /// to the ship's page; only there it leaves the ship.
+    [[nodiscard]] bool steps_back() const override { return picking() || m_page != Page::Root; }
     std::optional<Request> take_request() override { return std::exchange(m_request, std::nullopt); }
     /// The mouse wheel over the trade route's list of stops: a page (four stops) per notch, as its
     /// arrows (Open1602).
