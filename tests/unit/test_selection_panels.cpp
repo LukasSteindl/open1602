@@ -16,6 +16,7 @@
 #include "selection_panels.hpp"
 
 #include "o1602/assets/cod_parser.hpp"
+#include "o1602/assets/gad.hpp"
 #include "o1602/assets/game_directory.hpp"
 #include "o1602/assets/own_figures.hpp"
 #include "o1602/assets/text_table.hpp"
@@ -632,6 +633,48 @@ TEST_CASE("selection panels: a house shows its class and city taxes, its buttons
     p->refresh(house, c);
     const auto after = texts(*p);
     CHECK(std::find(after.begin(), after.end(), std::to_string(60 * 132 / 128)) != after.end());
+}
+
+TEST_CASE("selection panels: the house window puts a long inhabitant count above the class name") {
+    // The older layout: the count right-aligned so that it ends left of the portrait, from five
+    // digits on running out of the panel. It moves onto its own line above the class name.
+    const std::string older =
+        "Objekt: GADGET\n"
+        "  @Nummer: 0\n  Id: 36013\n  Kind: 7\n  Pos: 15, 440\n  Size: 40, 20\n"
+        "  Posoffs: 35, 20\n"
+        "  @Nummer: 1\n  Id: 36014\n  Kind: 5\n  Pos: 120, 440\n  Size: 100, 20\n"
+        "  Posoffs: 0, 20\n"
+        "EndObj\n";
+    assets::GadgetLayout layout = assets::parse_gad(older);
+    app::fit_class_count(layout);
+    const assets::Gadget* count = layout.find(36013);
+    REQUIRE(count != nullptr);
+    CHECK(count->kind == assets::GadgetKind::TextLeft);
+    CHECK(count->pos[0] == 120);
+    CHECK(count->pos[1] == 418);
+    CHECK(count->size[0] == 100);
+    CHECK(count->size[1] == 20);
+    CHECK(count->offset[0] == 0);
+    CHECK(count->offset[1] == 20);
+    const assets::Gadget* name = layout.find(36014);
+    REQUIRE(name != nullptr);
+    CHECK(name->pos[0] == 120);
+    CHECK(name->pos[1] == 440);
+
+    // A layout that already has the count left-aligned (or elsewhere) stays as it is.
+    assets::GadgetLayout placed = layout;
+    placed.gadgets[*placed.index_of(36013)].pos = {130, 410};
+    app::fit_class_count(placed);
+    CHECK(placed.find(36013)->pos[0] == 130);
+    CHECK(placed.find(36013)->pos[1] == 410);
+
+    // Without the class name there is nothing to line the count up with.
+    assets::GadgetLayout alone = assets::parse_gad(
+        "Objekt: GADGET\n  @Nummer: 0\n  Id: 36013\n  Kind: 7\n  Pos: 15, 440\n  Size: 40, 20\nEndObj\n");
+    app::fit_class_count(alone);
+    CHECK(alone.find(36013)->kind == assets::GadgetKind::TextRight);
+    CHECK(alone.find(36013)->pos[0] == 15);
+    CHECK(alone.find(36013)->pos[1] == 440);
 }
 
 TEST_CASE("selection panels: the shipyard window orders a ship of the types a small yard builds") {
