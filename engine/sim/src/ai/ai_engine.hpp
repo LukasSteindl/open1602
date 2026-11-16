@@ -218,6 +218,15 @@ public:
     [[nodiscard]] std::uint8_t goal_crop(const AiPlayer& p) const;
 
     // ai_logistics.cpp
+    /// Whether `p` knows of city `c`: on an island it discovered, or with sees_all().
+    [[nodiscard]] bool city_known(const AiPlayer& p, const City& c) const;
+
+    // ai_strategy.cpp
+    /// Whether rival `b` has a city near `p`'s home: on its island or within four minutes at sea,
+    /// only among the cities `p` knows of; `unseen` is set when an unknown one would have counted.
+    [[nodiscard]] bool rival_near(const AiPlayer& p, PlayerId b, bool* unseen = nullptr);
+
+    // ai_logistics.cpp
     /// Whether `p` knows partner city `c`'s Kontor, its prices and offer: on an island it discovered,
     /// or with sees_all().
     [[nodiscard]] bool kontor_known(const AiPlayer& p, const City& c) const;

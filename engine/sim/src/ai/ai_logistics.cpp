@@ -623,11 +623,16 @@ void Engine::patrol_route(AiPlayer& p, Ship& s, std::uint16_t island) {
     n.last_stop = s.route.current;
 }
 
+bool Engine::city_known(const AiPlayer& p, const City& c) const {
+    // Open1602: a player knows of another's city only on an island they have discovered. A
+    // computer below the hardest level knows no more.
+    return sees_all() || island_of(c.island).discovered_by(p.player);
+}
+
 bool Engine::kontor_known(const AiPlayer& p, const City& c) const {
     // Open1602 (C4): a player sees a partner's prices and offer in its Kontor's window, which they
-    // open by clicking the Kontor on an island they have discovered (with a trade treaty); one on an
-    // island they have never seen they do not know of. A computer below the hardest level knows no more.
-    return sees_all() || island_of(c.island).discovered_by(p.player);
+    // open by clicking the Kontor of a city they know of (with a trade treaty).
+    return city_known(p, c);
 }
 
 std::optional<std::size_t> Engine::supply_source(AiPlayer& p, std::uint16_t home_island, std::uint8_t w,

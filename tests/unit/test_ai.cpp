@@ -1350,6 +1350,45 @@ TEST_CASE("ai: a computer's colony plan counts its own gold once") {
     CHECK(engine.goal_crop(*p) == assets::ware::kGold);
 }
 
+TEST_CASE("ai: below the hardest level a rival is near only by cities on islands the computer discovered") {
+    // A player knows of another's city only once their ships have discovered its island. Here the
+    // rival's city stands on the computer's home island, which the test leaves undiscovered; the
+    // hardest level sees every city.
+    for (const std::uint8_t difficulty : {std::uint8_t{2}, std::uint8_t{3}}) {
+        Game g;
+        sim::World::GameSettings settings = g.world.game_settings();
+        settings.difficulty = difficulty;
+        g.world.set_game_settings(settings);
+        sim::City own;
+        own.island = 1;
+        own.owner = kComputer;
+        g.world.add_city(own);
+        sim::City theirs;
+        theirs.island = 1;
+        theirs.owner = kHuman;
+        g.world.add_city(theirs);
+        sim::Simulation s(g.world, g.buildings, g.figures);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        sim::ai::AiPlayer p;
+        p.player = kComputer;
+        p.home_valid = true;
+        p.home_island = 1;
+        p.home_city = 0;
+        const bool hardest = difficulty == 3;
+        REQUIRE(!g.world.islands()[1].discovered_by(kComputer));
+        bool unseen = false;
+        CHECK(engine.rival_near(p, kHuman, &unseen) == hardest);
+        CHECK(unseen == !hardest);
+        g.world.island(1).discover(kComputer);
+        unseen = false;
+        CHECK(engine.rival_near(p, kHuman, &unseen));
+        CHECK(!unseen);
+        // A player without a city there is not near.
+        CHECK(!engine.rival_near(p, sim::PlayerId{2}));
+    }
+}
+
 TEST_CASE("ai: below the hardest level a computer knows a partner's Kontor as a human would") {
     // A human opens a partner's Kontor window on an island they have discovered and see there its
     // offer: stock less what it keeps and what carriers have reserved, nothing under a ton. The

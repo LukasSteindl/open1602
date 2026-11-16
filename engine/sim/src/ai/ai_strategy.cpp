@@ -117,6 +117,28 @@ std::uint32_t Engine::army_percent(const AiPlayer& p) const {
     return pct;
 }
 
+bool Engine::rival_near(const AiPlayer& p, PlayerId b, bool* unseen) {
+    // A rival is near with a city on the home island or within four minutes at sea of the home
+    // city. Open1602 (B5): only by the cities the computer knows of, as a player sees them on the
+    // map; `unseen` tells whether an unknown city would have counted.
+    const City* home = p.home_valid ? m_world.city(p.home_island, p.home_city) : nullptr;
+    if (home == nullptr) {
+        return false;
+    }
+    const auto home_at = city_point(*home);
+    for (const City& c : m_world.cities()) {
+        if (c.owner == b && (c.island == home->island || sail_seconds(p, home_at, city_point(c)) <= kNearSeconds)) {
+            if (city_known(p, c)) {
+                return true;
+            }
+            if (unseen != nullptr) {
+                *unseen = true;
+            }
+        }
+    }
+    return false;
+}
+
 void Engine::plan_strategy(AiPlayer& p) {
     const Balance& bal = m_world.balance();
     Strategy& st = p.strategy;
@@ -173,8 +195,6 @@ void Engine::plan_strategy(AiPlayer& p) {
     st.stances.resize(players, stance::kNeutral);
     const Diplomacy& d = m_world.diplomacy();
     const std::uint32_t own = strength(p.player, p.player);
-    const City* home = p.home_valid ? m_world.city(p.home_island, p.home_city) : nullptr;
-    const auto home_at = home != nullptr ? city_point(*home) : std::pair<std::int32_t, std::int32_t>{0, 0};
     // A conqueror presses earlier, a trader later; harder levels press earlier too.
     std::uint32_t press = bal.ai_pressure_percent;
     if (st.character == character::kConqueror) {
@@ -197,15 +217,10 @@ void Engine::plan_strategy(AiPlayer& p) {
         const Relation& rel = d.relation(p.player, b);
         const std::int32_t mood = d.mood(m_world, p.player, b, 0, now_ms());
         const std::uint32_t theirs = threat_of(p.player, b);
-        bool near = false;
-        if (home != nullptr) {
-            for (const City& c : m_world.cities()) {
-                if (c.owner == b &&
-                    (c.island == home->island || sail_seconds(p, home_at, city_point(c)) <= kNearSeconds)) {
-                    near = true;
-                    break;
-                }
-            }
+        bool unseen = false;
+        const bool near = rival_near(p, b, &unseen);
+        if (unseen && !near) {
+            log(p, "player %u is near only by cities on islands it has not discovered", b);
         }
         const auto presses = [&](std::uint32_t t) {
             return near && mood <= 0 && t != 0 && std::uint64_t{own} * 100U >= std::uint64_t{t} * press;
