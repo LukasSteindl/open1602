@@ -626,7 +626,7 @@ TEST_CASE("carts: an improved computer's gift the natives do not take comes back
     CHECK(home.goods[kCloth] == 29 * kTon);  // all but the one ton they took
 }
 
-TEST_CASE("carts: the editor puts a player's cart on a road beside its Kontor or market, one per island") {
+TEST_CASE("carts: the editor puts a player's cart on a road of its own land, one per island") {
     Land land;
     using editor::UnitRefusal;
     const sim::World before = land.world;
@@ -635,8 +635,18 @@ TEST_CASE("carts: the editor puts a player's cart on a road beside its Kontor or
     CHECK(editor::cart_fits(land.world, land.buildings, 0, 24, 16) == UnitRefusal::None);
     CHECK(editor::cart_fits(land.world, land.buildings, 0, 3, 3) == UnitRefusal::NoRoad);      // the sea
     CHECK(editor::cart_fits(land.world, land.buildings, 0, 10, 14) == UnitRefusal::NoRoad);    // the Kontor
-    CHECK(editor::cart_fits(land.world, land.buildings, 0, 30, 20) == UnitRefusal::NoMarket);  // far from it
+    CHECK(editor::cart_fits(land.world, land.buildings, 0, 30, 20) == UnitRefusal::NoMarket);  // player 1's land
     CHECK(editor::cart_fits(land.world, land.buildings, 0, 36, 14) == UnitRefusal::NoMarket);  // a foreign Kontor
+    // Far from its Kontor and market, on its own road: at home in the city whose Kontor is nearest.
+    CHECK(editor::cart_fits(land.world, land.buildings, 0, 15, 20) == UnitRefusal::None);
+    {
+        auto far = editor::place_cart(land.world, land.buildings, land.figures, 0, 15, 20, 0);
+        REQUIRE(far.ok());
+        sim::World w = land.world;
+        (*far)->apply(w);
+        CHECK(w.ships().back().previous.kind == sim::Target::Kind::City);
+        CHECK(w.ships().back().previous.city == 0);
+    }
     CHECK(editor::cart_fits(land.world, land.buildings, 1, 36, 14) == UnitRefusal::None);
     CHECK(editor::cart_fits(land.world, land.buildings, 5, 12, 14) == UnitRefusal::NoOwner);
     CHECK(editor::cart_fits(land.world, land.buildings, 0, -1, 14) == UnitRefusal::Outside);

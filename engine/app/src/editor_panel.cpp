@@ -14,6 +14,7 @@
 #include "o1602/assets/package_scenarios.hpp"
 #include "o1602/sim/limits.hpp"
 #include "o1602/sim/scenario_data.hpp"
+#include "o1602/sim/ships.hpp"
 #include "o1602/sim/simulation.hpp"
 #include "o1602/sim/world.hpp"
 #include "o1602/ui/localization.hpp"
@@ -200,6 +201,10 @@ constexpr Id kFirstRouteMore = 1110;      ///< + the entry: more tons
 constexpr std::size_t kRouteEntries = 8;  ///< entries of a stop the page shows at most
 constexpr Id kUnitPatrol = 1130;          ///< the selected unit's patrol: where to, on the map
 constexpr Id kUnitPatrolOff = 1131;       ///< the selected unit's patrol ended
+constexpr Id kShipNamePage = 1132;        ///< the selected ship's or cart's name
+constexpr Id kShipSale = 1133;            ///< the selected ship offered for sale, or no longer
+constexpr Id kShipCannonsLess = 1134;     ///< one mounted cannon fewer
+constexpr Id kShipCannonsMore = 1135;     ///< one mounted cannon more
 constexpr Id kPlayerTable = 300;          ///< + 8 * the row + the column of the players' table
 constexpr std::size_t kTableRows = 16;
 constexpr Id kRelationTable = 500;  ///< + 16 * the row + the column of the diplomacy table
@@ -462,8 +467,8 @@ void EditorPanel::ask_name(std::string_view name) {
 
 bool EditorPanel::show_selection() noexcept {
     if (m_page == Page::New || m_page == Page::Open || m_page == Page::SaveAs || m_page == Page::CityName ||
-        m_page == Page::PlayerName || m_page == Page::GoalText || m_page == Page::ScenarioText ||
-        m_page == Page::Markers || m_page == Page::MarkerName) {
+        m_page == Page::ShipName || m_page == Page::PlayerName || m_page == Page::GoalText ||
+        m_page == Page::ScenarioText || m_page == Page::Markers || m_page == Page::MarkerName) {
         return false;
     }
     m_page = Page::Selection;
@@ -644,6 +649,7 @@ std::optional<EditorTool> EditorPanel::active_tool(const EditorModel& model) con
         case Page::CityTrade:
         case Page::CityWare:
         case Page::ShipCargo:
+        case Page::ShipName:
         case Page::ShipRoute:
         case Page::Fertility:
             return EditorTool::Select;
@@ -835,6 +841,9 @@ void EditorPanel::layout_page(const EditorModel& model) {
             break;
         case Page::ShipCargo:
             layout_ship_cargo(model);
+            break;
+        case Page::ShipName:
+            layout_ship_name(model);
             break;
         case Page::ShipRoute:
             layout_ship_route(model);
@@ -1205,7 +1214,8 @@ void EditorPanel::layout_selection(const EditorModel& model) {
         y += 2 * kLine + 4;
         // Room for the buttons below: back, and an island's three rows, a city's three or a ship's one.
         const std::int32_t rows = model.island || model.placeholder || model.city ? 4
-                                  : model.ship || model.unit                      ? 2
+                                  : model.ship                                    ? 3
+                                  : model.unit                                    ? 2
                                                                                   : 1;
         const std::int32_t bottom = m_top + m_height - rows * (kButtonH + kGap) - kGap;
         for (const EditorProperty& p : model.properties) {
@@ -1237,6 +1247,11 @@ void EditorPanel::layout_selection(const EditorModel& model) {
             f.button(kShipRoutePage, Rect{m_x + half + kGap, y, half, kButtonH}, ui::tr("editor.ship.route"),
                      model.ship->route_targets.size() > 1);
             y += kButtonH + kGap;
+            f.button(kShipNamePage, Rect{m_x, y, half, kButtonH}, ui::tr("editor.ship.rename"));
+            f.button(kShipSale, Rect{m_x + half + kGap, y, half, kButtonH},
+                     ui::tr(model.ship->for_sale ? "editor.ship.sale_on" : "editor.ship.sale_off"),
+                     model.ship->can_sell, model.ship->for_sale);
+            y += kButtonH + kGap;
         } else if (model.unit) {
             const std::int32_t half = (m_w - kGap) / 2;
             f.button(kUnitPatrol, Rect{m_x, y, half, kButtonH}, ui::tr("editor.unit.patrol"), true,
@@ -1264,6 +1279,26 @@ void EditorPanel::layout_city_name(const EditorModel& model) {
     f.field(kField, Rect{m_x, y, m_w, 32}, m_text);
     y += 38;
     const bool valid = sim::valid_name(m_text, sim::CityOrder::kMaxNameLength);
+    const std::int32_t half = (m_w - kGap) / 2;
+    f.button(kStore, Rect{m_x, y, half, kButtonH}, ui::tr("editor.city.rename_ok"), valid);
+    f.button(kCitySelection, Rect{m_x + half + kGap, y, half, kButtonH}, ui::tr("editor.cancel"));
+}
+
+void EditorPanel::layout_ship_name(const EditorModel& model) {
+    if (!model.ship) {
+        m_page = Page::Selection;  // the ship is gone (undone)
+        layout_selection(model);
+        return;
+    }
+    ui::Form& f = m_form;
+    std::int32_t y = m_top + 6;
+    f.label(Rect{m_x, y, m_w, 28}, ui::tr("editor.ship.rename_title"), Align::Left, Tone::Heading);
+    y += 34;
+    f.label(Rect{m_x, y, m_w, kLine}, ui::tr("editor.ship.name"));
+    y += kLine;
+    f.field(kField, Rect{m_x, y, m_w, 32}, m_text);
+    y += 38;
+    const bool valid = sim::valid_name(m_text, sim::ShipCommand::kMaxNameLength);
     const std::int32_t half = (m_w - kGap) / 2;
     f.button(kStore, Rect{m_x, y, half, kButtonH}, ui::tr("editor.city.rename_ok"), valid);
     f.button(kCitySelection, Rect{m_x + half + kGap, y, half, kButtonH}, ui::tr("editor.cancel"));
@@ -1514,19 +1549,34 @@ void EditorPanel::layout_ship_cargo(const EditorModel& model) {
     constexpr std::int32_t kHoldH = 30;
     constexpr std::int32_t kStep = 28;
     constexpr std::int32_t kAmount = 64;  // as on the page "Stock"
-    const std::int32_t bottom = m_top + m_height - (kButtonH + kGap) - kGap;
+    // A ship that carries cannons has a row for them below the holds.
+    const bool armed = ship.max_cannons != 0;
+    const std::int32_t bottom = m_top + m_height - (kButtonH + kGap) - kGap - (armed ? kHoldH + 4 : 0);
+    const std::int32_t ware_w = m_w - 2 * kStep - kAmount - 4;
     for (std::size_t i = 0; i < std::min(ship.holds.size(), kHoldRows) && y + kHoldH <= bottom; ++i) {
         const EditorGood& h = ship.holds[i];
         const auto id = static_cast<Id>(i);
-        const std::int32_t ware_w = m_w - 2 * kStep - kAmount - 4;
+        // A land unit fills its hold: no tons to change.
+        const bool unit = assets::is_soldier_ware(h.ware);
         f.cycle_button(kFirstHoldWare + id, Rect{m_x, y, ware_w - 2, kHoldH - 4},
                        h.ware != 0 ? h.name : ui::tr("editor.ship.empty"));
-        f.label(Rect{m_x + ware_w, y, kAmount, kHoldH - 4}, ui::tr("editor.city.tons", {count(h.amount / 32)}),
-                Align::Right);
+        if (!unit) {
+            f.label(Rect{m_x + ware_w, y, kAmount, kHoldH - 4}, ui::tr("editor.city.tons", {count(h.amount / 32)}),
+                    Align::Right);
+        }
         f.cycle_button(kFirstHoldLess + id, Rect{m_x + m_w - 2 * kStep - 2, y, kStep, kHoldH - 4}, "-",
-                       h.ware != 0 && h.amount > 0);
+                       !unit && h.ware != 0 && h.amount > 0);
         f.cycle_button(kFirstHoldMore + id, Rect{m_x + m_w - kStep, y, kStep, kHoldH - 4}, "+",
-                       h.ware != 0 && h.amount < ship.room);
+                       !unit && h.ware != 0 && h.amount < ship.room);
+        y += kHoldH;
+    }
+    if (armed) {
+        y += 4;
+        f.label(Rect{m_x, y, ware_w + kAmount, kHoldH - 4},
+                ui::tr("editor.ship.cannons", {count(ship.cannons), count(ship.max_cannons)}));
+        f.cycle_button(kShipCannonsLess, Rect{m_x + m_w - 2 * kStep - 2, y, kStep, kHoldH - 4}, "-", ship.cannons > 0);
+        f.cycle_button(kShipCannonsMore, Rect{m_x + m_w - kStep, y, kStep, kHoldH - 4}, "+",
+                       ship.cannons < ship.max_cannons);
         y += kHoldH;
     }
     y += 4;
@@ -3007,6 +3057,16 @@ std::optional<EditorRequest> EditorPanel::commit_name() {
         r.name = m_text;
         return r;
     }
+    if (m_page == Page::ShipName) {
+        if (!sim::valid_name(m_text, sim::ShipCommand::kMaxNameLength)) {
+            return std::nullopt;
+        }
+        m_page = Page::Selection;
+        m_form.set_focus(std::nullopt);
+        EditorRequest r{EditorRequest::Kind::ShipName};
+        r.name = m_text;
+        return r;
+    }
     std::string name = clean_name(m_text);
     if (name.empty()) {
         return std::nullopt;
@@ -3608,6 +3668,38 @@ std::optional<EditorRequest> EditorPanel::press(Id pressed, const EditorModel& m
         case kShipCargoPage:
             m_page = Page::ShipCargo;
             return std::nullopt;
+        case kShipNamePage:
+            if (model.ship) {
+                m_page = Page::ShipName;
+                m_text = model.ship->name;
+                m_form.set_focus(kField);
+                m_form.select_all();
+            }
+            return std::nullopt;
+        case kShipSale: {
+            if (!model.ship || !model.ship->can_sell) {
+                return std::nullopt;
+            }
+            EditorRequest r{EditorRequest::Kind::ShipSale};
+            r.index = model.ship->for_sale ? 0 : 1;
+            return r;
+        }
+        case kShipCannonsLess:
+        case kShipCannonsMore: {
+            if (!model.ship || model.ship->max_cannons == 0) {
+                return std::nullopt;
+            }
+            // Left one, right all the way, as far as the ship takes them.
+            const EditorShip& ship = *model.ship;
+            const bool more = *id == kShipCannonsMore;
+            EditorRequest r{EditorRequest::Kind::ShipCannons};
+            r.amount = more ? (forward ? std::min(ship.max_cannons, ship.cannons + 1) : ship.max_cannons)
+                            : (forward ? ship.cannons - std::min(ship.cannons, 1U) : 0U);
+            if (r.amount == ship.cannons) {
+                return std::nullopt;
+            }
+            return r;
+        }
         case kUnitPatrol:
             if (!model.unit) {
                 return std::nullopt;
@@ -3848,15 +3940,22 @@ std::optional<EditorRequest> EditorPanel::press(Id pressed, const EditorModel& m
         r.ware = h.ware;
         r.amount = h.amount;
         if (ware) {
-            // Empty, then the wares in their order and back to empty; a new ware fills the hold.
-            const auto at = std::find_if(ship.wares.begin(), ship.wares.end(),
-                                         [&](const EditorGood& g) { return g.ware == h.ware; });
-            const std::size_t n = ship.wares.size() + 1;  // with "empty" at 0
-            const std::size_t now = at == ship.wares.end() ? 0 : static_cast<std::size_t>(at - ship.wares.begin()) + 1;
+            // Empty, then the wares in their order, then a ship's land units, and back to empty; a
+            // new ware fills the hold.
+            std::vector<EditorGood> goods = ship.wares;
+            goods.insert(goods.end(), ship.units.begin(), ship.units.end());
+            const auto at =
+                std::find_if(goods.begin(), goods.end(), [&](const EditorGood& g) { return g.ware == h.ware; });
+            const std::size_t n = goods.size() + 1;  // with "empty" at 0
+            const std::size_t now = at == goods.end() ? 0 : static_cast<std::size_t>(at - goods.begin()) + 1;
             const std::size_t next = step(now, n, forward);
-            r.ware = next == 0 ? 0 : ship.wares[next - 1].ware;
-            r.amount = next == 0 ? 0 : (h.amount > 0 ? h.amount : ship.room);
+            r.ware = next == 0 ? 0 : goods[next - 1].ware;
+            const bool from_unit = assets::is_soldier_ware(h.ware);
+            r.amount = next == 0 ? 0 : (h.amount > 0 && !from_unit ? h.amount : ship.room);
             return r;
+        }
+        if (assets::is_soldier_ware(h.ware)) {
+            return std::nullopt;  // a land unit fills its hold
         }
         // Left 10 t, right 1 t; within the hold's room, as on the page "Stock".
         const std::uint32_t unit = forward ? 10 * 32 : 32;
@@ -4059,7 +4158,7 @@ std::optional<EditorRequest> EditorPanel::key(int key) {
         case 13:
             return commit_name();
         case 27:
-            if (m_page == Page::CityName) {
+            if (m_page == Page::CityName || m_page == Page::ShipName) {
                 m_page = Page::Selection;
                 m_form.set_focus(std::nullopt);
             } else if (m_page == Page::MarkerName) {

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <optional>
+#include <string>
 
 #include "../test_framework.hpp"
 #include "build_tool.hpp"
@@ -14,6 +15,7 @@
 #include "o1602/script/game_scripts.hpp"
 #include "o1602/sim/blueprints.hpp"
 #include "o1602/sim/construction.hpp"
+#include "o1602/sim/game_data.hpp"
 #include "o1602/sim/growth.hpp"
 #include "o1602/sim/original_limits.hpp"
 #include "o1602/sim/save_game.hpp"
@@ -1916,7 +1918,8 @@ TEST_CASE("construction: the editor puts ships on the water and units on land, a
     const auto doc = assets::cod::parse(
         "Objekt: FIGUR\n"
         "  Nummer: 1\n  Kind: 1\n  Gfx: 0\n  Blocknr: 1\n  Speed: 260\n  Maxenergy: 20\n"
-        "  Nummer: 21\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 4\n  Speed: 500\n  Maxenergy: 50\n"
+        "  Nummer: 21\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 4\n  Speed: 500\n  Maxenergy: 50\n  Maxkanon: "
+        "6\n"
         "EndObj\n",
         types);
     auto figures = assets::FigureTable::from_cod(doc);
@@ -2039,6 +2042,64 @@ TEST_CASE("construction: the editor puts ships on the water and units on land, a
         (*emptied)->revert(island.world);
         (*loaded)->revert(island.world);
         CHECK(island.world.ship(id)->cargo[1].ware == 0);
+    }
+
+    // A land unit on board, at full health whatever the amount; a name, cannons and a sale.
+    {
+        const std::uint32_t id = island.world.ships().back().id;
+        const std::uint8_t soldiers = sim::unit_ware(assets::figure::kUnitFamilies[0]);
+        REQUIRE(sim::is_soldier_ware(soldiers));
+        auto boarded = editor::set_ship_cargo(island.world, id, 2, soldiers, 32);
+        REQUIRE(boarded.ok());
+        (*boarded)->apply(island.world);
+        CHECK(island.world.ship(id)->cargo[2].ware == soldiers);
+        CHECK(island.world.ship(id)->cargo[2].amount == sim::kHoldCapacity);
+        (*boarded)->revert(island.world);
+
+        CHECK(!editor::rename_ship(island.world, id, "").ok());
+        CHECK(!editor::rename_ship(island.world, id, std::string(41, 'a')).ok());
+        CHECK(!editor::rename_ship(island.world, id + 100, "Seestern").ok());
+        auto named = editor::rename_ship(island.world, id, "Seestern");
+        REQUIRE(named.ok());
+        (*named)->apply(island.world);
+        CHECK(island.world.ship(id)->name == "Seestern");
+        (*named)->revert(island.world);
+        CHECK(island.world.ship(id)->name.empty());
+
+        CHECK(!editor::set_ship_cannons(island.world, *figures, id, 7).ok());
+        auto armed = editor::set_ship_cannons(island.world, *figures, id, 6);
+        REQUIRE(armed.ok());
+        (*armed)->apply(island.world);
+        CHECK(island.world.ship(id)->cannons == 6);
+        (*armed)->revert(island.world);
+        CHECK(island.world.ship(id)->cannons == 0);
+
+        CHECK(!editor::set_ship_for_sale(island.world, id, true, sim::ShipCommand::kMaxSaleFactor + 1).ok());
+        auto sale = editor::set_ship_for_sale(island.world, id, true, 192);
+        REQUIRE(sale.ok());
+        (*sale)->apply(island.world);
+        CHECK(island.world.ship(id)->for_sale);
+        CHECK(island.world.ship(id)->sale_factor == 192);
+        // The scenario keeps all of it (each edit holds the world it makes: one after the other).
+        auto both = editor::rename_ship(island.world, id, "Seestern");
+        REQUIRE(both.ok());
+        (*both)->apply(island.world);
+        auto all = editor::set_ship_cannons(island.world, *figures, id, 6);
+        REQUIRE(all.ok());
+        (*all)->apply(island.world);
+        auto bytes = sim::write_game(island.world, island.buildings);
+        REQUIRE(bytes.ok());
+        auto read = sim::read_game(*bytes, island.buildings);
+        REQUIRE(read.ok());
+        REQUIRE(read->ship(id) != nullptr);
+        CHECK(read->ship(id)->name == "Seestern");
+        CHECK(read->ship(id)->cannons == 6);
+        CHECK(read->ship(id)->for_sale);
+        CHECK(read->ship(id)->sale_factor == 192);
+        (*all)->revert(island.world);
+        (*both)->revert(island.world);
+        (*sale)->revert(island.world);
+        CHECK(!island.world.ship(id)->for_sale);
     }
 
     // Taken away, with the orders that name them.
