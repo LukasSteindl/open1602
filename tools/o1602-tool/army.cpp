@@ -220,6 +220,15 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
         } else {
             b.stall = 0;
         }
+        // An order but no way yet: waiting for a search (or after a failed one).
+        if (!s.target.empty() && !now_on_way && moved == 0 && s.anim != kAnimAttack &&
+            s.motion.phase == sim::SoldierMotion::Phase::Wait) {
+            ++m_wait_ticks;
+            ++b.waiting;
+            m_longest_wait = std::max(m_longest_wait, b.waiting);
+        } else {
+            b.waiting = 0;
+        }
         if (moved > 0 && b.moved > 0) {
             ++m_moving_pairs;
             if (s.direction == b.direction && std::abs(moved - b.moved) * 8 > b.moved) {
@@ -266,6 +275,9 @@ void ArmyBench::print() const {
                 m_longest_stall * sim::Simulation::kTickMs);
     std::printf("walk animation without moving: %llu unit ticks\n",
                 static_cast<unsigned long long>(m_walk_in_place_ticks));
+    std::printf("an order but no way yet (waiting for a search): %llu unit ticks, longest %u ticks (%u ms)\n",
+                static_cast<unsigned long long>(m_wait_ticks), m_longest_wait,
+                m_longest_wait * sim::Simulation::kTickMs);
     std::printf("tempo changes on a straight line: %.2f%% of %llu moving ticks; %llu turns in %.0f half tiles walked\n",
                 per(m_tempo_changes, m_moving_pairs), static_cast<unsigned long long>(m_moving_pairs),
                 static_cast<unsigned long long>(m_turns), cells);

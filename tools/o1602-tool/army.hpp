@@ -35,8 +35,9 @@ private:
         std::int32_t y = 0;
         bool on_way = false;
         std::uint8_t direction = 0;
-        std::int32_t moved = 0;   ///< way in the tick before, 1/4096 tile (0: stood)
-        std::uint32_t stall = 0;  ///< ticks in a row on the way without moving
+        std::int32_t moved = 0;     ///< way in the tick before, 1/4096 tile (0: stood)
+        std::uint32_t stall = 0;    ///< ticks in a row on the way without moving
+        std::uint32_t waiting = 0;  ///< ticks in a row with an order but no way
     };
     struct Goal {
         std::int32_t x2 = 0;  ///< ordered half-tile cell
@@ -64,6 +65,8 @@ private:
     std::uint64_t m_cells_walked = 0;         ///< half tiles
     std::vector<std::uint32_t> m_arrival;     ///< half tiles from the ordered cell when the way ended
     std::uint64_t m_goals_dropped = 0;
+    std::uint64_t m_wait_ticks = 0;
+    std::uint32_t m_longest_wait = 0;
     std::uint64_t m_orders = 0;
     std::uint64_t m_orders_accepted = 0;
     std::uint64_t m_searches = 0;
