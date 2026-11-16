@@ -208,6 +208,9 @@ struct OwnerHeading {
     std::int32_t name = 0;
     std::int32_t arms_x = 0;
     std::int32_t cover = 0;
+    /// Where the name beside the arms ends at the latest (0: at the plate's end), before an
+    /// ornament the plate keeps.
+    std::int32_t text_end = 0;
 };
 /// The layout with the gadgets of the owner's heading added: a second name line, centred beside
 /// the arms, the arms' shadow and the arms (Ids name + 900, + 901, + 902).

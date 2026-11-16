@@ -307,7 +307,8 @@ assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const Owner
         line.size[0] = std::max(0, h.arms_x - 6 - line.pos[0]);
     } else {
         line.pos[0] = h.arms_x + kArmsWidth + 6;
-        line.size[0] = std::max(0, name.pos[0] + name.size[0] - line.pos[0]);
+        const std::int32_t end = h.text_end > 0 ? h.text_end : name.pos[0] + name.size[0];
+        line.size[0] = std::max(0, end - line.pos[0]);
     }
     line.offset[0] = static_cast<std::int16_t>(line.size[0] / 2);
     layout.gadgets.push_back(line);

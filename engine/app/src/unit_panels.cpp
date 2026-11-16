@@ -21,11 +21,10 @@ using namespace panel_detail;
 
 constexpr std::uint8_t kCannonWare = sim::ware::kCannons;
 
-/// The headings with the owner of someone else's ship or unit: on SKSHIP the arms take the place
-/// of the anchor at the plate's right end (51001); SKSOLDAT's plate has none, the arms stand where
-/// the route's stops show a city's.
-constexpr OwnerHeading kShipHeading{51002, 210, 51001};
-constexpr OwnerHeading kSoldierHeading{65002, 210, 0};
+/// The headings with the owner of someone else's ship or unit: the arms over the plate's round
+/// left end; on SKSHIP the name ends before the anchor and its rope at the right end.
+constexpr OwnerHeading kShipHeading{51002, 6, 0, 192};
+constexpr OwnerHeading kSoldierHeading{65002, 6, 0, 0};
 
 const sim::Ship* the_ship(const PanelContext& c) {
     if (c.units == nullptr || c.units->size() != 1 || c.units->kind() != ui::UnitRef::Kind::Ship) {
