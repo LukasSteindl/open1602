@@ -386,7 +386,7 @@ TEST_CASE("pirates: a surrendered ship is plundered and the loot goes to the nes
 
 TEST_CASE("pirates: the nest offers its six most valuable goods it holds at 40 % of the base price") {
     // Base price times stock, the highest first, as many as the Kontor's Maxware (6);
-    // a ware the nest does not hold is never offered and what is not picked is switched off.
+    // a ware the nest does not hold is never offered and what is not picked is no longer sold.
     World w;
     sim::City& nest = *w.world.city(0, 0);
     const std::pair<std::uint8_t, std::uint32_t> stock[] = {{assets::ware::kJewellery, 5}, {assets::ware::kTools, 10},
@@ -408,7 +408,8 @@ TEST_CASE("pirates: the nest offers its six most valuable goods it holds at 40 %
     CHECK(nest.trade[assets::ware::kTools].sell_price == 55);
     CHECK(!nest.trade[assets::ware::kBricks].sell);
     CHECK(!nest.trade[assets::ware::kSugar].sell);
-    CHECK(!nest.trade[assets::ware::kGold].buy);
+    // What the map set the nest to buy stays (Open1602; the original cleared it).
+    CHECK(nest.trade[assets::ware::kGold].buy);
     // With only two goods in store, only those two.
     for (const auto& [ware, tons] : stock) {
         nest.goods[ware] = 0;
@@ -422,6 +423,14 @@ TEST_CASE("pirates: the nest offers its six most valuable goods it holds at 40 %
     }
     CHECK(offered == 2);
     CHECK(nest.trade[assets::ware::kCloth].sell);
+    CHECK(nest.trade[assets::ware::kOre].sell);
+    // A ware the nest buys is not offered, however much it holds; its price stays.
+    nest.trade[assets::ware::kCloth].buy = true;
+    nest.trade[assets::ware::kCloth].buy_price = 77;
+    sim::pirate_nest_offer(w.world, w.buildings, nest);
+    CHECK(!nest.trade[assets::ware::kCloth].sell);
+    CHECK(nest.trade[assets::ware::kCloth].buy);
+    CHECK(nest.trade[assets::ware::kCloth].buy_price == 77);
     CHECK(nest.trade[assets::ware::kOre].sell);
 }
 
