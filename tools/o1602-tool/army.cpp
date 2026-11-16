@@ -332,8 +332,15 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
                     static_cast<std::uint32_t>(chebyshev(s.cell_x() - g->second.x2, s.cell_y() - g->second.y2));
                 m_arrival.push_back(d);
                 g->second.open = false;
-                if (d > kStopRange && connected(simulation, world, s.island, s.cell_x() / 2, s.cell_y() / 2,
-                                                g->second.x2 / 2, g->second.y2 / 2)) {
+                // A spot that is built over is reached from a cell within kStopRange of it.
+                bool joined = false;
+                for (std::int32_t dy = -3; d > kStopRange && !joined && dy <= 3; ++dy) {
+                    for (std::int32_t dx = -3; !joined && dx <= 3; ++dx) {
+                        joined = connected(simulation, world, s.island, s.cell_x() / 2, s.cell_y() / 2,
+                                           g->second.x2 / 2 + dx, g->second.y2 / 2 + dy);
+                    }
+                }
+                if (joined) {
                     ++m_given_up_reachable;
                     if (m_given_up_samples.size() < 8) {
                         char text[200];
