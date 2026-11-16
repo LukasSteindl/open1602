@@ -446,9 +446,17 @@ std::int32_t Engine::arming_budget(const AiPlayer& p) const {
     return static_cast<std::int32_t>(std::min<std::int64_t>(civil + runway, std::numeric_limits<std::int32_t>::max()));
 }
 
-std::uint32_t Engine::war_measure(PlayerId target) const {
+std::uint32_t Engine::war_measure(const AiPlayer& p, PlayerId target) const {
     // What a war takes from its target: its inhabitants, and a city counts as fifty more.
-    return total_population(target) + 50U * own_city_count(target);
+    // Open1602 (B1): only the cities the computer knows of, whose inhabitants a player reads on the
+    // map; with sees_all() every city.
+    std::uint32_t n = 0;
+    for (const City& c : m_world.cities()) {
+        if (c.owner == target && city_known(p, c)) {
+            n += population(c) + 50U;
+        }
+    }
+    return n;
 }
 
 void Engine::end_war(AiPlayer& p, const char* why) {
@@ -504,7 +512,7 @@ void Engine::war_plan(AiPlayer& p, bool broke) {
             return;
         }
         if (now_ms() >= st.war_check_ms) {
-            const std::uint32_t m = war_measure(st.war_target);
+            const std::uint32_t m = war_measure(p, st.war_target);
             if (std::uint64_t{m} * 100U <= std::uint64_t{st.war_measure} * 95U) {
                 st.war_fails = 0;
             } else {
@@ -512,6 +520,11 @@ void Engine::war_plan(AiPlayer& p, bool broke) {
             }
             log(p, "war on player %u: measure %u (was %u), %u looks without progress", st.war_target, m, st.war_measure,
                 st.war_fails);
+            if (logging() && !sees_all()) {
+                // The measurement of the information contract: what the whole census holds.
+                log(p, "war on player %u: census %u inhabitants in %u cities", st.war_target,
+                    total_population(st.war_target), own_city_count(st.war_target));
+            }
             st.war_measure = m;
             st.war_check_ms = now_ms() + kWarCheckMs;
             if (st.war_fails >= kWarFails) {
@@ -596,7 +609,7 @@ void Engine::start_war(AiPlayer& p, PlayerId target) {
     st.war_since_ms = now_ms();
     st.war_check_ms = now_ms() + kWarCheckMs;
     st.war_fails = 0;
-    st.war_measure = war_measure(target);
+    st.war_measure = war_measure(p, target);
     if (m_world.diplomacy().relation(p.player, target).peace != Treaty::None) {
         DiplomacyOrder o;
         o.player = p.player;
