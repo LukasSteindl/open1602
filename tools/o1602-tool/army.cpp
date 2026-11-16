@@ -190,15 +190,22 @@ void ArmyBench::order(sim::Simulation& simulation, const sim::World& world, std:
                     }
                 }
             }
-            // Across the island: a land tile far from the group.
-            for (int attempt = 0; attempt < 64 && (tx < 0 || !walkable(simulation, tx, ty)); ++attempt) {
+            // Across the island: a land tile far from the group that the group can walk to.
+            const auto reachable = [&](std::int32_t x, std::int32_t y) {
+                return x >= 0 && walkable(simulation, x, y) &&
+                       connected(simulation, world, lead->island, lead->cell_x() / 2, lead->cell_y() / 2, x, y);
+            };
+            if (tx >= 0 && !reachable(tx, ty)) {
+                tx = -1;
+            }
+            for (int attempt = 0; attempt < 64 && !reachable(tx, ty); ++attempt) {
                 tx = static_cast<std::int32_t>(isl.x + next_random() % std::max<std::uint32_t>(1, isl.map.width()));
                 ty = static_cast<std::int32_t>(isl.y + next_random() % std::max<std::uint32_t>(1, isl.map.height()));
                 if (chebyshev(2 * tx - lead->cell_x(), 2 * ty - lead->cell_y()) < 30) {
                     tx = -1;
                 }
             }
-            if (tx < 0 || !walkable(simulation, tx, ty)) {
+            if (!reachable(tx, ty)) {
                 continue;
             }
             // As the interface sends a group: the spot, each unit with its place in the group.
