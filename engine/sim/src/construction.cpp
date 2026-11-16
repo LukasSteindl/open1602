@@ -2980,7 +2980,8 @@ std::size_t take_peaceful_neutrals(World& world, const assets::BuildingTable& bu
             if (std::ranges::find(neutral, cell.city) == neutral.end()) {
                 continue;
             }
-            const auto b = building_at(world, buildings, island, {static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)});
+            const auto b =
+                building_at(world, buildings, island, {static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)});
             if (b && b->origin.x == static_cast<std::int32_t>(x) && b->origin.y == static_cast<std::int32_t>(y)) {
                 origins.push_back(b->origin);
             }

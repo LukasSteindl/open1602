@@ -445,6 +445,9 @@ public:
         if (ship == nullptr) {
             return std::nullopt;
         }
+        if (auto owner = owner_help(id, kHeading, ship->owner, c)) {
+            return owner;
+        }
         const auto line = [&](std::size_t n) { return std::optional<std::string>(help_line(c, n)); };
         // The name frame: the game's line names a ship, a trade cart has its own.
         const auto name_line = [&]() {

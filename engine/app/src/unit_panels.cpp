@@ -56,8 +56,8 @@ public:
         }
         const bool own = ship->owner == c.local;
         // Open1602: the name can be typed here too, as in the ship window.
-        show_owner(m_panel, kShipHeading, own ? c.shown_name(NameTarget::of(*ship), ship_name(*ship)) : ship_name(*ship),
-                   ship->owner, c);
+        show_owner(m_panel, kShipHeading,
+                   own ? c.shown_name(NameTarget::of(*ship), ship_name(*ship)) : ship_name(*ship), ship->owner, c);
         m_panel.set_no_select(kName, !can_rename(c.world(), c.local, NameTarget::of(*ship)));
         const bool moving = !ship->target.empty() || ship->motion.path_index < ship->motion.path.size();
         for (const std::int32_t id :
@@ -182,6 +182,9 @@ public:
         const sim::Ship* ship = the_ship(c);
         if (ship == nullptr) {
             return std::nullopt;
+        }
+        if (auto owner = owner_help(id, kShipHeading, ship->owner, c)) {
+            return owner;
         }
         switch (id) {
             case kCannonsDown:
@@ -315,6 +318,9 @@ public:
         const sim::Soldier* s = the_soldier(c);
         if (s == nullptr) {
             return std::nullopt;
+        }
+        if (auto owner = owner_help(id, kSoldierHeading, s->owner, c)) {
+            return owner;
         }
         switch (id) {
             case kStop:

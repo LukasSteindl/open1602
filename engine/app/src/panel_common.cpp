@@ -295,18 +295,19 @@ assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const Owner
     }
     const assets::Gadget name = *found;
     const std::int32_t gfx = layout.constant("GFXPIRAT").value_or(543) + 5;
-    // The second line ends a gap before the arms (or before the plate's middle if they stand left
-    // of it, then starting after them).
+    // The name line beside the arms: from after the plate's round left end to a gap before them
+    // (or from after them to the plate's end, if they stand left of its middle).
+    constexpr std::int32_t kKnob = 24;
     assets::Gadget line = name;
     line.id = h.name + kOwnerName;
     line.no_select = true;
     const std::int32_t middle = name.pos[0] + name.size[0] / 2;
     if (h.arms_x >= middle) {
-        line.size[0] = std::max(0, h.arms_x - 6 - name.pos[0]);
+        line.pos[0] = name.pos[0] + kKnob;
+        line.size[0] = std::max(0, h.arms_x - 6 - line.pos[0]);
     } else {
-        const std::int32_t left = h.arms_x + kArmsWidth + 6;
-        line.size[0] = std::max(0, name.pos[0] + name.size[0] - left);
-        line.pos[0] = left;
+        line.pos[0] = h.arms_x + kArmsWidth + 6;
+        line.size[0] = std::max(0, name.pos[0] + name.size[0] - line.pos[0]);
     }
     line.offset[0] = static_cast<std::int16_t>(line.size[0] / 2);
     layout.gadgets.push_back(line);
@@ -327,10 +328,8 @@ assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const Owner
     return layout;
 }
 
-void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner,
-                const PanelContext& c) {
-    const sim::Player* p =
-        c.local != sim::kNoPlayer && owner != c.local ? c.world().player(owner) : nullptr;
+void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner, const PanelContext& c) {
+    const sim::Player* p = c.local != sim::kNoPlayer && owner != c.local ? c.world().player(owner) : nullptr;
     const assets::Gadget* arms = panel.layout().find(h.name + kOwnerArms);
     const bool shown = p != nullptr && arms != nullptr;
     panel.set_visible(h.name, !shown);
@@ -344,10 +343,25 @@ void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::
         panel.set_text(h.name, std::move(name));
         return;
     }
-    panel.set_text(h.name + kOwnerName, ui::tr("unit.of_owner", {name, player_name(*p)}));
+    // The name alone, cut to fit beside the arms; the owner's name is their help line.
+    const assets::Gadget* line = panel.layout().find(h.name + kOwnerName);
+    panel.set_text(h.name + kOwnerName, std::move(name));
+    if (line != nullptr) {
+        panel.set_fit(h.name + kOwnerName, true, line->offset[0] + line->size[0]);
+    }
+    panel.set_hover_only(h.name + kOwnerArms, true);
     const render::BannerArt art = render::BannerArt::arms_at(arms->gfx);
     set_banner_graphic(panel, h.name + kOwnerShadow, art, c.banner(owner));
     set_banner_graphic(panel, h.name + kOwnerArms, art, c.banner(owner));
+}
+
+std::optional<std::string> owner_help(std::int32_t id, const OwnerHeading& h, sim::PlayerId owner,
+                                      const PanelContext& c) {
+    if (id != h.name + kOwnerArms && id != h.name + kOwnerName) {
+        return std::nullopt;
+    }
+    const sim::Player* p = owner != c.local ? c.world().player(owner) : nullptr;
+    return p != nullptr ? std::optional<std::string>(player_name(*p)) : std::nullopt;
 }
 
 }  // namespace o1602::app

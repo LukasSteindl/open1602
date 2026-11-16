@@ -209,14 +209,16 @@ struct OwnerHeading {
     std::int32_t arms_x = 0;
     std::int32_t cover = 0;
 };
-/// The layout with the gadgets of the owner's heading added: a second name line, centred left of
+/// The layout with the gadgets of the owner's heading added: a second name line, centred beside
 /// the arms, the arms' shadow and the arms (Ids name + 900, + 901, + 902).
 [[nodiscard]] assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const OwnerHeading& h);
 /// The heading: `name` alone for one's own unit or ship (or a game without a local player); for
-/// someone else's the owner's coat of arms beside it and the owner's name after it, as the colour
-/// of the figure alone is hard to tell apart.
-void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner,
-                const PanelContext& c);
+/// someone else's the owner's coat of arms beside it, as the colour of the figure alone is hard
+/// to tell apart, with the owner's name as its help line.
+void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner, const PanelContext& c);
+/// The help line of the owner's heading: the owner's name over the arms and the name beside them.
+[[nodiscard]] std::optional<std::string> owner_help(std::int32_t id, const OwnerHeading& h, sim::PlayerId owner,
+                                                    const PanelContext& c);
 
 /// The ship's window with its pages (ship_panel.cpp).
 /// SHIPLIST (`ships`) or STADTLST: the lists of the player status (list_panels.cpp).

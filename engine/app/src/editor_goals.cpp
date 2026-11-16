@@ -263,12 +263,12 @@ void MapViewer::editor_scenario_model(EditorModel& m) const {
     // Only a map with neutral buildings has a say about them.
     const sim::World& world = m_editor->document.world();
     const bool has_neutrals = editor::neutral_player(world) != sim::kNoPlayer;
-    m.scenario_rows[static_cast<std::size_t>(Row::NeutralPeace)] = EditorRule{
-        ui::tr("editor.scenario.neutrals"),
-        ui::tr(!has_neutrals                 ? "editor.scenario.neutrals_none"
-               : editor::neutral_peace(world) ? "editor.scenario.neutrals_peaceful"
-                                              : "editor.scenario.neutrals_hostile"),
-        has_neutrals};
+    m.scenario_rows[static_cast<std::size_t>(Row::NeutralPeace)] =
+        EditorRule{ui::tr("editor.scenario.neutrals"),
+                   ui::tr(!has_neutrals                  ? "editor.scenario.neutrals_none"
+                          : editor::neutral_peace(world) ? "editor.scenario.neutrals_peaceful"
+                                                         : "editor.scenario.neutrals_hostile"),
+                   has_neutrals};
 }
 
 void MapViewer::editor_scenario_request(const EditorRequest& request) {
