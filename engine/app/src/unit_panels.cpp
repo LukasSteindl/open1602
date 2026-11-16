@@ -334,7 +334,6 @@ public:
     }
 
 private:
-    static constexpr std::int32_t kName = 65002;
     static constexpr std::int32_t kStop = 65021;
     static constexpr std::int32_t kPatrol = 65022;
     static constexpr std::int32_t kDisband = 65023;
