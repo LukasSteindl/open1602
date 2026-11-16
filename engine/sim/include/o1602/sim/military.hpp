@@ -129,11 +129,17 @@ struct MilitaryEvent {
 
 class Military {
 public:
-    /// Way searches of all soldiers in one tick (TB-1), about 1.6 ms each. Soldiers over the
+    /// Way searches of all soldiers in one tick (TB-1): at most kPlansPerTick, and new ones only while
+    /// the tick's searches have taken fewer than kCellsPerTick cells from their queues (a search that
+    /// has begun ends, so a tick takes at most one window of 91 x 91 cells more; the original's whole
+    /// window was 8 281 cells, and 8 such searches the budget before). Counted in cells, not time,
+    /// so that every computer of a network game lets the same units search. Soldiers over the
     /// budget decide again in the next tick, and the first of them goes first then: units that
     /// search a lot (computers' soldiers chasing enemies they cannot reach) never keep a unit
-    /// further down the list from its way for good.
-    static constexpr std::uint32_t kPlansPerTick = 8;
+    /// further down the list from its way for good. Since the searches head for their goal (A*,
+    /// F17) most take a few hundred cells, so many more units get their way in a tick.
+    static constexpr std::uint32_t kPlansPerTick = 64;
+    static constexpr std::uint32_t kCellsPerTick = 24'000;
 
     Military(World& world, const assets::BuildingTable& buildings, const assets::FigureTable& figures,
              const Rules& rules, Combat& combat);
@@ -163,6 +169,7 @@ public:
         std::uint32_t turned_away = 0;  ///< units the budget sent to wait a tick
         /// Of those, units with a way still to go: they needed no search to walk on.
         std::uint32_t turned_away_walking = 0;
+        std::uint32_t cells = 0;  ///< cells the searches took from their queues
     };
     [[nodiscard]] const PlanStats& plan_stats() const noexcept { return m_stats; }
     /// A castle's pack donkey brought weapons (the logistics call this; amount 0: the trip failed).
@@ -302,6 +309,7 @@ private:
     Fleet* m_fleet = nullptr;
     LandPlanner m_planner;
     std::uint32_t m_plans_left = 0;  ///< way searches still allowed in this tick (TB-1)
+    std::uint32_t m_cells_left = 0;  ///< cells the searches of this tick may still take
     std::uint32_t m_tick_ms = 0;     ///< game time of the running tick
     PlanStats m_stats;
     /// The first unit the budget turned away in the last tick, which goes first in the next one

@@ -108,6 +108,13 @@ struct LandPlan {
     bool first_goal = false;
     std::int32_t aim_x = 0;  ///< where the soldier wants to be: the target, for the window edge
     std::int32_t aim_y = 0;
+    /// Optional, for a faster search with the same ways (F17): every goal cell lies within
+    /// `goal_reach` (CellRect::distance) of `goal_area`. Without it the search looks at the whole
+    /// window as the original does.
+    std::optional<CellRect> goal_area;
+    std::int32_t goal_reach = 0;
+    /// Counts the cells the search took from its queue (for a budget and measurements).
+    std::uint32_t* visited = nullptr;
 };
 
 struct LandCourse {
@@ -132,6 +139,7 @@ private:
     };
     std::vector<std::uint32_t> m_cost;
     std::vector<std::uint8_t> m_state;
+    std::vector<std::size_t> m_targets;
     std::vector<std::uint8_t> m_speed;
     std::vector<Node> m_heap;
     std::vector<std::uint8_t> m_dirs;  ///< scratch: the steps of the way found, back to front

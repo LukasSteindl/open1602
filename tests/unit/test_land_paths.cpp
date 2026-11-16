@@ -658,3 +658,75 @@ TEST_CASE("land paths: a long way stops after 128 runs and goes on from its end"
     CHECK(course.path.size() == 46);
     CHECK(course.end_x == 180);
 }
+
+TEST_CASE("land paths: with the goal area known the search finds as short a way to as near a cell (F17)") {
+    // Random forest, slow ground and other figures; random starts, targets and goal kinds. The
+    // search that heads for the cells nearest the aim (A*) must end as near the aim as the search of
+    // the whole window, over a way of the same cost, with fewer cells looked at on the whole.
+    Field f(120, 90, 4, 4, 100, 70);
+    Lcg rng{17};
+    for (int i = 0; i < 1400; ++i) {
+        const auto x = static_cast<std::int32_t>(rng.next(100));
+        const auto y = static_cast<std::int32_t>(rng.next(70));
+        f.put(rng.next(4) == 0 ? kSlow : kForest, x, y);
+    }
+    f.land.rebuild(f.world, f.buildings);
+    sim::LandPlanner whole;
+    sim::LandPlanner heading;
+    std::uint32_t cells_whole = 0;
+    std::uint32_t cells_heading = 0;
+    std::size_t compared = 0;
+    for (int k = 0; k < 400; ++k) {
+        const std::int32_t sx = 8 + static_cast<std::int32_t>(rng.next(200));
+        const std::int32_t sy = 8 + static_cast<std::int32_t>(rng.next(140));
+        const std::int32_t tx = 8 + static_cast<std::int32_t>(rng.next(200));
+        const std::int32_t ty = 8 + static_cast<std::int32_t>(rng.next(140));
+        const sim::CellRect rect{tx, ty, tx + static_cast<std::int32_t>(rng.next(4)),
+                                 ty + static_cast<std::int32_t>(rng.next(4))};
+        const std::uint32_t kind = rng.next(3);  // 0 a place, 1 near an object, 2 an attack
+        const std::int32_t reach = kind == 0 ? 0 : kind == 1 ? 7 : 1 + static_cast<std::int32_t>(rng.next(14));
+        sim::LandPlan r;
+        r.start_x = sx;
+        r.start_y = sy;
+        r.radius = 45;
+        r.max_run = 15;
+        const auto [ax, ay] = rect.nearest(sx, sy);
+        r.aim_x = ax;
+        r.aim_y = ay;
+        r.first_goal = kind == 2;
+        // An attack's goal also needs a free line of fire: some cells in reach are no goal.
+        r.goal = [rect, reach, kind](std::int32_t x, std::int32_t y) {
+            return rect.distance(x, y) <= reach && (kind != 2 || (x * 7 + y * 3) % 5 != 0);
+        };
+        for (int b = 0; b < 6; ++b) {
+            r.blocked.emplace_back(sx - 6 + static_cast<std::int32_t>(rng.next(13)),
+                                   sy - 6 + static_cast<std::int32_t>(rng.next(13)));
+        }
+        r.visited = &cells_whole;
+        const sim::LandCourse a = whole.plan(f.land, r);
+        r.goal_area = rect;
+        r.goal_reach = reach;
+        r.visited = &cells_heading;
+        const sim::LandCourse b = heading.plan(f.land, r);
+        CHECK(a.reached_goal == b.reached_goal);
+        CHECK(a.path.empty() == b.path.empty());
+        if (a.path.empty() || b.path.empty() || a.path.size() >= sim::LandPlanner::kMaxRuns ||
+            b.path.size() >= sim::LandPlanner::kMaxRuns) {
+            continue;
+        }
+        const Grid g = make_grid(f.land, r);
+        const Trace ta = trace(g, sx, sy, a.path, r.max_run);
+        const Trace tb = trace(g, sx, sy, b.path, r.max_run);
+        REQUIRE(ta.valid);
+        REQUIRE(tb.valid);
+        CHECK(tb.x == b.end_x);
+        CHECK(tb.y == b.end_y);
+        if (!r.first_goal) {
+            CHECK(sim::sea_distance(ax - a.end_x, ay - a.end_y) == sim::sea_distance(ax - b.end_x, ay - b.end_y));
+        }
+        CHECK(ta.cost == tb.cost);
+        ++compared;
+    }
+    CHECK(compared > 200);
+    CHECK(cells_heading * 3 < cells_whole);
+}
