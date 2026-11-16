@@ -1176,7 +1176,8 @@ TEST_CASE("military: a unit with a way to go walks on when the searches of the t
     for (std::uint32_t t = 0; t < 60; ++t) {
         for (std::size_t i = 0; i < busy.size(); ++i) {
             const auto x = static_cast<std::uint32_t>(2 * (20 + (t + i) % 10));
-            REQUIRE(f.military->order(sim::SoldierOrder{0, {busy[i]}, sim::Target::spot(x, 2 * (30 + i / 5))}));
+            REQUIRE(f.military->order(
+                sim::SoldierOrder{0, {busy[i]}, sim::Target::spot(x, static_cast<std::uint32_t>(2 * (30 + i / 5)))}));
         }
         const std::int32_t before = f.world.soldier(id)->pos_x;
         f.run(50);

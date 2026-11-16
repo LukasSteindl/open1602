@@ -29,7 +29,6 @@ constexpr std::int32_t kMeleeRange8 = 8;
 constexpr std::int32_t kFriendlyGoal = 7;  // cells around an object a soldier may stop at
 constexpr std::int32_t kDoctorGoal = 1;    // cells from an own doctor: the soldier goes in
 constexpr std::int32_t kOthersRange = 8;   // cells: other figures block planning within 4 tiles
-constexpr std::int32_t kSpread = 6;        // cells: how far a place moves to a free cell
 constexpr std::int32_t kCrowded = 3;       // cells: walking slower next to another figure
 constexpr std::uint8_t kMaxFailures = 3;
 constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;  // way searches chasing leaves
@@ -520,37 +519,38 @@ std::int32_t Military::friendly_goal(const Soldier& s, const Target& t) const {
     return kFriendlyGoal;
 }
 
-namespace {
-
-std::uint64_t cell_key(std::int32_t x, std::int32_t y) noexcept {
-    return (static_cast<std::uint64_t>(static_cast<std::uint32_t>(y)) << 32U) | static_cast<std::uint32_t>(x);
-}
-
-}  // namespace
-
-std::unordered_set<std::uint64_t> Military::occupied_cells(const std::unordered_set<std::uint32_t>& leaving) const {
-    std::unordered_set<std::uint64_t> occupied;
+Military::Occupancy Military::occupied_cells(std::uint32_t leaving, std::int32_t x, std::int32_t y) const {
+    // One pass over the units without building a set of every cell: only the window counts (F17:
+    // with thousands of units arriving in groups the set cost most of the soldiers' time).
+    Occupancy taken{};
+    const auto mark = [&](std::int32_t cx, std::int32_t cy) {
+        const std::int32_t i = cx - x + kSpread;
+        const std::int32_t j = cy - y + kSpread;
+        if (i >= 0 && j >= 0 && i <= 2 * kSpread && j <= 2 * kSpread) {
+            taken[static_cast<std::size_t>(j * (2 * kSpread + 1) + i)] = true;
+        }
+    };
     for (const Soldier& o : m_world->soldiers()) {
-        if (o.away() || o.owner == kNoPlayer || leaving.contains(o.id)) {
+        if (o.away() || o.owner == kNoPlayer || o.id == leaving) {
             continue;
         }
         if (o.target.empty()) {
-            occupied.insert(cell_key(o.cell_x(), o.cell_y()));
+            mark(o.cell_x(), o.cell_y());
         } else if (o.target.kind == Target::Kind::Spot) {
-            occupied.insert(cell_key(static_cast<std::int32_t>(o.target.x), static_cast<std::int32_t>(o.target.y)));
+            mark(static_cast<std::int32_t>(o.target.x), static_cast<std::int32_t>(o.target.y));
         }
     }
-    return occupied;
+    return taken;
 }
 
 std::pair<std::int32_t, std::int32_t> Military::free_cell(std::int32_t x, std::int32_t y, std::int32_t from_x,
-                                                          std::int32_t from_y,
-                                                          const std::unordered_set<std::uint64_t>& occupied) const {
+                                                          std::int32_t from_y, const Occupancy& occupied) const {
     const LandMap& land = m_combat->land();
-    const auto free = [&](std::int32_t cx, std::int32_t cy) {
-        return land.cell(cx, cy, 0) == LandMap::Cell::Walk && !occupied.contains(cell_key(cx, cy));
+    const auto free = [&](std::int32_t dx, std::int32_t dy) {
+        return land.cell(x + dx, y + dy, 0) == LandMap::Cell::Walk &&
+               !occupied[static_cast<std::size_t>((dy + kSpread) * (2 * kSpread + 1) + dx + kSpread)];
     };
-    if (free(x, y)) {
+    if (free(0, 0)) {
         return {x, y};
     }
     std::pair<std::int32_t, std::int32_t> best{x, y};
@@ -559,7 +559,7 @@ std::pair<std::int32_t, std::int32_t> Military::free_cell(std::int32_t x, std::i
     for (std::int32_t dy = -kSpread; dy <= kSpread; ++dy) {
         for (std::int32_t dx = -kSpread; dx <= kSpread; ++dx) {
             const std::int32_t d = sea_distance(dx, dy);
-            if (d > 2 * kSpread || !free(x + dx, y + dy)) {
+            if (d > 2 * kSpread || !free(dx, dy)) {
                 continue;
             }
             const std::int32_t from = sea_distance(x + dx - from_x, y + dy - from_y);
@@ -618,7 +618,7 @@ bool Military::arrived(Soldier& s) {
             return stacked;
         });
         if (stacked) {
-            const std::unordered_set<std::uint64_t> occupied = occupied_cells({s.id});
+            const Occupancy occupied = occupied_cells(s.id, s.cell_x(), s.cell_y());
             const auto [fx, fy] = free_cell(s.cell_x(), s.cell_y(), s.cell_x(), s.cell_y(), occupied);
             if (fx != s.cell_x() || fy != s.cell_y()) {
                 s.target = Target::spot(static_cast<std::uint32_t>(fx), static_cast<std::uint32_t>(fy));

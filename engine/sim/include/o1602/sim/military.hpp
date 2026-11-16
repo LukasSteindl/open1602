@@ -10,6 +10,7 @@
 // Open1602 computes everything on every computer from the same state (ADR 0004).
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <unordered_set>
@@ -237,15 +238,17 @@ private:
     /// How near (in cells) the soldier walks to a friendly target: onto a free place itself, next
     /// to an own doctor, within a few cells of anything else.
     [[nodiscard]] std::int32_t friendly_goal(const Soldier& s, const Target& t) const;
-    /// The cells where a unit stands without an order or is headed to as its place, the units in
-    /// `leaving` left out (they are given a new place).
-    [[nodiscard]] std::unordered_set<std::uint64_t> occupied_cells(
-        const std::unordered_set<std::uint32_t>& leaving) const;
-    /// The cell nearest (x, y) that a soldier can stand on and that is not in `occupied`, among
-    /// equally near ones the one nearest (from_x, from_y); (x, y) itself when there is none near.
-    [[nodiscard]] std::pair<std::int32_t, std::int32_t> free_cell(
-        std::int32_t x, std::int32_t y, std::int32_t from_x, std::int32_t from_y,
-        const std::unordered_set<std::uint64_t>& occupied) const;
+    /// Half width of the window free_cell() looks in, cells.
+    static constexpr std::int32_t kSpread = 6;
+    /// The cells of the window around (x, y) where a unit stands without an order or is headed to as
+    /// its place, unit `leaving` left out (it is given a new place); row by row from the upper left.
+    using Occupancy = std::array<bool, (2 * kSpread + 1) * (2 * kSpread + 1)>;
+    [[nodiscard]] Occupancy occupied_cells(std::uint32_t leaving, std::int32_t x, std::int32_t y) const;
+    /// The cell nearest (x, y) that a soldier can stand on and that is not taken in `occupied` (the
+    /// window around (x, y)), among equally near ones the one nearest (from_x, from_y); (x, y) itself
+    /// when there is none near.
+    [[nodiscard]] std::pair<std::int32_t, std::int32_t> free_cell(std::int32_t x, std::int32_t y, std::int32_t from_x,
+                                                                  std::int32_t from_y, const Occupancy& occupied) const;
     [[nodiscard]] bool attackable(const Soldier& s, const Target& t) const;
     [[nodiscard]] std::optional<std::uint8_t> fire_direction(const Soldier& s, const assets::FigureType& type,
                                                              const Target& t) const;
