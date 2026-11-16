@@ -135,7 +135,7 @@ player, without costs, and takes them away again. Each click, or each drag, is o
 
 | Setting | What it does |
 |---|---|
-| Tool | **Build**: a left click puts the building down about the mouse, for the owner; dragged, the next one goes where it no longer covers the last, so roads, walls and fields are dragged out. **Template**: a left click builds one of the templates saved in games (the copy tool's pieces, kept in the folder "templates" of the user's data folder) about the mouse, for the owner; what does not fit is left out. **Ship**: a left click puts a new, empty ship on the water. **Unit**: a left click puts a land unit on an island, or a trade cart on a road beside its owner's Kontor or market. **Resource**: a left click puts a vein into an ore mountain, a treasure under open ground or deer into a forest. **Paint territory**: dragged over land, gives it to the owner's city on that island without a building that claims it (a city of its own needs its Kontor first); the right button takes it back, except where a market, Kontor or tower of the city covers it or one of its buildings stands. **Remove**: a left click takes the ship or unit under the mouse away, else the treasure, deer or vein there, else the building, as its owner demolishes it. |
+| Tool | **Build**: a left click puts the building down about the mouse, for the owner; dragged, the next one goes where it no longer covers the last, so roads, walls and fields are dragged out. **Template**: a left click builds one of the templates saved in games (the copy tool's pieces, kept in the folder "templates" of the user's data folder) about the mouse, for the owner; what does not fit is left out. **Ship**: a left click puts a new, empty ship on the water. **Unit**: a left click puts a land unit on an island, or a trade cart on a road of its owner's land. **Resource**: a left click puts a vein into an ore mountain, a treasure under open ground or deer into a forest. **Paint territory**: dragged over land, gives it to the owner's city on that island without a building that claims it (a city of its own needs its Kontor first); the right button takes it back, except where a market, Kontor or tower of the city covers it or one of its buildings stands. **Remove**: a left click takes the ship or unit under the mouse away, else the treasure, deer or vein there, else the building, as its owner demolishes it. |
 | Group | The groups of the build menu (with the buildings packages add to it), then the natives' and pirates' buildings (the natives' huts named by what they are: chief's, warriors', tobacco growers', spice growers' and dwelling huts, each in the natives' two looks; the pyramid, the pirates' warehouse, houses and tower, ...), last the special objects (below); not for ships and units. |
 | Building, Template, Ship, Unit, Resource, Brush | The group's buildings by name; the templates by name, read again from their folder each time the tool is chosen; the four ships of the shipyards (with those packages add), the pirates' ship and the free trader's ship, the four land units of the castle (with those packages add) the natives' spearman, placed for the natives only, and the trade cart; a big or small iron vein, gold, a treasure or deer; for Paint territory the brush's size (its shape is the terrain brush's). |
 | Rotation | A quarter clockwise, for a building that turns or a template; the way a ship or unit faces. |
@@ -184,7 +184,7 @@ middle, and the outline shows each of its buildings green where it can stand and
 A ship goes on water ships sail on, with no other ship on the tiles about it; it is new as a
 shipyard launches it, at full strength with empty holds, and gets its name when a game of the map
 starts. A land unit goes on ground soldiers walk on (open ground, roads, squares, ruins), one to a
-tile, at full health. A trade cart goes on ground carts drive on (roads, squares, open ground) within two tiles of a Kontor or market of its owner, empty and idle, at home in that city, and named from the ship names when the game starts; one to a tile, and no more on an island than the game gives its owner there (one, or with the scenario's setting „Trade carts per island“ one for each of its Kontors and markets). Only the free trader sails the trader's ship, and he sails no other; one placed sails from Kontor to Kontor when the game starts, its goods empty, and the game sends more as the Kontors grow. A computer disbands its units on an island without a city of its own while it is at peace; the editor says so when one is placed there. Orders of other ships and units that name a ship or unit taken away are
+tile, at full health. A trade cart goes on ground carts drive on (roads, squares, open ground) of its owner's land, empty and idle, at home in the city whose Kontor or market lies within two tiles, else in the owner's city on the island whose Kontor lies nearest, and named from the ship names when the game starts; one to a tile, and no more on an island than the game gives its owner there (one, or with the scenario's setting „Trade carts per island“ one for each of its Kontors and markets). Only the free trader sails the trader's ship, and he sails no other; one placed sails from Kontor to Kontor when the game starts, its goods empty, and the game sends more as the Kontors grow. A computer disbands its units on an island without a city of its own while it is at peace; the editor says so when one is placed there. Orders of other ships and units that name a ship or unit taken away are
 forgotten with it.
 
 Resources lie where a new game puts them, and nobody knows them at first:
@@ -215,7 +215,15 @@ buttons on the Selection page, each change one step of undo:
 A selected ship has the button **Cargo**: a row for each of its holds with the ware in it (a click
 the next trade good, the right button the one before, and empty), and + and - for its tons, by
 10 t, with the right button by 1 t, up to the 50 t a hold takes. A ware chosen for an empty hold
-fills it. Each change is one step of undo.
+fills it. After the trade goods come the four land units of the castle (not on a trade cart): a
+unit fills a hold at full health and lands where its ship unloads it in the game. A ship that
+carries cannons has a row **Cannons** below the holds: + and - mount one more or one fewer, with
+the right button as many as the ship takes or none. Each change is one step of undo.
+
+**Name** types a new name for the ship or trade cart, up to 40 characters, as its owner may give it
+(a ship without one is named from the ship names when the game starts). **For sale** offers a
+human's or computer's ship for sale from the start at its full price, as its owner offers it in
+the game; other players, computers too, can buy it.
 
 Beside it, **Route** gives the ship or trade cart a trade route as its route window in the game
 does: **Stop 1 of 8** (a cart: of 4) chooses the stop to change, **City** the city it goes to (a

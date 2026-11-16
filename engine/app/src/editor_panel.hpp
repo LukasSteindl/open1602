@@ -284,6 +284,13 @@ struct EditorShip {
     std::uint32_t room = 0;
     std::vector<EditorGood> holds;  ///< per hold: its ware (0 empty), name and amount
     std::vector<EditorGood> wares;  ///< the trade goods a hold can take, in the order panels list them
+    /// The land units a ship's hold can take (not a cart's), after the wares on the page "Cargo":
+    /// one fills a hold.
+    std::vector<EditorGood> units;
+    std::uint32_t cannons = 0;      ///< mounted cannons
+    std::uint32_t max_cannons = 0;  ///< what the ship type takes (0: none, a cart)
+    bool for_sale = false;          ///< offered for sale from the game's start
+    bool can_sell = false;          ///< a human's or computer's ship, which can be offered
     bool cart = false;              ///< a trade cart: its stops are the cities of its island
     /// The cities a stop can be (a ship's: each with a Kontor; a cart's: those of its island),
     /// by name; the first, "none", empties a stop.
@@ -599,6 +606,9 @@ struct EditorRequest {
         CityTrade,
         CityTradeReset,  ///< the city's trade as its owner starts with it (a village's offer, else none)
         ShipCargo,       ///< the selected ship's hold `index` with `amount` (1/32 t) of `ware`
+        ShipName,        ///< the selected ship or cart named `name`
+        ShipCannons,     ///< the selected ship with `amount` mounted cannons
+        ShipSale,        ///< the selected ship offered for sale (`index` 1) or no longer (0)
         /// The selected ship's route: `route` says what changes.
         ShipRoute,
         UnitPatrol,     ///< the map's next click sets where the selected unit patrols to
@@ -728,6 +738,7 @@ public:
         CityTrade,  ///< the wares the city's Kontor sells and buys
         CityWare,   ///< the trade of one ware
         ShipCargo,
+        ShipName,   ///< the selected ship's or trade cart's name
         ShipRoute,  ///< the selected ship's or trade cart's route
         Players,
         PlayerName,
@@ -788,9 +799,9 @@ public:
     void ask_new(const EditorNewMap& map);
     /// A name is being typed: the keys go here.
     [[nodiscard]] bool typing() const noexcept {
-        return m_page == Page::SaveAs || m_page == Page::CityName || m_page == Page::PlayerName ||
-               m_page == Page::GoalText || m_page == Page::ScenarioText || m_page == Page::Find ||
-               m_page == Page::MarkerName || m_page == Page::PackageSave ||
+        return m_page == Page::SaveAs || m_page == Page::CityName || m_page == Page::ShipName ||
+               m_page == Page::PlayerName || m_page == Page::GoalText || m_page == Page::ScenarioText ||
+               m_page == Page::Find || m_page == Page::MarkerName || m_page == Page::PackageSave ||
                (m_page == Page::Campaign && m_new_campaign);
     }
     /// The text typed on the page "Find" (Windows-1252); empty on another page.
@@ -858,6 +869,7 @@ private:
     void layout_city_trade(const EditorModel& model);
     void layout_city_ware(const EditorModel& model);
     void layout_ship_cargo(const EditorModel& model);
+    void layout_ship_name(const EditorModel& model);
     void layout_ship_route(const EditorModel& model);
     void layout_players(const EditorModel& model);
     void layout_player_name(const EditorModel& model);
