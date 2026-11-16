@@ -200,6 +200,24 @@ struct ShipLayouts {
     /// TRADER.GAD, the trade cart's window; without it a cart shows the ship's.
     std::optional<assets::GadgetLayout> trader;
 };
+/// Open1602: where a window's heading shows the owner of someone else's unit or ship. `name` is
+/// the name's text gadget on the plate; `arms_x` the left edge of the coat of arms (32 x 40, with
+/// its shadow, as the route's stops show a city's), from the plate's top 4 above the name; `cover`
+/// a gadget of the plate the arms take the place of (0: none), hidden while they show.
+struct OwnerHeading {
+    std::int32_t name = 0;
+    std::int32_t arms_x = 0;
+    std::int32_t cover = 0;
+};
+/// The layout with the gadgets of the owner's heading added: a second name line, centred left of
+/// the arms, the arms' shadow and the arms (Ids name + 900, + 901, + 902).
+[[nodiscard]] assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const OwnerHeading& h);
+/// The heading: `name` alone for one's own unit or ship (or a game without a local player); for
+/// someone else's the owner's coat of arms beside it and the owner's name after it, as the colour
+/// of the figure alone is hard to tell apart.
+void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner,
+                const PanelContext& c);
+
 /// The ship's window with its pages (ship_panel.cpp).
 /// SHIPLIST (`ships`) or STADTLST: the lists of the player status (list_panels.cpp).
 std::unique_ptr<SelectionPanel> make_list_panel(assets::GadgetLayout layout, bool ships);

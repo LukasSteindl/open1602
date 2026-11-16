@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include "banner_graphic.hpp"
 #include "goods_window.hpp"
 
 #include "o1602/sim/ships.hpp"
@@ -276,3 +277,77 @@ void TradeLists::fill(const sim::City& city, const assets::Goods& goods, bool bu
 }
 
 }  // namespace o1602::app::panel_detail
+
+namespace o1602::app {
+
+namespace {
+constexpr std::int32_t kOwnerName = 900;  ///< offsets from the name's Id
+constexpr std::int32_t kOwnerShadow = 901;
+constexpr std::int32_t kOwnerArms = 902;
+constexpr std::int32_t kArmsWidth = 32;
+constexpr std::int32_t kArmsHeight = 40;
+}  // namespace
+
+assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const OwnerHeading& h) {
+    const assets::Gadget* found = layout.find(h.name);
+    if (found == nullptr) {
+        return layout;
+    }
+    const assets::Gadget name = *found;
+    const std::int32_t gfx = layout.constant("GFXPIRAT").value_or(543) + 5;
+    // The second line ends a gap before the arms (or before the plate's middle if they stand left
+    // of it, then starting after them).
+    assets::Gadget line = name;
+    line.id = h.name + kOwnerName;
+    line.no_select = true;
+    const std::int32_t middle = name.pos[0] + name.size[0] / 2;
+    if (h.arms_x >= middle) {
+        line.size[0] = std::max(0, h.arms_x - 6 - name.pos[0]);
+    } else {
+        const std::int32_t left = h.arms_x + kArmsWidth + 6;
+        line.size[0] = std::max(0, name.pos[0] + name.size[0] - left);
+        line.pos[0] = left;
+    }
+    line.offset[0] = static_cast<std::int16_t>(line.size[0] / 2);
+    layout.gadgets.push_back(line);
+    assets::Gadget shadow;
+    shadow.id = h.name + kOwnerShadow;
+    shadow.kind = assets::GadgetKind::GraphicRaster;
+    shadow.no_select = true;
+    shadow.gfx = gfx;
+    shadow.pos = {h.arms_x, name.pos[1] - 4};
+    shadow.offset = {7, 7};
+    shadow.size = {kArmsWidth, kArmsHeight};
+    layout.gadgets.push_back(shadow);
+    assets::Gadget arms = shadow;
+    arms.id = h.name + kOwnerArms;
+    arms.kind = assets::GadgetKind::Graphic;
+    arms.offset = {0, 0};
+    layout.gadgets.push_back(arms);
+    return layout;
+}
+
+void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner,
+                const PanelContext& c) {
+    const sim::Player* p =
+        c.local != sim::kNoPlayer && owner != c.local ? c.world().player(owner) : nullptr;
+    const assets::Gadget* arms = panel.layout().find(h.name + kOwnerArms);
+    const bool shown = p != nullptr && arms != nullptr;
+    panel.set_visible(h.name, !shown);
+    if (h.cover != 0) {
+        panel.set_visible(h.cover, !shown);
+    }
+    for (const std::int32_t id : {h.name + kOwnerName, h.name + kOwnerShadow, h.name + kOwnerArms}) {
+        panel.set_visible(id, shown);
+    }
+    if (!shown) {
+        panel.set_text(h.name, std::move(name));
+        return;
+    }
+    panel.set_text(h.name + kOwnerName, ui::tr("unit.of_owner", {name, player_name(*p)}));
+    const render::BannerArt art = render::BannerArt::arms_at(arms->gfx);
+    set_banner_graphic(panel, h.name + kOwnerShadow, art, c.banner(owner));
+    set_banner_graphic(panel, h.name + kOwnerArms, art, c.banner(owner));
+}
+
+}  // namespace o1602::app

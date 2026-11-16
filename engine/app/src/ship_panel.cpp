@@ -218,7 +218,7 @@ assets::GadgetLayout with_route_row(assets::GadgetLayout route, const std::optio
 class ShipPanel final : public SelectionPanel {
 public:
     explicit ShipPanel(ShipLayouts l)
-        : m_ship(std::move(l.ship), 1.0),
+        : m_ship(with_owner_heading(std::move(l.ship), kHeading), 1.0),
           m_transfer(std::move(l.transfer), 1.0),
           m_trade(std::move(l.trade), 1.0),
           m_route(with_route_row(std::move(l.route), l.musik), 1.0),
@@ -671,6 +671,9 @@ public:
 private:
     enum class Page : std::uint8_t { Root, Transfer, Trade, Route, PickOwn, PickForeign, Pirates, PirateOrder };
     static constexpr std::int32_t kName = 38002;
+    /// The heading with the owner of someone else's ship: the arms at the plate's right end, as the
+    /// route's stops show a city's, in place of the plate with the anchor (38001).
+    static constexpr OwnerHeading kHeading{kName, 210, 38001};
     static constexpr std::int32_t kRepair = 38003;
     static constexpr std::int32_t kSale = 38004;
     static constexpr std::int32_t kTrade = 38005;
@@ -866,7 +869,9 @@ private:
 
     void refresh_root(const sim::Ship& ship, const Context& k, const PanelContext& c) {
         // The name: a click on it types a new one (own ships that are not sinking).
-        m_ship.set_text(kName, c.shown_name(NameTarget::of(ship), ship_name(ship)));
+        // Someone else's ship: the owner's coat of arms in place of the anchor, and their name.
+        show_owner(m_ship, kHeading, k.foreign ? ship_name(ship) : c.shown_name(NameTarget::of(ship), ship_name(ship)),
+                   ship.owner, c);
         m_ship.set_no_select(kName, !can_rename(c.world(), c.local, NameTarget::of(ship)));
         const bool own = !k.foreign;
         const bool idle = own && !k.moving;
