@@ -1159,6 +1159,35 @@ TEST_CASE("military: units that search a lot never keep a later unit from its wa
     CHECK(f.world.soldier(id)->cell_x() == 2 * (10 + 28));
 }
 
+TEST_CASE("military: a unit with a way to go walks on when the searches of the tick are used up (F17)") {
+    // Twenty units get a new order every tick, so every tick's searches go to them; the unit after
+    // them in the list has its way already and needs none: it must not stand with its walk playing.
+    Field f;
+    f.start();
+    std::vector<std::uint32_t> busy;
+    for (std::int32_t i = 0; i < 20; ++i) {
+        busy.push_back(f.add(kSword, 0, 2 * (12 + i % 5), 2 * (30 + i / 5)).id);
+    }
+    const std::uint32_t id = f.add(kSword, 0, 2 * 12, 2 * 15).id;
+    REQUIRE(f.military->order(sim::SoldierOrder{0, {id}, sim::Target::spot(2 * 40, 2 * 15)}));
+    f.run(100);
+    REQUIRE(!f.world.soldier(id)->motion.path.empty());
+    std::size_t stood = 0;
+    for (std::uint32_t t = 0; t < 60; ++t) {
+        for (std::size_t i = 0; i < busy.size(); ++i) {
+            const auto x = static_cast<std::uint32_t>(2 * (20 + (t + i) % 10));
+            REQUIRE(f.military->order(
+                sim::SoldierOrder{0, {busy[i]}, sim::Target::spot(x, static_cast<std::uint32_t>(2 * (30 + i / 5)))}));
+        }
+        const std::int32_t before = f.world.soldier(id)->pos_x;
+        f.run(50);
+        CHECK(f.military->plan_stats().searches == sim::Military::kPlansPerTick);
+        stood += f.world.soldier(id)->pos_x == before ? 1U : 0U;
+        CHECK(f.military->plan_stats().turned_away_walking == 0);
+    }
+    CHECK(stood == 0);
+}
+
 TEST_CASE("military: idle units look again at times spread by their number (TB-1)") {
     Field f;
     f.start();
