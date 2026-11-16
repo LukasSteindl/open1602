@@ -47,6 +47,10 @@ private:
     };
     std::uint64_t next_random();
     bool walkable(const sim::Simulation& simulation, std::int32_t x, std::int32_t y) const;
+    /// Whether soldiers can walk from world tile (ax, ay) to (bx, by) on island `island` (tiles
+    /// joined by their sides, units and closed gates left out).
+    bool connected(const sim::Simulation& simulation, const sim::World& world, std::uint16_t island, std::int32_t ax,
+                   std::int32_t ay, std::int32_t bx, std::int32_t by);
 
     std::uint64_t m_random = 0;
     std::vector<std::vector<std::uint32_t>> m_units;  ///< per player, the units placed
@@ -66,6 +70,9 @@ private:
     std::uint64_t m_cells_walked = 0;         ///< half tiles
     std::vector<std::uint32_t> m_arrival;     ///< half tiles from the ordered cell when the way ended
     std::uint64_t m_goals_dropped = 0;
+    std::unordered_map<std::uint16_t, std::vector<std::uint32_t>> m_regions;  ///< per island, tile -> land region
+    std::uint64_t m_given_up_reachable = 0;  ///< orders given up although the land joins unit and spot
+    std::vector<std::string> m_given_up_samples;
     std::uint64_t m_wait_ticks = 0;
     std::uint32_t m_longest_wait = 0;
     std::uint64_t m_long_waits = 0;

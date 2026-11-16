@@ -19,6 +19,9 @@ constexpr std::uint8_t kAnimWalk = 0;
 constexpr std::uint8_t kAnimAttack = 2;
 // Swordsmen, cavalry, musketeers, cannoneers: the first figure of each family.
 constexpr std::array<std::uint32_t, 4> kFamilies = {1, 5, 9, 13};
+// A target cleared farther than a soldier may stop from a spot (7 half tiles) was given up after
+// failed searches, not reached.
+constexpr std::uint32_t kStopRange = 7;
 
 bool on_way(const sim::Soldier& s) {
     return !s.away() &&
@@ -46,6 +49,62 @@ bool ArmyBench::walkable(const sim::Simulation& simulation, std::int32_t x, std:
     }
     const assets::BuildingType* b = land.building(x, y);
     return b == nullptr || sim::soldiers_walk_on(*b);
+}
+
+bool ArmyBench::connected(const sim::Simulation& simulation, const sim::World& world, std::uint16_t island,
+                          std::int32_t ax, std::int32_t ay, std::int32_t bx, std::int32_t by) {
+    if (island >= world.islands().size()) {
+        return false;
+    }
+    const sim::WorldIsland& isl = world.islands()[island];
+    const auto x0 = static_cast<std::int32_t>(isl.x);
+    const auto y0 = static_cast<std::int32_t>(isl.y);
+    const auto w = static_cast<std::int32_t>(isl.map.width());
+    const auto h = static_cast<std::int32_t>(isl.map.height());
+    const auto inside = [&](std::int32_t x, std::int32_t y) { return x >= x0 && y >= y0 && x < x0 + w && y < y0 + h; };
+    if (!inside(ax, ay) || !inside(bx, by)) {
+        return false;
+    }
+    std::vector<std::uint32_t>& region = m_regions[island];
+    if (region.empty()) {
+        // Label the island's walkable tiles once: flood fill over tiles joined by their sides.
+        const sim::LandMap& land = simulation.combat().land();
+        const auto at = [&](std::int32_t x, std::int32_t y) {
+            return static_cast<std::size_t>(y - y0) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x - x0);
+        };
+        region.assign(static_cast<std::size_t>(w) * static_cast<std::size_t>(h), 0);
+        std::uint32_t next = 1;
+        std::vector<std::pair<std::int32_t, std::int32_t>> stack;
+        for (std::int32_t y = y0; y < y0 + h; ++y) {
+            for (std::int32_t x = x0; x < x0 + w; ++x) {
+                if (region[at(x, y)] != 0 || land.tile(x, y, 0) != sim::LandMap::Cell::Walk) {
+                    continue;
+                }
+                region[at(x, y)] = next;
+                stack.emplace_back(x, y);
+                while (!stack.empty()) {
+                    const auto [cx, cy] = stack.back();
+                    stack.pop_back();
+                    constexpr std::array<std::pair<std::int32_t, std::int32_t>, 4> kSides{
+                        {{1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
+                    for (const auto& [dx, dy] : kSides) {
+                        const std::int32_t nx = cx + dx;
+                        const std::int32_t ny = cy + dy;
+                        if (inside(nx, ny) && region[at(nx, ny)] == 0 &&
+                            land.tile(nx, ny, 0) == sim::LandMap::Cell::Walk) {
+                            region[at(nx, ny)] = next;
+                            stack.emplace_back(nx, ny);
+                        }
+                    }
+                }
+                ++next;
+            }
+        }
+    }
+    const auto at = [&](std::int32_t x, std::int32_t y) {
+        return static_cast<std::size_t>(y - y0) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x - x0);
+    };
+    return region[at(ax, ay)] != 0 && region[at(ax, ay)] == region[at(bx, by)];
 }
 
 std::size_t ArmyBench::place(sim::Simulation& simulation, const sim::World& world, const assets::FigureTable& figures,
@@ -262,9 +321,21 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
         // Another target (a fight, the next order) ends the goal without counting.
         if (const auto g = m_goals.find(s.id); g != m_goals.end() && g->second.open) {
             if (s.target.empty()) {
-                m_arrival.push_back(
-                    static_cast<std::uint32_t>(chebyshev(s.cell_x() - g->second.x2, s.cell_y() - g->second.y2)));
+                const auto d =
+                    static_cast<std::uint32_t>(chebyshev(s.cell_x() - g->second.x2, s.cell_y() - g->second.y2));
+                m_arrival.push_back(d);
                 g->second.open = false;
+                if (d > kStopRange && connected(simulation, world, s.island, s.cell_x() / 2, s.cell_y() / 2,
+                                                g->second.x2 / 2, g->second.y2 / 2)) {
+                    ++m_given_up_reachable;
+                    if (m_given_up_samples.size() < 8) {
+                        char text[200];
+                        std::snprintf(text, sizeof text, "unit %u of player %u, figure %u, at cell %d,%d, spot %d,%d",
+                                      s.id, unsigned{s.owner}, unsigned{s.figure}, s.cell_x(), s.cell_y(), g->second.x2,
+                                      g->second.y2);
+                        m_given_up_samples.emplace_back(text);
+                    }
+                }
             } else if (s.target.kind != sim::Target::Kind::Spot ||
                        static_cast<std::int32_t>(s.target.x) != g->second.x2 ||
                        static_cast<std::int32_t>(s.target.y) != g->second.y2) {
@@ -305,9 +376,6 @@ void ArmyBench::print() const {
     std::printf("way searches per unit tick on the way: %.4f; goals given up for a fight or another order: %llu\n",
                 m_on_way_ticks != 0 ? static_cast<double>(m_searches) / static_cast<double>(m_on_way_ticks) : 0.0,
                 static_cast<unsigned long long>(m_goals_dropped));
-    // A target cleared farther than a soldier may stop from a spot (7 half tiles) was given up
-    // after failed searches, not reached.
-    constexpr std::uint32_t kStopRange = 7;
     std::vector<std::uint32_t> a;
     std::uint64_t given_up = 0;
     std::uint64_t given_up_sum = 0;
@@ -322,6 +390,11 @@ void ArmyBench::print() const {
     std::printf("orders given up after failed searches: %llu of %zu, mean %.1f half tiles from the ordered cell\n",
                 static_cast<unsigned long long>(given_up), m_arrival.size(),
                 given_up != 0 ? static_cast<double>(given_up_sum) / static_cast<double>(given_up) : 0.0);
+    std::printf("  of those with the land joining unit and spot (the way search lost it): %llu\n",
+                static_cast<unsigned long long>(m_given_up_reachable));
+    for (const std::string& t : m_given_up_samples) {
+        std::printf("    %s\n", t.c_str());
+    }
     if (!a.empty()) {
         std::sort(a.begin(), a.end());
         std::uint64_t sum = 0;
