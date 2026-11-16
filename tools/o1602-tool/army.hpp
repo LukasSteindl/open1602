@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -67,6 +68,8 @@ private:
     std::uint64_t m_goals_dropped = 0;
     std::uint64_t m_wait_ticks = 0;
     std::uint32_t m_longest_wait = 0;
+    std::uint64_t m_long_waits = 0;
+    std::string m_longest_wait_unit;
     std::uint64_t m_orders = 0;
     std::uint64_t m_orders_accepted = 0;
     std::uint64_t m_searches = 0;

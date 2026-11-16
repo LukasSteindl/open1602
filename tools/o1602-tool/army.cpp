@@ -225,8 +225,25 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
             s.motion.phase == sim::SoldierMotion::Phase::Wait) {
             ++m_wait_ticks;
             ++b.waiting;
-            m_longest_wait = std::max(m_longest_wait, b.waiting);
+            if (b.waiting > m_longest_wait) {
+                m_longest_wait = b.waiting;
+                const sim::Player* pl = world.player(s.owner);
+                char text[320];
+                std::snprintf(text, sizeof text,
+                              "unit %u of player %u (behaviour %d, role %d), figure %u, %s, cell %d,%d, target kind %d "
+                              "at %u,%u (ship/unit %u), failures %u, wait %u us, hold %d, patrol %d, attack move %d",
+                              s.id, unsigned{s.owner}, pl != nullptr ? static_cast<int>(world.behaviour(*pl)) : -1,
+                              pl != nullptr ? static_cast<int>(pl->role) : -1, unsigned{s.figure},
+                              m_goals.contains(s.id) ? "placed by the bench" : "of the game", s.cell_x(), s.cell_y(),
+                              static_cast<int>(s.target.kind), s.target.x, s.target.y, s.target.ship,
+                              unsigned{s.failures}, s.motion.duration_us, int{s.hold}, int{s.patrol.active},
+                              int{s.attack_move});
+                m_longest_wait_unit = text;
+            }
         } else {
+            if (b.waiting >= 200) {
+                ++m_long_waits;
+            }
             b.waiting = 0;
         }
         if (moved > 0 && b.moved > 0) {
@@ -278,6 +295,8 @@ void ArmyBench::print() const {
     std::printf("an order but no way yet (waiting for a search): %llu unit ticks, longest %u ticks (%u ms)\n",
                 static_cast<unsigned long long>(m_wait_ticks), m_longest_wait,
                 m_longest_wait * sim::Simulation::kTickMs);
+    std::printf("waits for a way of 10 s or more that ended: %llu; the longest: %s\n",
+                static_cast<unsigned long long>(m_long_waits), m_longest_wait_unit.c_str());
     std::printf("tempo changes on a straight line: %.2f%% of %llu moving ticks; %llu turns in %.0f half tiles walked\n",
                 per(m_tempo_changes, m_moving_pairs), static_cast<unsigned long long>(m_moving_pairs),
                 static_cast<unsigned long long>(m_turns), cells);
