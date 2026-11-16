@@ -97,6 +97,17 @@ sim::PlayerId add_neutral_player(sim::World& world);
 /// add_neutral_player() as a step of its own. Fails (Unsupported) if the world has one already.
 [[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> add_neutral(const sim::World& world);
 
+/// Whether the neutral buildings of the world are peaceful (sim::scenario_flag::kNeutralPeace on
+/// their player): at peace with everyone, and taken by a city whose land comes to cover them. False
+/// for a world without them.
+[[nodiscard]] bool neutral_peace(const sim::World& world) noexcept;
+
+/// Makes the neutral buildings peaceful or hostile (the default) for this map: the flag on their
+/// player, and peace or war with every human and computer. Fails (NotFound) for a world without
+/// the neutral buildings' player.
+[[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> set_neutral_peace(const sim::World& world,
+                                                                                  bool peaceful);
+
 /// How two players stand at the start: at peace or at war, with a trade treaty or without.
 struct Relations {
     bool peace = true;

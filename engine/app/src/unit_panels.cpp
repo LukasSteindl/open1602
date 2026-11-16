@@ -28,6 +28,13 @@ const sim::Ship* the_ship(const PanelContext& c) {
     return c.world().ship(c.units->units().front().id);
 }
 
+/// Open1602: the name of someone else's unit or ship with its owner's name after it, as the colour
+/// of the figure alone is hard to tell apart; one's own as it is.
+std::string with_owner(std::string name, sim::PlayerId owner, const PanelContext& c) {
+    const sim::Player* p = owner != c.local ? c.world().player(owner) : nullptr;
+    return p != nullptr ? ui::tr("unit.of_owner", {name, player_name(*p)}) : name;
+}
+
 const sim::Soldier* the_soldier(const PanelContext& c) {
     if (c.units == nullptr || c.units->size() != 1 || c.units->kind() != ui::UnitRef::Kind::Soldier) {
         return nullptr;
@@ -50,7 +57,8 @@ public:
         }
         const bool own = ship->owner == c.local;
         // Open1602: the name can be typed here too, as in the ship window.
-        m_panel.set_text(kName, c.shown_name(NameTarget::of(*ship), ship_name(*ship)));
+        m_panel.set_text(kName, own ? c.shown_name(NameTarget::of(*ship), ship_name(*ship))
+                                    : with_owner(ship_name(*ship), ship->owner, c));
         m_panel.set_no_select(kName, !can_rename(c.world(), c.local, NameTarget::of(*ship)));
         const bool moving = !ship->target.empty() || ship->motion.path_index < ship->motion.path.size();
         for (const std::int32_t id :
@@ -236,8 +244,9 @@ public:
         const assets::FigureType* t = c.figures.get(s->figure);
         // The kind of unit (FIGKIND); the natives' warriors have none there (LEISTE 227).
         const std::int32_t kind = t != nullptr ? t->kind : 0;
-        m_panel.set_text(
-            kName, kind >= 1 && kind <= 4 ? c.text("FIGKIND", static_cast<std::size_t>(kind)) : help_line(c, 227));
+        m_panel.set_text(kName, with_owner(kind >= 1 && kind <= 4 ? c.text("FIGKIND", static_cast<std::size_t>(kind))
+                                                                  : help_line(c, 227),
+                                           s->owner, c));
         m_panel.set_visible(kStop, own && !s->target.empty());
         for (const std::int32_t id : {kPatrol, kDisband, kCost, kCoin}) {
             m_panel.set_visible(id, own);

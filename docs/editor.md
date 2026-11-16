@@ -285,7 +285,10 @@ A click on a text opens a field to type it (Shift+Enter breaks a line in an intr
 an empty text takes that language away. Without a
 name the list shows the file's name, which still finds the scenario. Texts in other languages,
 written by other tools, are kept. **The original's limits** switches the check of the original's
-size, islands, players and buildings on or off.
+size, islands, players and buildings on or off. **Neutral buildings**, on a map that has them, makes
+them hostile (the default: at war with every player, taken only by soldiers) or peaceful (at peace,
+and taken without a fight by a city whose land comes to cover them; see
+[the neutral buildings](modding/factions.md#the-neutral-buildings)).
 
 The introduction is the page shown before the scenario starts; the missions' own texts are set
 under Goals.

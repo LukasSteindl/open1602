@@ -260,6 +260,15 @@ void MapViewer::editor_scenario_model(EditorModel& m) const {
                    true};
     m.scenario_rows[static_cast<std::size_t>(Row::OriginalLimits)] = EditorRule{
         ui::tr("editor.scenario.limits"), ui::tr(info.original_limits ? "editor.goals.yes" : "editor.goals.no"), true};
+    // Only a map with neutral buildings has a say about them.
+    const sim::World& world = m_editor->document.world();
+    const bool has_neutrals = editor::neutral_player(world) != sim::kNoPlayer;
+    m.scenario_rows[static_cast<std::size_t>(Row::NeutralPeace)] = EditorRule{
+        ui::tr("editor.scenario.neutrals"),
+        ui::tr(!has_neutrals                 ? "editor.scenario.neutrals_none"
+               : editor::neutral_peace(world) ? "editor.scenario.neutrals_peaceful"
+                                              : "editor.scenario.neutrals_hostile"),
+        has_neutrals};
 }
 
 void MapViewer::editor_scenario_request(const EditorRequest& request) {
@@ -268,6 +277,19 @@ void MapViewer::editor_scenario_request(const EditorRequest& request) {
     sim::ScenarioInfo info = before.value_or(sim::ScenarioInfo{});
     using Row = EditorScenarioRow;
     const auto row = static_cast<Row>(request.index);
+    if (request.kind == EditorRequest::Kind::ScenarioStep && row == Row::NeutralPeace) {
+        // Not a part of the description: the neutral buildings' player and the relations.
+        auto op = editor::set_neutral_peace(world, !editor::neutral_peace(world));
+        if (!op) {
+            editor_notice(ui::tr("editor.goals.refused"), true, op.error().message);
+            return;
+        }
+        m_editor->document.perform(std::move(op).value());
+        m_editor->notice.clear();
+        std::fprintf(stderr, "editor: neutral buildings made %s\n",
+                     editor::neutral_peace(m_editor->document.world()) ? "peaceful" : "hostile");
+        return;
+    }
     if (request.kind == EditorRequest::Kind::ScenarioStep) {
         if (row == Row::Stars) {
             constexpr auto kMax = sim::ScenarioInfo::kMaxStars;

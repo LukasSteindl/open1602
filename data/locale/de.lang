@@ -375,6 +375,8 @@ ship.cannons_unmount = {1} (Umschalt+Klick: so viele, wie in den Laderaum passen
 # The castle's send-out arrow ({1}: its help line from the game's texts)
 # The city window's trade cart button while another cart is allowed ({1}: its help line from the game's texts)
 city.cart_more = {1} (Umschalt+Klick: ein weiterer fahrender Händler)
+# Someone else's unit or ship in its window: its name and the owner's ({1}: name, {2}: owner)
+unit.of_owner = {1} ({2})
 # The status line over a trade cart on the map
 unit.trade_cart = Fahrender Händler
 # The name frame of a trade cart's window
@@ -1546,6 +1548,10 @@ editor.scenario.stars_value = {1} von {2} Sternen
 editor.scenario.author = Autor
 editor.scenario.version = Version
 editor.scenario.limits = Grenzen des Originals
+editor.scenario.neutrals = Neutrale Gebäude
+editor.scenario.neutrals_hostile = Feindlich, mit Gewalt
+editor.scenario.neutrals_peaceful = Friedlich, durch Land
+editor.scenario.neutrals_none = Keine auf dieser Karte
 editor.scenario.empty = (leer)
 editor.scenario.text_note = Ein leerer Text nimmt ihn weg.
 editor.scenario.note = Name, Sterne und Einleitung zeigt die Szenarioliste; ohne Namen den Dateinamen. Die übrigen Sprachen der Datei bleiben erhalten.

@@ -699,7 +699,7 @@ ui::Rect EditorPanel::dialog_rect() const noexcept {
     const std::int32_t room_h = m_screen_h - kBars - 16;
     const std::int32_t want = m_page == P::PlayerName                              ? 230
                               : m_page == P::GoalText || m_page == P::ScenarioText ? 330
-                              : m_page == P::Scenario                              ? 470
+                              : m_page == P::Scenario                              ? 510
                               : m_page == P::Script                                ? 400
                               : m_page == P::ScriptFiles                           ? m_files_h
                               : m_page == P::Packages                              ? m_packages_h
@@ -716,6 +716,11 @@ ui::Rect EditorPanel::dialog_rect() const noexcept {
 
 void EditorPanel::layout(const EditorModel& model) {
     m_form.clear();
+    // The column starts m_column_x into the window: the dialogs left of it, and their tooltips,
+    // are kept within the window, not within a screen from the column's edge.
+    if (m_screen_w > 0) {
+        m_form.set_bounds(Rect{-m_column_x, 0, m_screen_w, m_screen_h});
+    }
     if (m_page != m_laid_page) {
         // Another page: a button held on the last one is not this one's.
         m_form.cancel_press();
@@ -2610,7 +2615,7 @@ void EditorPanel::layout_scenario(const EditorModel& model) {
         if (scenario_row_is_text(static_cast<EditorScenarioRow>(i))) {
             f.button(id, Rect{m_x + label, y, m_w - label, kButtonH}, r.value);
         } else {
-            f.cycle_button(id, Rect{m_x + label, y, m_w - label, kButtonH}, r.value);
+            f.cycle_button(id, Rect{m_x + label, y, m_w - label, kButtonH}, r.value, r.enabled);
         }
         y += kRow;
     }

@@ -28,18 +28,20 @@ Form::Widget make(Form::Widget::Kind kind, Form::Id id, Rect r, std::string text
 }
 
 /// Where a tooltip of `lines` lines, the widest `widest` design units, goes for `anchor`: below it,
-/// or above it where the screen ends, within the 1024 x 768 design.
-Rect tooltip_box(const Rect& anchor, std::size_t lines, double widest) {
+/// or above it where the screen ends, within `bounds` (the form's part of the screen).
+Rect tooltip_box(const Rect& anchor, std::size_t lines, double widest, const Rect& bounds) {
     constexpr std::int32_t kLine = 22;
     constexpr std::int32_t kGapToAnchor = 4;
     constexpr std::int32_t kMargin = 4;
     const std::int32_t w =
         std::min(Form::kTooltipWidth, static_cast<std::int32_t>(std::ceil(widest)) + 1 + 2 * kPadding + 2 * kBorder);
     const auto h = static_cast<std::int32_t>(lines) * kLine + 2 * kPadding;
-    std::int32_t x = std::clamp(anchor.x, kMargin, std::max(kMargin, 1024 - kMargin - w));
+    const std::int32_t left = bounds.x + kMargin;
+    const std::int32_t top = bounds.y + kMargin;
+    std::int32_t x = std::clamp(anchor.x, left, std::max(left, bounds.x + bounds.w - kMargin - w));
     std::int32_t y = anchor.y + anchor.h + kGapToAnchor;
-    if (y + h > 768 - kMargin) {
-        y = std::max(kMargin, anchor.y - kGapToAnchor - h);
+    if (y + h > bounds.y + bounds.h - kMargin) {
+        y = std::max(top, anchor.y - kGapToAnchor - h);
     }
     return Rect{x, y, w, h};
 }
@@ -546,7 +548,7 @@ std::vector<DrawItem> Form::draw(const std::array<const Font*, kFontSlots>& font
                 for (const std::string& l : lines) {
                     widest = std::max(widest, text_width(font, l));
                 }
-                const Rect box = tooltip_box(w.rect, lines.size(), widest);
+                const Rect box = tooltip_box(w.rect, lines.size(), widest, m_bounds);
                 fill(box, m_style.frame);
                 fill(Rect{box.x + kBorder, box.y + kBorder, box.w - 2 * kBorder, box.h - 2 * kBorder}, m_style.ground);
                 for (std::size_t i = 0; i < lines.size(); ++i) {

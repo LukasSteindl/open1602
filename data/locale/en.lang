@@ -399,6 +399,8 @@ ship.cannons_unmount = {1} (Shift+click: all that fit into the hold)
 # The castle's send-out arrow ({1}: its help line from the game's texts)
 # The city window's trade cart button while another cart is allowed ({1}: its help line from the game's texts)
 city.cart_more = {1} (Shift+click: another trade cart)
+# Someone else's unit or ship in its window: its name and the owner's ({1}: name, {2}: owner)
+unit.of_owner = {1} ({2})
 # The status line over a trade cart on the map
 unit.trade_cart = Trade cart
 # The name frame of a trade cart's window
@@ -1616,6 +1618,10 @@ editor.scenario.stars_value = {1} of {2} stars
 editor.scenario.author = Author
 editor.scenario.version = Version
 editor.scenario.limits = The original's limits
+editor.scenario.neutrals = Neutral buildings
+editor.scenario.neutrals_hostile = Hostile, taken by force
+editor.scenario.neutrals_peaceful = Peaceful, taken by land
+editor.scenario.neutrals_none = None on this map
 editor.scenario.empty = (empty)
 editor.scenario.text_note = An empty text takes it away.
 editor.scenario.note = The scenario list shows the name, stars and introduction; without a name, the file's name. The file's other languages are kept.
