@@ -37,6 +37,7 @@
 #include "o1602/assets/cursor_resource.hpp"
 #include "o1602/assets/data_fixes.hpp"
 #include "o1602/assets/game_content.hpp"
+#include "o1602/assets/game_data.hpp"
 #include "o1602/assets/high_scores.hpp"
 #include "o1602/assets/package_graphics.hpp"
 #include "o1602/assets/package_sounds.hpp"
@@ -1554,6 +1555,36 @@ void MapViewer::render() {
                             }
                         }
                     }
+                    // A tile of the item that carries trees or a crop shows bare meadow, as once
+                    // cleared (put back after drawing like the rest).
+                    const assets::BuildingType* meadow = m_buildings.by_id(assets::id::kMeadow);
+                    const auto clear_plants = [&](const sim::BuildOrder& o, const sim::PlannedBuild& item) {
+                        if (meadow == nullptr) {
+                            return;
+                        }
+                        std::uint32_t w = 1;
+                        std::uint32_t h = 1;
+                        sim::rotated_size(*item.type, item.rotation, w, h);
+                        for (std::uint32_t j = 0; j < h; ++j) {
+                            for (std::uint32_t i = 0; i < w; ++i) {
+                                const std::int32_t tx = item.x + static_cast<std::int32_t>(i);
+                                const std::int32_t ty = item.y + static_cast<std::int32_t>(j);
+                                if (!map.contains(tx, ty)) {
+                                    continue;
+                                }
+                                const auto ux = static_cast<std::uint32_t>(tx);
+                                const auto uy = static_cast<std::uint32_t>(ty);
+                                const sim::MapCell cell = map.top(ux, uy);
+                                const assets::BuildingType* on =
+                                    cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
+                                if (on == nullptr || on->kind != sim::kind::kForest) {
+                                    continue;
+                                }
+                                saved.push_back(Saved{o.island, ux, uy, cell});
+                                (void)map.build(*meadow, tx, ty, 0, 0, cell.owner, cell.city);
+                            }
+                        }
+                    };
                     const bool multi = m_tool.multi_drag();
                     const bool blink_off = (annokit::platform::ticks_ms() / kShortOfMeansBlinkMs) % 2 == 1;
                     for (const sim::PlannedBuild& item : plan.items) {
@@ -1582,6 +1613,11 @@ void MapViewer::render() {
                             }
                         }
                         m_tool_short_of_wood |= item.refusal == sim::BuildRefusal::Wood;
+                        if (item.type != nullptr && hatched && (item.ok() || short_of_means)) {
+                            // The trees and crops a dragged field would replace give way, so that only
+                            // the hatched ground shows where it goes.
+                            clear_plants(*order, item);
+                        }
                         if (item.type == nullptr || hatched) {
                             continue;
                         }
