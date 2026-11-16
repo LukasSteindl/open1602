@@ -157,6 +157,10 @@ void Military::turned_away(Soldier& s) {
     if (m_first_id == kNoUnit) {
         m_first_id = s.id;
     }
+    ++m_stats.turned_away;
+    if (s.motion.path_index < s.motion.path.size()) {
+        ++m_stats.turned_away_walking;
+    }
     start_wait(s, std::max<std::uint32_t>(1, m_tick_ms));
 }
 
@@ -434,6 +438,7 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         return false;
     }
     m_plans_left = m_plans_left != 0 ? m_plans_left - 1 : 0;
+    ++m_stats.searches;
     LandPlan r;
     r.start_x = s.cell_x();
     r.start_y = s.cell_y();

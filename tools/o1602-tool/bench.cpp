@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "army.hpp"
 #include "mod_rules.hpp"
 #include "tool.hpp"
 
@@ -472,6 +473,10 @@ int cmd_bench(const Args& args) {
     const std::size_t reload_minutes = std::max<std::size_t>(args.number("--reload-minutes").value_or(10), 1);
     const std::size_t reload_every = std::max<std::size_t>(args.number("--reload-every").value_or(20), 1);
 
+    // --army N: N land units for every settler player, sent about in groups (F17).
+    const std::size_t army_size = args.number("--army").value_or(0);
+    std::optional<ArmyBench> army;
+
     std::optional<sim::Simulation> simulation;
     for (std::size_t run = 0; run < repeats; ++run) {
         const bool last = run + 1 == repeats;
@@ -544,6 +549,15 @@ int cmd_bench(const Args& args) {
             }
             frozen = p;
         }
+        army.reset();
+        if (army_size > 0) {
+            army.emplace();
+            const std::size_t placed =
+                army->place(*simulation, *world, *figures, army_size, args.number("--seed").value_or(1));
+            if (run == 0) {
+                std::printf("army: %zu units placed, %zu soldiers in the world\n", placed, world->soldiers().size());
+            }
+        }
         if (reload_at == std::size_t{0}) {
             return reload_check(*world, *simulation, *buildings, *figures, reload_minutes, reload_every);
         }
@@ -572,9 +586,16 @@ int cmd_bench(const Args& args) {
         for (std::size_t minute = 1; minute <= minutes; ++minute) {
             for (std::uint64_t t = 0; t < ticks_per_minute; ++t, ++tick) {
                 std::fill(step_ns.begin(), step_ns.end(), 0);
+                if (army) {
+                    army->order(*simulation, *world, tick);
+                    army->before_tick(*world);
+                }
                 const double start = now_us();
                 simulation->tick_timed(step_ns);
                 const double us = now_us() - start;
+                if (army) {
+                    army->after_tick(*world, *simulation);
+                }
                 // What the interface would take; left lying, the buffers only grow to their bound.
                 drain_events(*simulation);
                 best[tick] = run == 0 ? us : std::min(best[tick], us);
@@ -633,6 +654,10 @@ int cmd_bench(const Args& args) {
         std::printf("%-13.*s %5.1f%% %7.1f %8.0f\n", static_cast<int>(steps[i].size()), steps[i].data(),
                     all_ns > 0 ? 100.0 * static_cast<double>(step_total_ns[i]) / static_cast<double>(all_ns) : 0.0,
                     step_us / ticks, static_cast<double>(step_max_ns[i]) / 1000.0);
+    }
+
+    if (army) {
+        army->print();
     }
 
     // The savegame first, so that --out holds the game at the end of its last minute: a run loaded

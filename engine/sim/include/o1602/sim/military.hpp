@@ -154,6 +154,16 @@ public:
 
     /// Units a player has: on land, in castles and on board ships.
     [[nodiscard]] std::uint32_t army_size(PlayerId player) const;
+
+    /// What the way searches did in the last tick, for measurements (o1602-tool bench); not part of
+    /// the game's state.
+    struct PlanStats {
+        std::uint32_t searches = 0;     ///< way searches run
+        std::uint32_t turned_away = 0;  ///< units the budget sent to wait a tick
+        /// Of those, units with a way still to go: they needed no search to walk on.
+        std::uint32_t turned_away_walking = 0;
+    };
+    [[nodiscard]] const PlanStats& plan_stats() const noexcept { return m_stats; }
     /// A castle's pack donkey brought weapons (the logistics call this; amount 0: the trip failed).
     void castle_delivery(std::uint16_t island, std::uint16_t x, std::uint16_t y, std::uint8_t ware,
                          std::uint32_t amount);
@@ -290,6 +300,7 @@ private:
     LandPlanner m_planner;
     std::uint32_t m_plans_left = 0;  ///< way searches still allowed in this tick (TB-1)
     std::uint32_t m_tick_ms = 0;     ///< game time of the running tick
+    PlanStats m_stats;
     /// The first unit the budget turned away in the last tick, which goes first in the next one
     /// (kNoUnit: none).
     std::uint32_t m_first_id = kNoUnit;
