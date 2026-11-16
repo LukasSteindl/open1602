@@ -604,7 +604,10 @@ bool Military::arrived(Soldier& s) {
             }
         }
     }
-    if (d > friendly_goal(s, s.target)) {
+    // friendly_goal() is 0 or kFriendlyGoal here (the doctor is handled above): farther away the
+    // unit has not arrived without asking the land (F17: that look cost a quarter of the soldiers'
+    // time with thousands walking).
+    if (d > kFriendlyGoal || d > friendly_goal(s, s.target)) {
         return false;
     }
     if (s.target.kind == Target::Kind::Spot && !s.patrol.active) {
