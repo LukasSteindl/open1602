@@ -231,15 +231,18 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
         }
         m_cells_walked += static_cast<std::uint64_t>(moved);  // in 1/4096 tile, divided in print()
         b.moved = moved;
-        // The way ended: how far from the cell it was sent to.
-        if (b.on_way && !now_on_way) {
-            if (const auto g = m_goals.find(s.id); g != m_goals.end() && g->second.open) {
-                if (s.target.kind == sim::Target::Kind::Spot && static_cast<std::int32_t>(s.target.x) == g->second.x2 &&
-                    static_cast<std::int32_t>(s.target.y) == g->second.y2) {
-                    m_arrival.push_back(
-                        static_cast<std::uint32_t>(chebyshev(s.cell_x() - g->second.x2, s.cell_y() - g->second.y2)));
-                }
+        // The order done (the target cleared on arrival): how far from the cell it was sent to.
+        // Another target (a fight, the next order) ends the goal without counting.
+        if (const auto g = m_goals.find(s.id); g != m_goals.end() && g->second.open) {
+            if (s.target.empty()) {
+                m_arrival.push_back(
+                    static_cast<std::uint32_t>(chebyshev(s.cell_x() - g->second.x2, s.cell_y() - g->second.y2)));
                 g->second.open = false;
+            } else if (s.target.kind != sim::Target::Kind::Spot ||
+                       static_cast<std::int32_t>(s.target.x) != g->second.x2 ||
+                       static_cast<std::int32_t>(s.target.y) != g->second.y2) {
+                g->second.open = false;
+                ++m_goals_dropped;
             }
         }
     }
@@ -263,8 +266,12 @@ void ArmyBench::print() const {
                 m_longest_stall * sim::Simulation::kTickMs);
     std::printf("walk animation without moving: %llu unit ticks\n",
                 static_cast<unsigned long long>(m_walk_in_place_ticks));
-    std::printf("tempo changes on a straight line: %.2f%% of the moving ticks; turns: %.3f per half tile walked\n",
-                per(m_tempo_changes, m_moving_pairs), cells > 0 ? static_cast<double>(m_turns) / cells : 0.0);
+    std::printf("tempo changes on a straight line: %.2f%% of %llu moving ticks; %llu turns in %.0f half tiles walked\n",
+                per(m_tempo_changes, m_moving_pairs), static_cast<unsigned long long>(m_moving_pairs),
+                static_cast<unsigned long long>(m_turns), cells);
+    std::printf("way searches per unit tick on the way: %.4f; goals given up for a fight or another order: %llu\n",
+                m_on_way_ticks != 0 ? static_cast<double>(m_searches) / static_cast<double>(m_on_way_ticks) : 0.0,
+                static_cast<unsigned long long>(m_goals_dropped));
     if (!m_arrival.empty()) {
         std::vector<std::uint32_t> a = m_arrival;
         std::sort(a.begin(), a.end());

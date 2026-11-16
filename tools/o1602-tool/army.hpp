@@ -63,6 +63,7 @@ private:
     std::uint64_t m_turns = 0;                ///< direction changes while walking
     std::uint64_t m_cells_walked = 0;         ///< half tiles
     std::vector<std::uint32_t> m_arrival;     ///< half tiles from the ordered cell when the way ended
+    std::uint64_t m_goals_dropped = 0;
     std::uint64_t m_orders = 0;
     std::uint64_t m_orders_accepted = 0;
     std::uint64_t m_searches = 0;
