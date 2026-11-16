@@ -1389,6 +1389,38 @@ TEST_CASE("ai: below the hardest level a rival is near only by cities on islands
     }
 }
 
+TEST_CASE("ai: below the hardest level a war is measured by the target's cities the computer knows of") {
+    // A player reads the inhabitants of a city on the map, but only of cities on islands they have
+    // discovered. The measure counts each known city's inhabitants and fifty for the city; the
+    // hardest level counts every city.
+    for (const std::uint8_t difficulty : {std::uint8_t{2}, std::uint8_t{3}}) {
+        Game g;
+        sim::World::GameSettings settings = g.world.game_settings();
+        settings.difficulty = difficulty;
+        g.world.set_game_settings(settings);
+        for (const std::uint16_t island : {std::uint16_t{0}, std::uint16_t{1}}) {
+            sim::City c;
+            c.island = island;
+            c.owner = kHuman;
+            c.inhabitants = {100, 20};
+            g.world.add_city(c);
+        }
+        sim::Simulation s(g.world, g.buildings, g.figures);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        sim::ai::AiPlayer p;
+        p.player = kComputer;
+        const bool hardest = difficulty == 3;
+        REQUIRE(!g.world.islands()[0].discovered_by(kComputer));
+        REQUIRE(!g.world.islands()[1].discovered_by(kComputer));
+        CHECK(engine.war_measure(p, kHuman) == (hardest ? 2U * 170U : 0U));
+        g.world.island(1).discover(kComputer);
+        CHECK(engine.war_measure(p, kHuman) == (hardest ? 2U : 1U) * 170U);
+        g.world.island(0).discover(kComputer);
+        CHECK(engine.war_measure(p, kHuman) == 2U * 170U);
+    }
+}
+
 TEST_CASE("ai: below the hardest level a computer knows a partner's Kontor as a human would") {
     // A human opens a partner's Kontor window on an island they have discovered and see there its
     // offer: stock less what it keeps and what carriers have reserved, nothing under a ton. The

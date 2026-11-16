@@ -225,6 +225,9 @@ public:
     /// Whether rival `b` has a city near `p`'s home: on its island or within four minutes at sea,
     /// only among the cities `p` knows of; `unseen` is set when an unknown one would have counted.
     [[nodiscard]] bool rival_near(const AiPlayer& p, PlayerId b, bool* unseen = nullptr);
+    /// What a war on `target` has left to take, as `p` sees it: the inhabitants of its known cities
+    /// and fifty for each of them.
+    [[nodiscard]] std::uint32_t war_measure(const AiPlayer& p, PlayerId target) const;
 
     // ai_logistics.cpp
     /// Whether `p` knows partner city `c`'s Kontor, its prices and offer: on an island it discovered,
@@ -931,7 +934,6 @@ private:
     /// For the log: the events a remembers of b.
     [[nodiscard]] std::string event_text(PlayerId a, PlayerId b) const;
     void end_war(AiPlayer& p, const char* why);
-    [[nodiscard]] std::uint32_t war_measure(PlayerId target) const;
     /// The army and the fleet's cannons of `owner` as `viewer` sees them, weighted as stronger() does.
     [[nodiscard]] std::uint32_t strength(PlayerId viewer, PlayerId owner) const;
     /// strength(), a human's raised on the harder levels (Balance::ai_human_threat_percent).
