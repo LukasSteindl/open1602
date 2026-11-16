@@ -21,6 +21,11 @@ using namespace panel_detail;
 
 constexpr std::uint8_t kCannonWare = sim::ware::kCannons;
 
+/// The headings with the owner of someone else's ship or unit: the arms over the plate's round
+/// left end; on SKSHIP the name ends before the anchor and its rope at the right end.
+constexpr OwnerHeading kShipHeading{51002, 6, 0, 192};
+constexpr OwnerHeading kSoldierHeading{65002, 6, 0, 0};
+
 const sim::Ship* the_ship(const PanelContext& c) {
     if (c.units == nullptr || c.units->size() != 1 || c.units->kind() != ui::UnitRef::Kind::Ship) {
         return nullptr;
@@ -50,7 +55,8 @@ public:
         }
         const bool own = ship->owner == c.local;
         // Open1602: the name can be typed here too, as in the ship window.
-        m_panel.set_text(kName, c.shown_name(NameTarget::of(*ship), ship_name(*ship)));
+        show_owner(m_panel, kShipHeading,
+                   own ? c.shown_name(NameTarget::of(*ship), ship_name(*ship)) : ship_name(*ship), ship->owner, c);
         m_panel.set_no_select(kName, !can_rename(c.world(), c.local, NameTarget::of(*ship)));
         const bool moving = !ship->target.empty() || ship->motion.path_index < ship->motion.path.size();
         for (const std::int32_t id :
@@ -176,6 +182,9 @@ public:
         if (ship == nullptr) {
             return std::nullopt;
         }
+        if (auto owner = owner_help(id, kShipHeading, ship->owner, c)) {
+            return owner;
+        }
         switch (id) {
             case kCannonsDown:
                 return unmount_cannon_help(*ship, c);
@@ -236,8 +245,9 @@ public:
         const assets::FigureType* t = c.figures.get(s->figure);
         // The kind of unit (FIGKIND); the natives' warriors have none there (LEISTE 227).
         const std::int32_t kind = t != nullptr ? t->kind : 0;
-        m_panel.set_text(
-            kName, kind >= 1 && kind <= 4 ? c.text("FIGKIND", static_cast<std::size_t>(kind)) : help_line(c, 227));
+        show_owner(m_panel, kSoldierHeading,
+                   kind >= 1 && kind <= 4 ? c.text("FIGKIND", static_cast<std::size_t>(kind)) : help_line(c, 227),
+                   s->owner, c);
         m_panel.set_visible(kStop, own && !s->target.empty());
         for (const std::int32_t id : {kPatrol, kDisband, kCost, kCoin}) {
             m_panel.set_visible(id, own);
@@ -308,6 +318,9 @@ public:
         if (s == nullptr) {
             return std::nullopt;
         }
+        if (auto owner = owner_help(id, kSoldierHeading, s->owner, c)) {
+            return owner;
+        }
         switch (id) {
             case kStop:
                 return help_line(c, 135);
@@ -321,7 +334,6 @@ public:
     }
 
 private:
-    static constexpr std::int32_t kName = 65002;
     static constexpr std::int32_t kStop = 65021;
     static constexpr std::int32_t kPatrol = 65022;
     static constexpr std::int32_t kDisband = 65023;
@@ -422,10 +434,10 @@ private:
 }  // namespace
 
 std::unique_ptr<SelectionPanel> make_ship_unit_panel(assets::GadgetLayout layout) {
-    return std::make_unique<ShipUnitPanel>(std::move(layout));
+    return std::make_unique<ShipUnitPanel>(with_owner_heading(std::move(layout), kShipHeading));
 }
 std::unique_ptr<SelectionPanel> make_soldier_unit_panel(assets::GadgetLayout layout) {
-    return std::make_unique<SoldierUnitPanel>(std::move(layout));
+    return std::make_unique<SoldierUnitPanel>(with_owner_heading(std::move(layout), kSoldierHeading));
 }
 std::unique_ptr<SelectionPanel> make_group_panel(assets::GadgetLayout layout, bool ships) {
     return std::make_unique<GroupPanel>(std::move(layout), ships);

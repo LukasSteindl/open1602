@@ -224,6 +224,53 @@ TEST_CASE("neutral buildings: taken whole where the taker's land reaches, else n
     CHECK(!sim::capture_neutral_building(f.world, f.buildings, 0, {15, 5}, 0, nullptr));  // the player's now
 }
 
+TEST_CASE("neutral buildings: a map makes them peaceful, and land takes them without a fight") {
+    Island f;
+    REQUIRE(f.build(kFort, 15, 5, f.neutral).placed == 1);
+    REQUIRE(f.build(kTower, 35, 10, f.neutral).placed == 1);
+    const std::uint8_t neutral_city = f.at(15, 5).city;
+    // Hostile, as by default: the land of a market takes nothing.
+    CHECK(!editor::neutral_peace(f.world));
+    REQUIRE(f.build(kMarket, 10, 5, 0).placed == 1);
+    CHECK(sim::take_peaceful_neutrals(f.world, f.buildings, 0, nullptr) == 0);
+    CHECK(f.at(15, 5).city == neutral_city);
+
+    // Peaceful: at peace with the humans and computers (still no trade, no treaties to change).
+    auto op = editor::set_neutral_peace(f.world, true);
+    REQUIRE(op.ok());
+    (*op)->apply(f.world);
+    CHECK(editor::neutral_peace(f.world));
+    CHECK(!f.world.diplomacy().hostile(0, f.neutral));
+    CHECK(!f.world.diplomacy().hostile(f.neutral, 1));
+    CHECK(!f.world.diplomacy().may_trade(0, f.neutral));
+    // The fort the market's circle covers goes over; the tower out of reach stays theirs.
+    CHECK(sim::take_peaceful_neutrals(f.world, f.buildings, 0, nullptr) == 1);
+    CHECK(f.at(15, 5).city == 0);
+    CHECK(f.at(16, 6).owner == 0);
+    CHECK(f.at(35, 10).city == neutral_city);
+    CHECK(sim::take_peaceful_neutrals(f.world, f.buildings, 0, nullptr) == 0);
+
+    // A new game's relations keep the peace (a player added starts the diplomacy over).
+    std::vector<sim::Player> players = f.world.players();
+    f.world.diplomacy().reset(players, f.world.factions());
+    CHECK(!f.world.diplomacy().hostile(0, f.neutral));
+
+    // Back to hostile: war again.
+    auto back = editor::set_neutral_peace(f.world, false);
+    REQUIRE(back.ok());
+    (*back)->apply(f.world);
+    CHECK(!editor::neutral_peace(f.world));
+    CHECK(f.world.diplomacy().hostile(0, f.neutral));
+}
+
+TEST_CASE("neutral buildings: the editor's switch needs them on the map") {
+    sim::World world{10, 10};
+    std::vector<sim::Player> players(1);
+    world.set_players(players);
+    CHECK(!editor::neutral_peace(world));
+    CHECK(!editor::set_neutral_peace(world, true).ok());
+}
+
 TEST_CASE("neutral buildings: destroyed, their ground is free and their city gone") {
     Island f;
     REQUIRE(f.build(kFort, 20, 5, f.neutral).placed == 1);

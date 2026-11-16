@@ -2948,6 +2948,57 @@ bool capture_neutral_building(World& world, const assets::BuildingTable& buildin
     return true;
 }
 
+std::size_t take_peaceful_neutrals(World& world, const assets::BuildingTable& buildings, std::uint16_t island,
+                                   std::vector<ConstructionEvent>* events) {
+    if (island >= world.islands().size()) {
+        return 0;
+    }
+    // The neutral cities on the island whose player keeps the peace, and who could take them.
+    std::vector<std::uint8_t> neutral;
+    std::vector<PlayerId> takers;
+    for (const City& c : world.cities()) {
+        if (c.island != island) {
+            continue;
+        }
+        const Player* p = world.player(c.owner);
+        if (p != nullptr && world.acts_as(c.owner, FactionBehaviour::Neutral) &&
+            p->scenario.has(scenario_flag::kNeutralPeace)) {
+            neutral.push_back(c.index);
+        } else if (world.acts_as(c.owner, FactionBehaviour::Settlers) &&
+                   std::ranges::find(takers, c.owner) == takers.end()) {
+            takers.push_back(c.owner);
+        }
+    }
+    if (neutral.empty() || takers.empty()) {
+        return 0;
+    }
+    std::vector<TilePos> origins;
+    const IslandMap& map = world.islands()[island].map;
+    for (std::uint32_t y = 0; y < map.height(); ++y) {
+        for (std::uint32_t x = 0; x < map.width(); ++x) {
+            const MapCell& cell = map.top(x, y);
+            if (std::ranges::find(neutral, cell.city) == neutral.end()) {
+                continue;
+            }
+            const auto b =
+                building_at(world, buildings, island, {static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)});
+            if (b && b->origin.x == static_cast<std::int32_t>(x) && b->origin.y == static_cast<std::int32_t>(y)) {
+                origins.push_back(b->origin);
+            }
+        }
+    }
+    std::size_t taken = 0;
+    for (const TilePos& o : origins) {
+        for (const PlayerId taker : takers) {
+            if (capture_neutral_building(world, buildings, island, o, taker, events)) {
+                ++taken;
+                break;
+            }
+        }
+    }
+    return taken;
+}
+
 bool computer_city_gone(const World& world, const assets::BuildingTable& buildings, std::uint16_t island,
                         std::uint8_t city) {
     if (island >= world.islands().size() || world.city(island, city) == nullptr ||

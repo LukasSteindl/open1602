@@ -71,6 +71,11 @@ public:
     void set_style(const FormStyle& style) { m_style = style; }
     void set_scale(double scale) noexcept { m_scale = scale; }
     [[nodiscard]] double scale() const noexcept { return m_scale; }
+    /// The part of the screen the form may draw on, in design units of its own coordinates
+    /// (1024 x 768 from 0, 0 unless set): tooltips stay inside it. A form laid out from a column
+    /// that starts further right has the screen's left edge at a negative x.
+    void set_bounds(Rect bounds) noexcept { m_bounds = bounds; }
+    [[nodiscard]] const Rect& bounds() const noexcept { return m_bounds; }
     /// The font of all text out of `fonts` (FormStyle::font), if there is one.
     [[nodiscard]] const Font* font(const std::array<const Font*, kFontSlots>& fonts) const noexcept;
 
@@ -202,6 +207,7 @@ private:
 
     FormStyle m_style;
     double m_scale = 1.0;
+    Rect m_bounds{0, 0, 1024, 768};
     std::vector<Widget> m_widgets;
     std::optional<Id> m_pressed;
     MouseButton m_pressed_with = MouseButton::Left;

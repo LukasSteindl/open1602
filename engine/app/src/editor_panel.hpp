@@ -359,12 +359,14 @@ enum class EditorScenarioRow : std::uint8_t {
     Author,
     Version,
     OriginalLimits,
+    NeutralPeace,  ///< the neutral buildings hostile or peaceful (editor::set_neutral_peace)
     Count
 };
 inline constexpr std::size_t kEditorScenarioRows = static_cast<std::size_t>(EditorScenarioRow::Count);
 /// Whether a row of the page "Scenario" is a text to type.
 [[nodiscard]] constexpr bool scenario_row_is_text(EditorScenarioRow row) noexcept {
-    return row != EditorScenarioRow::Stars && row != EditorScenarioRow::OriginalLimits;
+    return row != EditorScenarioRow::Stars && row != EditorScenarioRow::OriginalLimits &&
+           row != EditorScenarioRow::NeutralPeace;
 }
 /// The longest text a row takes, in characters.
 [[nodiscard]] constexpr std::size_t scenario_row_length(EditorScenarioRow row) noexcept {

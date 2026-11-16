@@ -310,6 +310,34 @@ annokit::core::Result<std::unique_ptr<Operation>> add_neutral(const sim::World& 
     return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "neutral_add"));
 }
 
+bool neutral_peace(const sim::World& world) noexcept {
+    const sim::Player* p = world.player(neutral_player(world));
+    return p != nullptr && p->scenario.has(sim::scenario_flag::kNeutralPeace);
+}
+
+annokit::core::Result<std::unique_ptr<Operation>> set_neutral_peace(const sim::World& world, bool peaceful) {
+    const sim::PlayerId n = neutral_player(world);
+    if (n == sim::kNoPlayer) {
+        return make_error(ErrorCode::NotFound, "the world has no neutral buildings");
+    }
+    sim::World after = world;
+    sim::Player& p = *after.player(n);
+    p.scenario.flags = peaceful ? p.scenario.flags | sim::scenario_flag::kNeutralPeace
+                                : p.scenario.flags & ~sim::scenario_flag::kNeutralPeace;
+    for (std::size_t o = 0; o < after.players().size(); ++o) {
+        const auto other = static_cast<sim::PlayerId>(o);
+        if (other == n || !after.acts_as(other, sim::FactionBehaviour::Settlers)) {
+            continue;
+        }
+        for (const auto& [x, y] : {std::pair{n, other}, std::pair{other, n}}) {
+            sim::Relation& rel = after.diplomacy().relation(x, y);
+            rel.peace = peaceful ? sim::Treaty::Signed : sim::Treaty::None;
+            rel.trade = sim::Treaty::None;  // nobody trades with them
+        }
+    }
+    return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "neutral_peace"));
+}
+
 sim::PlayerId party_slot(Neutral party) noexcept {
     switch (party) {
         case Neutral::Pirates:
