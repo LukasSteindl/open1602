@@ -270,10 +270,13 @@ void pirate_nest_offer(World& world, const assets::BuildingTable& buildings, Cit
     if (nest.trade.size() < world.goods().end()) {
         nest.trade.resize(world.goods().end());
     }
+    // Open1602: only the sales are drawn anew; what the nest buys stays as the map set it (the
+    // original clears both, but nobody could set the nest's buying there), and a ware it buys is
+    // not offered as well.
     for (City::Trade& t : nest.trade) {
         t.sell = false;
-        t.buy = false;
     }
+    std::erase_if(values, [&](const auto& v) { return nest.trade[v.second].buy; });
     for (std::size_t i = 0; i < values.size() && i < count && values[i].first != 0; ++i) {
         City::Trade& t = nest.trade[values[i].second];
         t.sell = true;
