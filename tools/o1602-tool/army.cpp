@@ -305,8 +305,24 @@ void ArmyBench::print() const {
     std::printf("way searches per unit tick on the way: %.4f; goals given up for a fight or another order: %llu\n",
                 m_on_way_ticks != 0 ? static_cast<double>(m_searches) / static_cast<double>(m_on_way_ticks) : 0.0,
                 static_cast<unsigned long long>(m_goals_dropped));
-    if (!m_arrival.empty()) {
-        std::vector<std::uint32_t> a = m_arrival;
+    // A target cleared farther than a soldier may stop from a spot (7 half tiles) was given up
+    // after failed searches, not reached.
+    constexpr std::uint32_t kStopRange = 7;
+    std::vector<std::uint32_t> a;
+    std::uint64_t given_up = 0;
+    std::uint64_t given_up_sum = 0;
+    for (const std::uint32_t d : m_arrival) {
+        if (d <= kStopRange) {
+            a.push_back(d);
+        } else {
+            ++given_up;
+            given_up_sum += d;
+        }
+    }
+    std::printf("orders given up after failed searches: %llu of %zu, mean %.1f half tiles from the ordered cell\n",
+                static_cast<unsigned long long>(given_up), m_arrival.size(),
+                given_up != 0 ? static_cast<double>(given_up_sum) / static_cast<double>(given_up) : 0.0);
+    if (!a.empty()) {
         std::sort(a.begin(), a.end());
         std::uint64_t sum = 0;
         std::size_t exact = 0;
