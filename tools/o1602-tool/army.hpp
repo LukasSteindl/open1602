@@ -73,6 +73,7 @@ private:
     std::uint64_t m_orders = 0;
     std::uint64_t m_orders_accepted = 0;
     std::uint64_t m_searches = 0;
+    std::uint64_t m_cells = 0;
     std::uint64_t m_turned_away = 0;
     std::uint64_t m_turned_away_walking = 0;
     std::uint32_t m_max_turned_away = 0;

@@ -193,10 +193,11 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
     ++m_ticks;
     const sim::Military::PlanStats& stats = simulation.military().plan_stats();
     m_searches += stats.searches;
+    m_cells += stats.cells;
     m_turned_away += stats.turned_away;
     m_turned_away_walking += stats.turned_away_walking;
     m_max_turned_away = std::max(m_max_turned_away, stats.turned_away);
-    m_ticks_budget_used_up += stats.searches >= sim::Military::kPlansPerTick ? 1U : 0U;
+    m_ticks_budget_used_up += stats.turned_away > 0 ? 1U : 0U;
     for (const sim::Soldier& s : world.soldiers()) {
         const auto it = m_before.find(s.id);
         if (it == m_before.end() || s.away()) {
@@ -282,8 +283,9 @@ void ArmyBench::print() const {
     const double cells = static_cast<double>(m_cells_walked) / static_cast<double>(sim::kCellUnit);
     std::printf("\narmy: %llu orders (%llu accepted), every 30 s in groups of %zu\n",
                 static_cast<unsigned long long>(m_orders), static_cast<unsigned long long>(m_orders_accepted), kGroup);
-    std::printf("way searches: %.2f per tick, budget used up in %.1f%% of the ticks\n",
-                static_cast<double>(m_searches) / ticks, per(m_ticks_budget_used_up, m_ticks));
+    std::printf("way searches: %.2f per tick, %.0f cells per tick, budget used up in %.1f%% of the ticks\n",
+                static_cast<double>(m_searches) / ticks, static_cast<double>(m_cells) / ticks,
+                per(m_ticks_budget_used_up, m_ticks));
     std::printf("turned away: %.2f per tick (max %u), %.2f per tick with a way still to go\n",
                 static_cast<double>(m_turned_away) / ticks, m_max_turned_away,
                 static_cast<double>(m_turned_away_walking) / ticks);

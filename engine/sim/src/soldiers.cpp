@@ -31,9 +31,11 @@ constexpr std::int32_t kDoctorGoal = 1;    // cells from an own doctor: the sold
 constexpr std::int32_t kOthersRange = 8;   // cells: other figures block planning within 4 tiles
 constexpr std::int32_t kCrowded = 3;       // cells: walking slower next to another figure
 constexpr std::uint8_t kMaxFailures = 3;
-constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;  // way searches chasing leaves
-constexpr std::int32_t kWanderRange = 9;                              // tiles around home
-constexpr std::int32_t kBoardRange = 9;  // cells from an own ship: the soldier goes on board
+// Way searches and cells chasing leaves to units with a way to go.
+constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;
+constexpr std::uint32_t kChaseReserveCells = Military::kCellsPerTick / 2;
+constexpr std::int32_t kWanderRange = 9;  // tiles around home
+constexpr std::int32_t kBoardRange = 9;   // cells from an own ship: the soldier goes on board
 constexpr std::uint8_t kAnimWalk = 0;
 constexpr std::uint8_t kAnimStand = 1;
 constexpr std::uint8_t kAnimAttack = 2;
@@ -467,6 +469,8 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         // Cells from which the target is in range and in sight; the first reached wins.
         const std::int32_t range = static_cast<std::int32_t>(type->combat.range8) / 4;
         r.first_goal = true;
+        r.goal_area = rect;
+        r.goal_reach = range;
         r.goal = [rect, range, &land](std::int32_t x, std::int32_t y) {
             if (rect.distance(x, y) > range) {
                 return false;
@@ -478,9 +482,18 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         // The object itself or a cell next to it, as near to it as can be. An own doctor only takes the
         // soldier in from the next cell, so the way must end there: the original plans anew until then.
         const std::int32_t goal = friendly_goal(s, target);
+        r.goal_area = rect;
+        r.goal_reach = goal;
         r.goal = [rect, goal](std::int32_t x, std::int32_t y) { return rect.distance(x, y) <= goal; };
     }
+    std::uint32_t taken = 0;
+    r.visited = &taken;
     const LandCourse course = m_planner.plan(land, r);
+    m_stats.cells += taken;
+    m_cells_left = m_cells_left > taken ? m_cells_left - taken : 0U;
+    if (m_cells_left == 0) {
+        m_plans_left = 0;  // the cells of the tick are used up: no new search in it
+    }
     if (course.path.empty()) {
         return course.reached_goal;
     }
@@ -821,7 +834,7 @@ void Military::decide(Soldier& s) {
                         }
                         continue;
                     }
-                    if (m_plans_left <= kChaseReserve) {
+                    if (m_plans_left <= kChaseReserve || m_cells_left <= kChaseReserveCells) {
                         // The rest of the budget is for units with a way to go: chasing is their
                         // own idea, a way is mostly an order.
                         no_searches = true;
