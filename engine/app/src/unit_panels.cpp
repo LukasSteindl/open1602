@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include "banner_graphic.hpp"
 #include "panel_common.hpp"
 
 #include "o1602/sim/ships.hpp"
@@ -28,11 +29,67 @@ const sim::Ship* the_ship(const PanelContext& c) {
     return c.world().ship(c.units->units().front().id);
 }
 
-/// Open1602: the name of someone else's unit or ship with its owner's name after it, as the colour
-/// of the figure alone is hard to tell apart; one's own as it is.
-std::string with_owner(std::string name, sim::PlayerId owner, const PanelContext& c) {
+/// Open1602: SKSHIP and SKSOLDAT with the owner's coat of arms at the right end of the heading, as
+/// the route's stops show a city's (a shadow and the arms, 32 x 40, 204 units into the plate), and a
+/// second name line beside it, centred left of the arms, for someone else's unit or ship.
+constexpr std::int32_t kOwnerName = 900;  ///< offsets from the name's Id
+constexpr std::int32_t kOwnerShadow = 901;
+constexpr std::int32_t kOwnerArms = 902;
+constexpr std::int32_t kArmsInPlate = 204;
+constexpr std::int32_t kArmsWidth = 32;
+constexpr std::int32_t kArmsHeight = 40;
+
+assets::GadgetLayout with_owner_arms(assets::GadgetLayout layout, std::int32_t name_id) {
+    const assets::Gadget* found = layout.find(name_id);
+    if (found == nullptr) {
+        return layout;
+    }
+    const assets::Gadget name = *found;
+    const std::int32_t gfx = layout.constant("GFXPIRAT").value_or(543) + 5;
+    const std::int32_t room = kArmsWidth + 12;  // the arms and a gap before them
+    assets::Gadget line = name;
+    line.id = name_id + kOwnerName;
+    line.size[0] = std::max(0, name.size[0] - room);
+    line.offset[0] = static_cast<std::int16_t>(std::max(0, name.offset[0] - room / 2));
+    line.no_select = true;
+    layout.gadgets.push_back(line);
+    assets::Gadget shadow;
+    shadow.id = name_id + kOwnerShadow;
+    shadow.kind = assets::GadgetKind::GraphicRaster;
+    shadow.no_select = true;
+    shadow.gfx = gfx;
+    shadow.pos = {name.pos[0] + kArmsInPlate, name.pos[1] - 4};  // the plate starts 4 above the name
+    shadow.offset = {7, 7};
+    shadow.size = {kArmsWidth, kArmsHeight};
+    layout.gadgets.push_back(shadow);
+    assets::Gadget arms = shadow;
+    arms.id = name_id + kOwnerArms;
+    arms.kind = assets::GadgetKind::Graphic;
+    arms.offset = {0, 0};
+    layout.gadgets.push_back(arms);
+    return layout;
+}
+
+/// The heading of a unit's or ship's window: `name` alone for one's own; for someone else's the
+/// owner's coat of arms beside it, and the owner's name after it, as the colour of the figure alone
+/// is hard to tell apart.
+void show_owner(ui::Panel& panel, std::int32_t name_id, std::string name, sim::PlayerId owner,
+                const PanelContext& c) {
     const sim::Player* p = owner != c.local ? c.world().player(owner) : nullptr;
-    return p != nullptr ? ui::tr("unit.of_owner", {name, player_name(*p)}) : name;
+    panel.set_visible(name_id, p == nullptr);
+    for (const std::int32_t id : {name_id + kOwnerName, name_id + kOwnerShadow, name_id + kOwnerArms}) {
+        panel.set_visible(id, p != nullptr);
+    }
+    if (p == nullptr) {
+        panel.set_text(name_id, std::move(name));
+        return;
+    }
+    panel.set_text(name_id + kOwnerName, ui::tr("unit.of_owner", {name, player_name(*p)}));
+    const render::BannerArt art = render::BannerArt::arms_at(panel.layout().find(name_id + kOwnerArms) != nullptr
+                                                                 ? panel.layout().find(name_id + kOwnerArms)->gfx
+                                                                 : 548);
+    set_banner_graphic(panel, name_id + kOwnerShadow, art, c.banner(owner));
+    set_banner_graphic(panel, name_id + kOwnerArms, art, c.banner(owner));
 }
 
 const sim::Soldier* the_soldier(const PanelContext& c) {
@@ -57,8 +114,8 @@ public:
         }
         const bool own = ship->owner == c.local;
         // Open1602: the name can be typed here too, as in the ship window.
-        m_panel.set_text(kName, own ? c.shown_name(NameTarget::of(*ship), ship_name(*ship))
-                                    : with_owner(ship_name(*ship), ship->owner, c));
+        show_owner(m_panel, kName, own ? c.shown_name(NameTarget::of(*ship), ship_name(*ship)) : ship_name(*ship),
+                   ship->owner, c);
         m_panel.set_no_select(kName, !can_rename(c.world(), c.local, NameTarget::of(*ship)));
         const bool moving = !ship->target.empty() || ship->motion.path_index < ship->motion.path.size();
         for (const std::int32_t id :
@@ -244,9 +301,9 @@ public:
         const assets::FigureType* t = c.figures.get(s->figure);
         // The kind of unit (FIGKIND); the natives' warriors have none there (LEISTE 227).
         const std::int32_t kind = t != nullptr ? t->kind : 0;
-        m_panel.set_text(kName, with_owner(kind >= 1 && kind <= 4 ? c.text("FIGKIND", static_cast<std::size_t>(kind))
-                                                                  : help_line(c, 227),
-                                           s->owner, c));
+        show_owner(m_panel, kName,
+                   kind >= 1 && kind <= 4 ? c.text("FIGKIND", static_cast<std::size_t>(kind)) : help_line(c, 227),
+                   s->owner, c);
         m_panel.set_visible(kStop, own && !s->target.empty());
         for (const std::int32_t id : {kPatrol, kDisband, kCost, kCoin}) {
             m_panel.set_visible(id, own);
@@ -431,10 +488,10 @@ private:
 }  // namespace
 
 std::unique_ptr<SelectionPanel> make_ship_unit_panel(assets::GadgetLayout layout) {
-    return std::make_unique<ShipUnitPanel>(std::move(layout));
+    return std::make_unique<ShipUnitPanel>(with_owner_arms(std::move(layout), 51002));
 }
 std::unique_ptr<SelectionPanel> make_soldier_unit_panel(assets::GadgetLayout layout) {
-    return std::make_unique<SoldierUnitPanel>(std::move(layout));
+    return std::make_unique<SoldierUnitPanel>(with_owner_arms(std::move(layout), 65002));
 }
 std::unique_ptr<SelectionPanel> make_group_panel(assets::GadgetLayout layout, bool ships) {
     return std::make_unique<GroupPanel>(std::move(layout), ships);

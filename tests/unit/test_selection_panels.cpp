@@ -1282,10 +1282,21 @@ TEST_CASE("selection panels: the military windows of one land unit and of a grou
     CHECK(go->on);
     out.clear();
 
-    // Another player's unit takes no orders.
+    // One's own unit: the heading without an owner.
+    const auto owner_named = [](SelectionPanel& panel) {
+        const std::vector<std::string> shown = texts(panel);
+        return std::any_of(shown.begin(), shown.end(),
+                           [](const std::string& s) { return s.find(" (") != std::string::npos; });
+    };
+    CHECK(!owner_named(*p));
+
+    // Another player's unit takes no orders; its heading names its owner beside the coat of arms.
     units.select(t.world, ui::UnitRef{ui::UnitRef::Kind::Soldier, foreign});
     p = panels.military_panel_for(c);
     REQUIRE(p != nullptr);
+    p->refresh(none, c);
+    CHECK(owner_named(*p));
+    CHECK(p->panel().layout().find(65002 + 902) != nullptr);
     p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, 65023}, none, c, out);
     CHECK(out.empty());
 
