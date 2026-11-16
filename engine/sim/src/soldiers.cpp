@@ -753,11 +753,15 @@ void Military::decide(Soldier& s) {
         island != World::kSea) {
         s.island = island;
     }
-    if (m_plans_left == 0) {
-        // No way search left in this tick: the unit decides in the next one (TB-1).
+    // Only a unit that needs a way search waits for the budget (TB-1); one with a way still to go
+    // walks on without one, so that it does not stand with its walk playing (F17).
+    const auto out_of_plans = [&]() {
+        if (m_plans_left != 0) {
+            return false;
+        }
         turned_away(s);
-        return;
-    }
+        return true;
+    };
     if (!s.target.empty() && !target_valid(s.target)) {
         next_queued(s);
         m.path.clear();
@@ -795,7 +799,7 @@ void Military::decide(Soldier& s) {
                 computer_controlled(*m_world, s.owner, m_rules->bugs.classic_ai) || s.patrol.active || s.attack_move;
             if (enemy.empty() && !s.hold && (hunter || (melee && !walking))) {
                 std::size_t tried = 0;
-                bool out_of_plans = false;
+                bool no_searches = false;
                 for (const Candidate& c : candidates) {
                     if (!hunter) {
                         const auto cells = target_cells(c.unit);
@@ -817,7 +821,7 @@ void Military::decide(Soldier& s) {
                     if (m_plans_left <= kChaseReserve) {
                         // The rest of the budget is for units with a way to go: chasing is their
                         // own idea, a way is mostly an order.
-                        out_of_plans = true;
+                        no_searches = true;
                         break;
                     }
                     if (plan_to(s, c.unit, kChaseRadius, true)) {
@@ -825,7 +829,9 @@ void Military::decide(Soldier& s) {
                         break;
                     }
                 }
-                if (out_of_plans && !chase) {
+                // Out of searches with a way still to go: on along it, chasing waits for the
+                // next decision.
+                if (no_searches && !chase && m.path_index >= m.path.size()) {
                     turned_away(s);
                     return;
                 }
@@ -839,6 +845,9 @@ void Military::decide(Soldier& s) {
         // Out of range or sight: walk into range (step 6); holding its position it waits.
         if (s.hold) {
             rest(s);
+            return;
+        }
+        if (out_of_plans()) {
             return;
         }
         if (!plan_to(s, enemy, kPlanRadius, true)) {
@@ -867,6 +876,9 @@ void Military::decide(Soldier& s) {
             }
         }
         if (!s.target.empty()) {
+            if (out_of_plans()) {
+                return;
+            }
             if (!plan(s, kPlanRadius, attackable(s, s.target))) {
                 ++s.failures;
                 if (s.failures > kMaxFailures) {
@@ -877,8 +889,9 @@ void Military::decide(Soldier& s) {
                 return;
             }
         }
-    } else if (s.target.moving() && now >= s.next_follow_ms) {
-        // Following a moving target: a new way every 3 s (step 8).
+    } else if (s.target.moving() && now >= s.next_follow_ms && m_plans_left != 0) {
+        // Following a moving target: a new way every 3 s (step 8); without a search left in this
+        // tick on along the old way, and again at the end of the next run.
         s.next_follow_ms = now + kFollowMs;
         if (const auto cells = target_cells(s.target);
             cells && cells->distance(s.cell_x(), s.cell_y()) > kFriendlyGoal) {
