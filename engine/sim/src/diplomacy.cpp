@@ -353,7 +353,9 @@ bool Diplomacy::set_alliance(const World& world, PlayerId a, PlayerId b, Treaty 
             break;
         case Treaty::Offered:
             m_notices.push({DiplomacyNotice::Kind::AllianceOffered, b, a});
-            add_event(b, a, DiplomacyEventType::FriendlyGesture, now_ms);
+            // A friendly gesture, but only one per partner: offered again after a withdrawal or a
+            // refusal, it is renewed, so that offering over and over does not pile up goodwill.
+            renew_event(b, a, DiplomacyEventType::FriendlyGesture, now_ms);
             ab.alliance = Treaty::Offered;
             ba.alliance = Treaty::Received;
             break;
@@ -366,6 +368,18 @@ bool Diplomacy::set_alliance(const World& world, PlayerId a, PlayerId b, Treaty 
             break;
     }
     return true;
+}
+
+void Diplomacy::renew_event(PlayerId a, PlayerId b, DiplomacyEventType type, std::uint64_t now_ms) {
+    if (a < m_count && type != DiplomacyEventType::None) {
+        for (DiplomacyEvent& e : m_events[a]) {
+            if (e.type == type && e.partner == b) {
+                e.time_ms = now_ms;
+                return;
+            }
+        }
+    }
+    add_event(a, b, type, now_ms);
 }
 
 void Diplomacy::add_event(PlayerId a, PlayerId b, DiplomacyEventType type, std::uint64_t now_ms) {
