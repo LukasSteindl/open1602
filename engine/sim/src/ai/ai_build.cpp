@@ -667,6 +667,32 @@ void Engine::task_claim_land(AiPlayer& p) {
     }
 }
 
+namespace {
+
+/// The placements task_mine tries for a mine around the slope tile, in its order.
+struct MineOffset {
+    std::int32_t dx;
+    std::int32_t dy;
+    std::uint8_t rotation;
+};
+constexpr std::array kMineOffsets{MineOffset{0, 0, 0}, MineOffset{-1, 0, 1}, MineOffset{0, -1, 0},
+                                  MineOffset{0, 0, 1}, MineOffset{0, -1, 1}, MineOffset{-1, 0, 0}};
+
+}  // namespace
+
+bool Engine::mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
+                          std::span<const BuildItem> road) const {
+    return std::ranges::any_of(kMineOffsets, [&](const MineOffset& o) {
+        std::uint32_t w = 1;
+        std::uint32_t h = 1;
+        rotated_size(mine, o.rotation, w, h);
+        const std::int32_t x0 = x + o.dx;
+        const std::int32_t y0 = y + o.dy;
+        return cart_reaches(p, x0, y0, x0 + static_cast<std::int32_t>(w) - 1, y0 + static_cast<std::int32_t>(h) - 1,
+                            road);
+    });
+}
+
 void Engine::task_mine(AiPlayer& p) {
     const assets::BuildingType* b = by_id(p.search.building);
     if (b == nullptr) {
@@ -687,14 +713,6 @@ void Engine::task_mine(AiPlayer& p) {
         slot_fail(p, s.slot);
         return;
     }
-    if (!path.empty()) {
-        log(p, "mine road of %zu tiles to %d,%d", path.size(), p.search.best_x1, p.search.best_y1);
-        build(p, std::move(path), false);
-    } else if (s.extra > 0) {
-        // The road from the road to the slope first.
-        const auto& d = kStep[static_cast<std::uint32_t>(s.rotation) & 3U];
-        road_line(p, s.best_x0 + d[0], s.best_y0 + d[1], s.extra, static_cast<std::uint8_t>(s.rotation), true);
-    }
     // The mine on the slope (1 x 2, facing the rock).
     const assets::BuildingType* mine = by_id(p.search.building);
     if (mine == nullptr) {
@@ -702,14 +720,40 @@ void Engine::task_mine(AiPlayer& p) {
     }
     const std::int32_t hx = p.search.best_x1;
     const std::int32_t hy = p.search.best_y1;
+    // The step of a straight road from the road to the slope.
+    const auto& d = kStep[static_cast<std::uint32_t>(s.rotation) & 3U];
+    if (rivals()) {
+        // Open1602 (F13): only the carts of a Kontor or market fetch a mine's goods, so a mine
+        // where none reaches it fills and idles until it is torn down as exhausted. A slope out
+        // of their reach waits for a market towards it, as a deposit on free land does.
+        std::vector<BuildItem> road = path;
+        if (road.empty()) {
+            for (std::int32_t k = 1; k <= s.extra; ++k) {
+                road.push_back(BuildItem{id::kRoadDirt, s.best_x0 + d[0] * k, s.best_y0 + d[1] * k, 0, 0});
+            }
+        }
+        if (!mine_reached(p, *mine, hx, hy, road)) {
+            log(p, "mine site at %d,%d out of the carts' reach", hx, hy);
+            if (!claim_land(p, s.slot, hx, hy)) {
+                slot_fail(p, s.slot);
+            }
+            return;
+        }
+    }
+    if (!path.empty()) {
+        log(p, "mine road of %zu tiles to %d,%d", path.size(), p.search.best_x1, p.search.best_y1);
+        build(p, std::move(path), false);
+    } else if (s.extra > 0) {
+        // The road from the road to the slope first.
+        road_line(p, s.best_x0 + d[0], s.best_y0 + d[1], s.extra, static_cast<std::uint8_t>(s.rotation), true);
+    }
     std::size_t placed = 0;
-    for (const auto& o : std::array<std::array<std::int32_t, 3>, 6>{
-             {{0, 0, 0}, {-1, 0, 1}, {0, -1, 0}, {0, 0, 1}, {0, -1, 1}, {-1, 0, 0}}}) {
+    for (const auto& o : kMineOffsets) {
         BuildOrder order;
         order.player = p.player;
         order.island = p.island;
         order.orient_to_road = false;
-        order.items.push_back(BuildItem{mine->id, hx + o[0], hy + o[1], static_cast<std::uint8_t>(o[2]), 0});
+        order.items.push_back(BuildItem{mine->id, hx + o.dx, hy + o.dy, o.rotation, 0});
         const BuildPlan plan = plan_build(m_world, m_buildings, order);
         if (plan.items.front().ok()) {
             placed = build(p, order.items, false);
