@@ -2231,3 +2231,31 @@ TEST_CASE("construction: the editor names the pirates' nest and gives them one c
     CHECK(editor::numbered_name(island.world, "Piratennest") == "Piratennest 2");
     CHECK(editor::numbered_name(island.world, "Eingeborenendorf") == "Eingeborenendorf");
 }
+
+TEST_CASE("construction: water under grass comes back as meadow when no water borders it (F18)") {
+    // The ground layer can hold water where the island shows grass (an island template's water
+    // under a city's grass). Demolishing a house there showed the water amid land, with no shore.
+    Island island;
+    island.found();
+    sim::IslandMap& map = island.world.island(0).map;
+    const sim::MapCell sea{static_cast<std::uint16_t>(island.buildings.by_id(kSea)->gfx), 0, 0};
+    for (std::uint32_t y = 13; y <= 14; ++y) {
+        for (std::uint32_t x = 8; x <= 9; ++x) {
+            map.set_ground_cell(x, y, sea);
+        }
+        // Beside the beach the water still borders its shore: it stays water.
+        map.set_ground_cell(5, y + 3, sea);
+        map.set_ground_cell(6, y + 3, sea);
+    }
+    REQUIRE(island.build({{kHouse, 8, 13, 0, 0}}).placed == 1);
+    REQUIRE(island.build({{kHouse, 5, 16, 0, 0}}).placed == 1);
+    CHECK(island.demolish({9, 14}, {9, 14}) == 1);
+    CHECK(island.demolish({6, 17}, {6, 17}) == 1);
+    for (std::int32_t y = 13; y <= 14; ++y) {
+        for (std::int32_t x = 8; x <= 9; ++x) {
+            CHECK(island.at(x, y)->id == sim::id::kMeadow);
+            CHECK(island.city_at(x, y) == 0);
+        }
+    }
+    CHECK(island.at(5, 16)->id == kSea);
+}

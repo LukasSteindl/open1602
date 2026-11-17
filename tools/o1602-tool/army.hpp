@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "o1602/assets/figure_table.hpp"
+#include "o1602/sim/land_paths.hpp"
 #include "o1602/sim/simulation.hpp"
 #include "o1602/sim/world.hpp"
 
@@ -46,6 +47,7 @@ private:
         bool open = false;  ///< not arrived yet
     };
     std::uint64_t next_random();
+    bool walled_in_by_units(const sim::Simulation& simulation, const sim::World& world, const sim::Soldier& s) const;
     bool walkable(const sim::Simulation& simulation, std::int32_t x, std::int32_t y) const;
     /// Whether soldiers can walk from world tile (ax, ay) to (bx, by) on island `island` (tiles
     /// joined by their sides, units and closed gates left out).
@@ -72,7 +74,11 @@ private:
     std::uint64_t m_goals_dropped = 0;
     std::unordered_map<std::uint16_t, std::vector<std::uint32_t>> m_regions;  ///< per island, tile -> land region
     std::uint64_t m_given_up_reachable = 0;  ///< orders given up although the land joins unit and spot
+    std::uint64_t m_given_up_enclosed = 0;   ///< ... of those, walled in by other units
+    std::uint64_t m_given_up_route = 0;      ///< ... a coarse way within the route's tiles
+    std::uint64_t m_given_up_far_route = 0;  ///< ... a coarse way only with more tiles
     std::vector<std::string> m_given_up_samples;
+    sim::LandPlanner m_route_planner;
     std::uint64_t m_wait_ticks = 0;
     std::uint32_t m_longest_wait = 0;
     std::uint64_t m_long_waits = 0;

@@ -1494,3 +1494,25 @@ TEST_CASE("military: soldiers destroy an enemy trade cart; it does not fight bac
           }) == 1);
     CHECK(f.world.player(0)->ships_sunk == sunk_before);  // no ship of the score
 }
+
+TEST_CASE("military: a unit walled in by standing units walks out past them (F17)") {
+    // Eight own units stand round it; with their cells blocked no way leads out, and the original
+    // gave the order up after four plans.
+    Field f;
+    f.start();
+    for (std::int32_t dy = -1; dy <= 1; ++dy) {
+        for (std::int32_t dx = -1; dx <= 1; ++dx) {
+            if (dx != 0 || dy != 0) {
+                f.add(kSword, 0, 30 + dx, 30 + dy);
+            }
+        }
+    }
+    const std::uint32_t id = f.add(kSword, 0, 30, 30).id;
+    REQUIRE(f.military->order(sim::SoldierOrder{0, {id}, sim::Target::spot(2 * 32, 2 * 15)}));
+    f.run(30'000);
+    const sim::Soldier* s = f.world.soldier(id);
+    REQUIRE(s != nullptr);
+    CHECK(s->target.empty());
+    CHECK(s->cell_x() == 2 * 32);
+    CHECK(s->cell_y() == 2 * 15);
+}
