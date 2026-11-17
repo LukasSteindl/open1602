@@ -1727,11 +1727,19 @@ bool Engine::way_out(const AiPlayer& p, std::uint16_t island, const CastleEntry&
     const auto h = static_cast<std::int32_t>(isl.map.height());
     const std::int32_t x = cell->first / 2 - static_cast<std::int32_t>(isl.x);
     const std::int32_t y = cell->second / 2 - static_cast<std::int32_t>(isl.y);
+    const auto key = std::tuple{p.player, island, e.x, e.y};
+    const auto kept = std::ranges::find(m_castles_kept, key);
     if (x < 0 || y < 0 || x >= w || y >= h ||
         reach[static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x)] != 0) {
+        if (kept != m_castles_kept.end()) {
+            m_castles_kept.erase(kept);
+        }
         return true;
     }
-    log(p, "castle at %u,%u keeps its units: its way out is cut off from the Kontor", e.x, e.y);
+    if (kept == m_castles_kept.end()) {
+        m_castles_kept.push_back(key);
+        log(p, "castle at %u,%u keeps its units: its way out is cut off from the Kontor", e.x, e.y);
+    }
     return false;
 }
 

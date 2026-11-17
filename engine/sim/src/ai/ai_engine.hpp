@@ -18,6 +18,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -1114,6 +1115,9 @@ private:
     /// reach no store (only the log).
     std::vector<std::uint32_t> m_yard_unreached;
     void log_yard(const AiPlayer& p, YardWait why) const;
+    /// The castles way_out() keeps units in, as player, island, x, y (only the log: a castle is
+    /// logged when its way out closes, not at every recruit pass).
+    mutable std::vector<std::tuple<PlayerId, std::uint16_t, std::uint16_t, std::uint16_t>> m_castles_kept;
     /// Per city, the minutes of statistics log_supply() last wrote at (only the log).
     std::vector<std::uint32_t> m_supply_logged;
     /// Free land from which `grown` grows a stage's orders, during the grow pass of `run_stage`.
