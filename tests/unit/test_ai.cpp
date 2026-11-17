@@ -3026,3 +3026,18 @@ TEST_CASE("ai: an improved computer moves its ship to where the soldiers at the 
         }
     }
 }
+
+TEST_CASE("ai: a computer finds no way for its ship to water cut off from the sea") {
+    // A lake on the island is water a ship cannot sail to from the sea: the computers ask the
+    // fleet before they send a ship to water near the coast.
+    Game g(true, 10000, true);
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    const sim::Ship& ship = g.world.ships().front();
+    const sim::WorldIsland& isl = g.world.islands().back();
+    const auto lake = sim::Target::position(isl.x + 28, isl.y + 25);
+    REQUIRE(s.fleet().sea().sailable(static_cast<std::int32_t>(lake.x), static_cast<std::int32_t>(lake.y)));
+    CHECK(!s.fleet().finds_way(ship, lake));
+    const auto sea = sim::Target::position(isl.x + 48, isl.y + 25);
+    REQUIRE(s.fleet().sea().sailable(static_cast<std::int32_t>(sea.x), static_cast<std::int32_t>(sea.y)));
+    CHECK(s.fleet().finds_way(ship, sea));
+}

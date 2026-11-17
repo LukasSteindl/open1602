@@ -1846,8 +1846,8 @@ std::optional<Target> Engine::boarding_water(const AiPlayer& p, const Ship& s, c
         const Target t = water_near(c.island, i % w, i / w);
         there.x = static_cast<std::uint16_t>(t.x);
         there.y = static_cast<std::uint16_t>(t.y);
-        if (boards(there, i % w, i / w)) {
-            return t;
+        if (boards(there, i % w, i / w) && m_sim.fleet().finds_way(s, t)) {
+            return t;  // water the ship can sail to (a patch of water by the coast may be cut off)
         }
     }
     return std::nullopt;
