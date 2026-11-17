@@ -752,6 +752,9 @@ void Engine::recruit(AiPlayer& p) {
                 }
                 for (std::size_t i = 0; i < b.slots.size(); ++i) {
                     if (b.slots[i].figure != 0 && !b.slots[i].training) {
+                        if (rivals() && !way_out(p, island, e)) {
+                            break;  // the units stay in the castle
+                        }
                         const WorldIsland& isl = island_of(island);
                         CastleOrder order;
                         order.player = p.player;
@@ -1699,6 +1702,29 @@ std::vector<std::uint8_t> Engine::walk_reach_to(const AiPlayer& p, const City& c
     }
     walk_flood(p.player, c.island, reach, std::move(open));
     return reach;
+}
+
+bool Engine::way_out(const AiPlayer& p, std::uint16_t island, const CastleEntry& e) const {
+    // Open1602 (F4): units released from a castle step out on the cell next to it the engine
+    // picks and walk to the rally point, the Kontor. Where trees, walls or buildings close that
+    // cell off from the Kontor, they would stand there for good: they stay in the castle instead.
+    const auto cell = m_sim.military().exit_cell(island, e.x, e.y);
+    const City* c = cell ? city(island, tile(island, e.x, e.y).city) : nullptr;
+    if (c == nullptr || c->owner != p.player) {
+        return true;  // the engine releases nobody, or the castle is not in a city of its own
+    }
+    const std::vector<std::uint8_t> reach = walk_reach_to(p, *c, true);
+    const WorldIsland& isl = island_of(island);
+    const auto w = static_cast<std::int32_t>(isl.map.width());
+    const auto h = static_cast<std::int32_t>(isl.map.height());
+    const std::int32_t x = cell->first / 2 - static_cast<std::int32_t>(isl.x);
+    const std::int32_t y = cell->second / 2 - static_cast<std::int32_t>(isl.y);
+    if (x < 0 || y < 0 || x >= w || y >= h ||
+        reach[static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x)] != 0) {
+        return true;
+    }
+    log(p, "castle at %u,%u keeps its units: its way out is cut off from the Kontor", e.x, e.y);
+    return false;
 }
 
 std::optional<Target> Engine::landing_shore(const AiPlayer& p, const Ship& s, const City& c) const {

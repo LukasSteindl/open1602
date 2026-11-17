@@ -245,6 +245,9 @@ public:
     /// off from the city's buildings, the water nearest to the ship from which they would land on
     /// land walkable to the city; nothing when they land there now or no such water is found.
     [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
+    /// Open1602 (F4): whether units released from `p`'s castle `e` on `island` can walk from the
+    /// cell they step out on to the city's Kontor (true too where the check does not apply).
+    [[nodiscard]] bool way_out(const AiPlayer& p, std::uint16_t island, const CastleEntry& e) const;
 
 private:
     // ---- ai_core.cpp ----
