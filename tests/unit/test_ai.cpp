@@ -2946,6 +2946,28 @@ TEST_CASE("ai: an improved computer builds a mine only where the carts of its Ko
     CHECK(engine.mine_reached(p, mine, 40, 20, planned));
 }
 
+TEST_CASE("ai: an improved computer does not wait for carts at a quarry") {
+    // The stonemason fetches the stone from the quarry's tiles; no cart comes for it, so a quarry
+    // site far from the Kontor's carts is as good as one beside them.
+    Game g;
+    g.buildings = make_buildings(
+        "  @Nummer: 13\n  Id: 22407\n  Kind: 11\n  Gfx: 13\n  Size: 1, 2\n"
+        "  Objekt: HAUS_PRODTYP\n    Kind: 11\n    Ware: 54\n  EndObj\n");
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    found_city(g, s, 300'000);
+    const sim::City* city = computer_city(g);
+    REQUIRE(city != nullptr);
+    sim::ai::State state;
+    sim::ai::Engine engine(s, state);
+    sim::ai::AiPlayer p;
+    p.player = kComputer;
+    p.island = city->island;
+    p.city = city->index;
+    const assets::BuildingType& quarry = *g.buildings.by_id(22407);
+    REQUIRE(quarry.prod_kind == assets::prod::kQuarry);
+    CHECK(engine.mine_reached(p, quarry, 25, 30, {}));
+}
+
 TEST_CASE("ai: an improved computer's guard leaves soldiers on their way aboard a ship") {
     // Attack ships board the soldiers at the home Kontor; the guard sent them back to its post every
     // few seconds, so the ships sailed empty. The original's guard takes them as before.

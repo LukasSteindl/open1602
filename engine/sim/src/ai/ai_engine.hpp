@@ -245,7 +245,8 @@ public:
 
     // ai_build.cpp
     /// Whether a Kontor's or market's carts of `p`'s city reach a mine `mine` placed at one of
-    /// task_mine's placements around slope tile (x, y), with the planned `road` laid.
+    /// task_mine's placements around slope tile (x, y), with the planned `road` laid. Always for a
+    /// quarry, whose stone the stonemason fetches.
     [[nodiscard]] bool mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
                                     std::span<const BuildItem> road) const;
 
