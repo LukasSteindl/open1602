@@ -509,6 +509,7 @@ std::optional<std::pair<std::int32_t, std::int32_t>> LandPlanner::waypoint(const
     // A* over tiles, eight neighbours without cut corners, on the same costs as the cells (a tile
     // is two cells wide). The box holds the start, the target and a margin for the detour.
     constexpr std::int32_t kMargin = 64;
+    constexpr std::uint32_t kRouteWeight = 2;
     constexpr std::uint8_t kTileKnown = 1;
     constexpr std::uint8_t kTileBlocked = 2;
     constexpr std::uint8_t kTileClosed = 4;
@@ -564,7 +565,8 @@ std::optional<std::pair<std::int32_t, std::int32_t>> LandPlanner::waypoint(const
         const auto dy = static_cast<std::uint32_t>(std::max({gy0 - y, y - gy1, 0}));
         const std::uint32_t lo = std::min(dx, dy);
         const std::uint32_t hi = std::max(dx, dy);
-        return 2U * (kStepStraight * (hi - lo) + kStepDiagonal * lo);
+        // Weighted twice (the way needs to be good, not the cheapest): far fewer tiles taken.
+        return kRouteWeight * 2U * (kStepStraight * (hi - lo) + kStepDiagonal * lo);
     };
     m_heap.clear();
     std::uint32_t seq = 0;
