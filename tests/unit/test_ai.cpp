@@ -2946,6 +2946,28 @@ TEST_CASE("ai: an improved computer builds a mine only where the carts of its Ko
     CHECK(engine.mine_reached(p, mine, 40, 20, planned));
 }
 
+TEST_CASE("ai: an improved computer does not wait for carts at a quarry") {
+    // The stonemason fetches the stone from the quarry's tiles; no cart comes for it, so a quarry
+    // site far from the Kontor's carts is as good as one beside them.
+    Game g;
+    g.buildings = make_buildings(
+        "  @Nummer: 13\n  Id: 22407\n  Kind: 11\n  Gfx: 13\n  Size: 1, 2\n"
+        "  Objekt: HAUS_PRODTYP\n    Kind: 11\n    Ware: 54\n  EndObj\n");
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    found_city(g, s, 300'000);
+    const sim::City* city = computer_city(g);
+    REQUIRE(city != nullptr);
+    sim::ai::State state;
+    sim::ai::Engine engine(s, state);
+    sim::ai::AiPlayer p;
+    p.player = kComputer;
+    p.island = city->island;
+    p.city = city->index;
+    const assets::BuildingType& quarry = *g.buildings.by_id(22407);
+    REQUIRE(quarry.prod_kind == assets::prod::kQuarry);
+    CHECK(engine.mine_reached(p, quarry, 25, 30, {}));
+}
+
 TEST_CASE("ai: an improved computer's guard leaves soldiers on their way aboard a ship") {
     // Attack ships board the soldiers at the home Kontor; the guard sent them back to its post every
     // few seconds, so the ships sailed empty. The original's guard takes them as before.
@@ -3099,4 +3121,40 @@ TEST_CASE("ai: a computer finds no way for its ship to water cut off from the se
     const auto sea = sim::Target::position(isl.x + 48, isl.y + 25);
     REQUIRE(s.fleet().sea().sailable(static_cast<std::int32_t>(sea.x), static_cast<std::int32_t>(sea.y)));
     CHECK(s.fleet().finds_way(ship, sea));
+}
+
+TEST_CASE("ai: an improved computer keeps units in a castle whose way out is cut off from the Kontor") {
+    // Released units step out next to the castle and walk to the Kontor. A castle behind the wood
+    // with no road through it lets them out where they could not leave: they stay inside.
+    Game g;
+    g.buildings = make_buildings("  @Nummer: 13\n  Id: 20701\n  Kind: 14\n  Gfx: 35\n  Size: 2, 2\n");
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    found_city(g, s);
+    const sim::City* city = computer_city(g);
+    REQUIRE(city != nullptr);
+    REQUIRE(city->warehouse_x.has_value());
+    REQUIRE(city->warehouse_y.has_value());
+    sim::IslandMap& map = g.world.island(city->island).map;
+    const auto kx = static_cast<std::uint16_t>(*city->warehouse_x);
+    const auto ky = static_cast<std::uint16_t>(*city->warehouse_y);
+    // One by the Kontor, one west of the wood (columns 32..43), both in the city's land.
+    const std::array<std::pair<std::uint16_t, std::uint16_t>, 2> castles{
+        {{kx, static_cast<std::uint16_t>(ky + 5)}, {20, ky}}};
+    sim::ai::State state;
+    sim::ai::Engine engine(s, state);
+    sim::ai::AiPlayer p;
+    p.player = kComputer;
+    for (std::size_t i = 0; i < castles.size(); ++i) {
+        const auto [x, y] = castles[i];
+        for (std::uint32_t ty = y; ty < y + 2U; ++ty) {
+            for (std::uint32_t tx = x; tx < x + 2U; ++tx) {
+                map.set_city(tx, ty, city->index, kComputer);
+            }
+        }
+        REQUIRE(map.place(*g.buildings.by_id(20701), x, y, 0, 0, kComputer, city->index).ok());
+        sim::ai::CastleEntry e;
+        e.x = x;
+        e.y = y;
+        CHECK(engine.way_out(p, city->island, e) == (i == 0));
+    }
 }

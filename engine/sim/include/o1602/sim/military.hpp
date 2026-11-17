@@ -162,6 +162,9 @@ public:
     [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_cell(const Ship& ship) const;
     /// Whether a soldier on cell (x, y) is near enough to `ship` to go on board (arrived()).
     [[nodiscard]] static bool boards_from(const Ship& ship, std::int32_t x, std::int32_t y) noexcept;
+    /// The cell next to castle (x, y) on `island` where a released unit steps out, if any.
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> exit_cell(std::uint16_t island, std::uint16_t x,
+                                                                                 std::uint16_t y) const;
 
     /// Units a player has: on land, in castles and on board ships.
     [[nodiscard]] std::uint32_t army_size(PlayerId player) const;
@@ -286,8 +289,6 @@ private:
     void castles_tick();
     void castle_second(CostBuilding& castle);
     [[nodiscard]] CostBuilding* castle_at(std::uint16_t island, std::uint16_t x, std::uint16_t y);
-    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> exit_cell(std::uint16_t island, std::uint16_t x,
-                                                                                 std::uint16_t y) const;
     /// The unit of `slot` (trained) out of castle `c` at `cell`, walking to `spot`; its id.
     std::uint32_t release(CostBuilding& c, std::size_t slot, std::pair<std::int32_t, std::int32_t> cell, PlayerId owner,
                           const Target& spot);
