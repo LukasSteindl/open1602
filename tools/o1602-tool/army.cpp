@@ -107,6 +107,46 @@ bool ArmyBench::connected(const sim::Simulation& simulation, const sim::World& w
     return region[at(ax, ay)] != 0 && region[at(ax, ay)] == region[at(bx, by)];
 }
 
+bool ArmyBench::walled_in_by_units(const sim::Simulation& simulation, const sim::World& world,
+                                   const sim::Soldier& s) const {
+    // Flood fill over walkable cells within 9 cells, the cells of other units blocked (the
+    // planner blocks them within 8): walled in when the fill does not reach the box's edge.
+    constexpr std::int32_t kBox = 9;
+    constexpr std::int32_t kSide = 2 * kBox + 1;
+    const sim::LandMap& land = simulation.combat().land();
+    std::array<std::uint8_t, kSide * kSide> state{};  // 1 blocked, 2 seen
+    const std::int32_t x0 = s.cell_x() - kBox;
+    const std::int32_t y0 = s.cell_y() - kBox;
+    for (const sim::Soldier& o : world.soldiers()) {
+        const std::int32_t i = o.cell_x() - x0;
+        const std::int32_t j = o.cell_y() - y0;
+        if (o.id != s.id && !o.away() && i >= 0 && j >= 0 && i < kSide && j < kSide) {
+            state[static_cast<std::size_t>(j * kSide + i)] = 1;
+        }
+    }
+    std::vector<std::pair<std::int32_t, std::int32_t>> stack{{kBox, kBox}};
+    state[static_cast<std::size_t>(kBox * kSide + kBox)] = 2;
+    while (!stack.empty()) {
+        const auto [i, j] = stack.back();
+        stack.pop_back();
+        if (i == 0 || j == 0 || i == kSide - 1 || j == kSide - 1) {
+            return false;
+        }
+        constexpr std::array<std::pair<std::int32_t, std::int32_t>, 4> kSides{{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
+        for (const auto& [dx, dy] : kSides) {
+            const std::int32_t ni = i + dx;
+            const std::int32_t nj = j + dy;
+            auto& st = state[static_cast<std::size_t>(nj * kSide + ni)];
+            if (st != 0 || land.cell(x0 + ni, y0 + nj, 0) != sim::LandMap::Cell::Walk) {
+                continue;
+            }
+            st = 2;
+            stack.emplace_back(ni, nj);
+        }
+    }
+    return true;
+}
+
 std::size_t ArmyBench::place(sim::Simulation& simulation, const sim::World& world, const assets::FigureTable& figures,
                              std::size_t per_player, std::uint64_t seed) {
     m_random = seed;
@@ -342,11 +382,38 @@ void ArmyBench::after_tick(const sim::World& world, const sim::Simulation& simul
                 }
                 if (joined) {
                     ++m_given_up_reachable;
+                    // Why: walled in by other units (as the planner sees them), or no coarse way.
+                    const bool enclosed = walled_in_by_units(simulation, world, s);
+                    m_given_up_enclosed += enclosed ? 1U : 0U;
+                    sim::LandRoute route;
+                    route.start_x = s.cell_x();
+                    route.start_y = s.cell_y();
+                    route.walker = s.owner;
+                    route.goal_area = sim::CellRect{g->second.x2, g->second.y2, g->second.x2, g->second.y2};
+                    route.goal_reach = static_cast<std::int32_t>(kStopRange);
+                    std::uint32_t tiles = 0;
+                    route.visited = &tiles;
+                    route.max_tiles = 16'384;
+                    const bool near_route = m_route_planner.waypoint(simulation.combat().land(), route).has_value();
+                    bool far_route = near_route;
+                    if (!near_route) {
+                        route.max_tiles = 1U << 22U;
+                        far_route = m_route_planner.waypoint(simulation.combat().land(), route).has_value();
+                    }
+                    m_given_up_route += near_route ? 1U : 0U;
+                    m_given_up_far_route += !near_route && far_route ? 1U : 0U;
                     if (m_given_up_samples.size() < 8) {
-                        char text[200];
-                        std::snprintf(text, sizeof text, "unit %u of player %u, figure %u, at cell %d,%d, spot %d,%d",
-                                      s.id, unsigned{s.owner}, unsigned{s.figure}, s.cell_x(), s.cell_y(), g->second.x2,
-                                      g->second.y2);
+                        char text[240];
+                        std::snprintf(
+                            text, sizeof text,
+                            "unit %u of player %u, figure %u, at cell %d,%d, spot %d,%d; walled in by units %d, "
+                            "coarse way %s (%u tiles)",
+                            s.id, unsigned{s.owner}, unsigned{s.figure}, s.cell_x(), s.cell_y(), g->second.x2,
+                            g->second.y2, int{enclosed},
+                            near_route  ? "yes"
+                            : far_route ? "only beyond 16384 tiles"
+                                        : "no",
+                            tiles);
                         m_given_up_samples.emplace_back(text);
                     }
                 }
@@ -406,6 +473,9 @@ void ArmyBench::print() const {
                 given_up != 0 ? static_cast<double>(given_up_sum) / static_cast<double>(given_up) : 0.0);
     std::printf("  of those with the land joining unit and spot (the way search lost it): %llu\n",
                 static_cast<unsigned long long>(m_given_up_reachable));
+    std::printf("    walled in by units: %llu; a coarse way within 16384 tiles: %llu, only beyond: %llu\n",
+                static_cast<unsigned long long>(m_given_up_enclosed), static_cast<unsigned long long>(m_given_up_route),
+                static_cast<unsigned long long>(m_given_up_far_route));
     for (const std::string& t : m_given_up_samples) {
         std::printf("    %s\n", t.c_str());
     }

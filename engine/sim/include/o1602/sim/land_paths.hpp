@@ -117,6 +117,22 @@ struct LandPlan {
     std::uint32_t* visited = nullptr;
 };
 
+/// A coarse way over whole tiles to a target beyond the window (F17, Open1602). The original plans
+/// only inside its window and heads for the window edge nearest the target; a detour that leaves
+/// the window is never found, and after four failed plans the soldier gives the order up. The route
+/// is planned anew for every leg and only gives the leg its aim, so it keeps no state.
+struct LandRoute {
+    std::int32_t start_x = 0;  ///< half-tile cell of the soldier
+    std::int32_t start_y = 0;
+    std::int32_t radius = 45;  ///< half width of the leg's window, cells: the waypoint lies inside it
+    std::uint8_t speed_type = 0;
+    PlayerId walker = kNoPlayer;
+    CellRect goal_area;           ///< the target's cells
+    std::int32_t goal_reach = 0;  ///< a tile with a cell within this of the area is at the target
+    std::uint32_t max_tiles = 0;  ///< tiles the search may take
+    std::uint32_t* visited = nullptr;
+};
+
 struct LandCourse {
     std::vector<std::uint8_t> path;  ///< runs as path codes (sea_paths.hpp)
     bool reached_goal = false;       ///< false: a leg to the window edge
@@ -130,6 +146,10 @@ public:
 
     /// Plans a way; an empty path without `reached_goal` means no way (or already there).
     [[nodiscard]] LandCourse plan(const LandMap& map, const LandPlan& request);
+    /// The cell a leg heads for on the coarse way to the target: the last route tile before the
+    /// route leaves the leg's window. None when no coarse way is found within `max_tiles`.
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> waypoint(const LandMap& map,
+                                                                                const LandRoute& route);
 
 private:
     struct Node {
@@ -143,6 +163,12 @@ private:
     std::vector<std::uint8_t> m_speed;
     std::vector<Node> m_heap;
     std::vector<std::uint8_t> m_dirs;  ///< scratch: the steps of the way found, back to front
+    // The coarse route's tiles (a box around start and target), reused between searches.
+    std::vector<std::uint32_t> m_tile_cost;
+    std::vector<std::uint32_t> m_tile_stamp;  ///< search the entry belongs to
+    std::vector<std::uint8_t> m_tile_state;   ///< walk / blocked / closed, and the step it came by
+    std::vector<std::uint8_t> m_tile_speed;
+    std::uint32_t m_stamp = 0;
 };
 
 }  // namespace o1602::sim

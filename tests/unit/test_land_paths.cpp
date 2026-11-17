@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdlib>
 #include <functional>
 #include <optional>
 #include <queue>
@@ -657,6 +658,76 @@ TEST_CASE("land paths: a long way stops after 128 runs and goes on from its end"
     CHECK(course.reached_goal);
     CHECK(course.path.size() == 46);
     CHECK(course.end_x == 180);
+}
+
+TEST_CASE("land paths: a detour that leaves the window is found over the coarse way (F17)") {
+    // A pocket: forest along island column 40 (gap in the last rows) and along row 10 from column
+    // 16 to 40. The soldier stands in the pocket, the target lies east of the column. The window's
+    // edge nearest the target cannot be reached from the pocket, so the original finds no way; the
+    // detour goes west out of the pocket, south, east through the gap and north again.
+    Field f(160, 60, 4, 4, 150, 50);  // island cells 8..307 x 8..107
+    for (std::int32_t y = 0; y < 47; ++y) {
+        f.put(kForest, 40, y);
+    }
+    for (std::int32_t x = 16; x < 40; ++x) {
+        f.put(kForest, x, 10);
+    }
+    f.land.rebuild(f.world, f.buildings);
+    const sim::CellRect target{128, 18, 128, 18};
+    sim::LandPlanner planner;
+    sim::LandPlan direct = request(78, 18, 128, 18);
+    direct.first_goal = false;
+    direct.goal_area = target;
+    CHECK(planner.plan(f.land, direct).path.empty());
+
+    std::int32_t x = 78;
+    std::int32_t y = 18;
+    std::size_t legs = 0;
+    std::uint32_t tiles = 0;
+    bool arrived = false;
+    while (!arrived && legs < 40) {
+        ++legs;
+        sim::LandPlan leg = request(x, y, 128, 18);
+        leg.first_goal = false;
+        leg.goal_area = target;
+        if (std::max(std::abs(128 - x), std::abs(18 - y)) > leg.radius) {
+            sim::LandRoute route;
+            route.start_x = x;
+            route.start_y = y;
+            route.radius = leg.radius;
+            route.goal_area = target;
+            route.max_tiles = 16'384;
+            route.visited = &tiles;
+            const auto point = planner.waypoint(f.land, route);
+            REQUIRE(point.has_value());
+            const sim::CellRect tile{point->first, point->second, point->first + 1, point->second + 1};
+            CHECK(std::max(std::abs(point->first - x), std::abs(point->second - y)) <= leg.radius);
+            leg.aim_x = point->first;
+            leg.aim_y = point->second;
+            leg.goal_area = tile;
+            leg.goal_reach = 1;
+            leg.goal = [tile](std::int32_t cx, std::int32_t cy) { return tile.distance(cx, cy) <= 1; };
+        }
+        const sim::LandCourse course = planner.plan(f.land, leg);
+        REQUIRE(!course.path.empty());
+        x = course.end_x;
+        y = course.end_y;
+        arrived = x == 128 && y == 18;
+    }
+    CHECK(arrived);
+    CHECK(legs < 20);
+    CHECK(tiles > 0);
+    // Without a coarse way the route gives none: a target walled in all round.
+    for (std::int32_t yy = 0; yy < 50; ++yy) {
+        f.put(kForest, 60, yy);
+    }
+    f.land.rebuild(f.world, f.buildings);
+    sim::LandRoute closed;
+    closed.start_x = 78;
+    closed.start_y = 18;
+    closed.goal_area = sim::CellRect{150, 18, 150, 18};
+    closed.max_tiles = 16'384;
+    CHECK(!planner.waypoint(f.land, closed).has_value());
 }
 
 TEST_CASE("land paths: with the goal area known the search finds as short a way to as near a cell (F17)") {
