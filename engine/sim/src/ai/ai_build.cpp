@@ -667,6 +667,32 @@ void Engine::task_claim_land(AiPlayer& p) {
     }
 }
 
+namespace {
+
+/// The placements task_mine tries for a mine around the slope tile, in its order.
+struct MineOffset {
+    std::int32_t dx;
+    std::int32_t dy;
+    std::uint8_t rotation;
+};
+constexpr std::array kMineOffsets{MineOffset{0, 0, 0}, MineOffset{-1, 0, 1}, MineOffset{0, -1, 0},
+                                  MineOffset{0, 0, 1}, MineOffset{0, -1, 1}, MineOffset{-1, 0, 0}};
+
+}  // namespace
+
+bool Engine::mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
+                          std::span<const BuildItem> road) const {
+    return std::ranges::any_of(kMineOffsets, [&](const MineOffset& o) {
+        std::uint32_t w = 1;
+        std::uint32_t h = 1;
+        rotated_size(mine, o.rotation, w, h);
+        const std::int32_t x0 = x + o.dx;
+        const std::int32_t y0 = y + o.dy;
+        return cart_reaches(p, x0, y0, x0 + static_cast<std::int32_t>(w) - 1, y0 + static_cast<std::int32_t>(h) - 1,
+                            road);
+    });
+}
+
 void Engine::task_mine(AiPlayer& p) {
     const assets::BuildingType* b = by_id(p.search.building);
     if (b == nullptr) {
@@ -694,13 +720,6 @@ void Engine::task_mine(AiPlayer& p) {
     }
     const std::int32_t hx = p.search.best_x1;
     const std::int32_t hy = p.search.best_y1;
-    struct MineOffset {
-        std::int32_t dx;
-        std::int32_t dy;
-        std::uint8_t rotation;
-    };
-    constexpr std::array kMineOffsets{MineOffset{0, 0, 0}, MineOffset{-1, 0, 1}, MineOffset{0, -1, 0},
-                                      MineOffset{0, 0, 1}, MineOffset{0, -1, 1}, MineOffset{-1, 0, 0}};
     // The step of a straight road from the road to the slope.
     const auto& d = kStep[static_cast<std::uint32_t>(s.rotation) & 3U];
     if (rivals()) {
@@ -713,16 +732,7 @@ void Engine::task_mine(AiPlayer& p) {
                 road.push_back(BuildItem{id::kRoadDirt, s.best_x0 + d[0] * k, s.best_y0 + d[1] * k, 0, 0});
             }
         }
-        const bool reached = std::ranges::any_of(kMineOffsets, [&](const MineOffset& o) {
-            std::uint32_t w = 1;
-            std::uint32_t h = 1;
-            rotated_size(*mine, o.rotation, w, h);
-            const std::int32_t x0 = hx + o.dx;
-            const std::int32_t y0 = hy + o.dy;
-            return cart_reaches(p, x0, y0, x0 + static_cast<std::int32_t>(w) - 1, y0 + static_cast<std::int32_t>(h) - 1,
-                                road);
-        });
-        if (!reached) {
+        if (!mine_reached(p, *mine, hx, hy, road)) {
             log(p, "mine site at %d,%d out of the carts' reach", hx, hy);
             if (!claim_land(p, s.slot, hx, hy)) {
                 slot_fail(p, s.slot);
