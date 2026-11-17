@@ -1051,6 +1051,23 @@ bool Fleet::start_next_run(Ship& ship) {
     return true;
 }
 
+bool Fleet::finds_way(const Ship& ship, const Target& target) const {
+    const auto aim = target_point(target);
+    if (!aim) {
+        return false;
+    }
+    SeaPlan r;
+    r.start_x = ship.x;
+    r.start_y = ship.y;
+    r.radius = kPlanRadius;
+    r.aim_x = aim->first;
+    r.aim_y = aim->second;
+    r.guided = true;
+    r.goal = goal_of(*m_world, *m_buildings, m_sea, target);
+    const SeaCourse course = m_probe.plan(m_sea, r);
+    return !course.path.empty() && course.reached_goal;  // a ship already there is not sent
+}
+
 Fleet::Planned Fleet::plan(Ship& ship, std::int32_t radius) {
     ShipMotion& m = ship.motion;
     m.path.clear();

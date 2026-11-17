@@ -646,6 +646,12 @@ std::pair<std::int32_t, std::int32_t> Military::free_cell(std::int32_t x, std::i
     return best;
 }
 
+bool Military::boards_from(const Ship& ship, std::int32_t x, std::int32_t y) noexcept {
+    const std::int32_t sx = 2 * static_cast<std::int32_t>(ship.x);
+    const std::int32_t sy = 2 * static_cast<std::int32_t>(ship.y);
+    return CellRect{sx, sy, sx + 1, sy + 1}.distance(x, y) <= kBoardRange;
+}
+
 bool Military::arrived(Soldier& s) {
     // Arrival (step 7): at an own doctor's house the soldier goes in to be healed; at a
     // place or another object it has arrived when its way ends near it.

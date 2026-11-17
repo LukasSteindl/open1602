@@ -457,6 +457,9 @@ public:
     [[nodiscard]] const SeaMap& sea() const noexcept { return m_sea; }
     /// Speed of a ship in tiles per second times 1000 (for the display).
     [[nodiscard]] std::uint32_t speed_milli(const Ship& ship) const;
+    /// Whether a course search from `ship` reaches `target`, as an ordinary plan with no other ships
+    /// in the way (the computer players ask before they send a ship to a nearby water).
+    [[nodiscard]] bool finds_way(const Ship& ship, const Target& target) const;
 
     [[nodiscard]] std::vector<ShipEvent> take_events() {
         std::vector<ShipEvent> e;
@@ -608,6 +611,7 @@ private:
     const Rules* m_rules;
     SeaMap m_sea;
     SeaPlanner m_planner;
+    mutable SeaPlanner m_probe;  ///< finds_way()'s searches, apart from the ships' own
     PathFinder m_cart_paths;
     // Ships by squares of kSquareTiles tiles, built at the start of a tick (TB-4): index into
     // World::ships(). Ships move less than kSquareSlack tiles in a tick; ships added since are
