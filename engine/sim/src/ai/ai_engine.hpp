@@ -248,6 +248,12 @@ public:
     [[nodiscard]] bool mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
                                     std::span<const BuildItem> road) const;
 
+    // ai_military.cpp
+    /// Open1602 (F5): when the cell where ship `s`'s soldiers would land at `p`'s city `c` is cut
+    /// off from the city's buildings, the water nearest to the ship from which they would land on
+    /// land walkable to the city; nothing when they land there now or no such water is found.
+    [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
+
 private:
     // ---- ai_core.cpp ----
     void step(AiPlayer& p);
@@ -909,6 +915,12 @@ private:
     /// others count as walls), one flag per tile of the island map.
     [[nodiscard]] std::vector<std::uint8_t> land_reach(PlayerId owner, std::uint16_t island,
                                                        const std::vector<std::uint32_t>& soldiers) const;
+    /// Open1602: marks in `reach` the tiles `owner`'s soldiers can walk to from the tiles in `open`.
+    void walk_flood(PlayerId owner, std::uint16_t island, std::vector<std::uint8_t>& reach,
+                    std::vector<std::pair<std::int32_t, std::int32_t>> open) const;
+    /// Open1602: the tiles of `c`'s island from which `p`'s soldiers can walk up to the city's
+    /// buildings, or with `kontor` to its Kontor, one flag per tile.
+    [[nodiscard]] std::vector<std::uint8_t> walk_reach_to(const AiPlayer& p, const City& c, bool kontor) const;
     /// Open1602: keeps the goals of an attack the soldiers can walk up to; with none of them, the
     /// first obstacle on the cheapest way to one (`way_in`).
     void reachable_goals(const AiPlayer& a, std::uint16_t island, const City& hostile,

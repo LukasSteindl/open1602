@@ -158,6 +158,8 @@ public:
     bool command(const SoldierCommand& command);
     bool castle(const CastleOrder& order);
     bool unload(const UnloadOrder& order);
+    /// The cell where `ship`'s soldiers would land if it unloaded now (unload()), if any.
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_cell(const Ship& ship) const;
 
     /// Units a player has: on land, in castles and on board ships.
     [[nodiscard]] std::uint32_t army_size(PlayerId player) const;
