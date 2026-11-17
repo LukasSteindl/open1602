@@ -964,18 +964,26 @@ void Engine::mission_end(AiPlayer& p, Ship& s, ShipNote& n) {
     n.counter = 0;
 }
 
+std::vector<std::uint32_t> Engine::boarders(const AiPlayer& p, const City& at) {
+    // The soldiers near the city's Kontor that are not headed into a building.
+    std::vector<std::uint32_t> out;
+    for (const Soldier* soldier : soldiers_near(p.player, at, 8, 16)) {
+        if (soldier->target.kind != Target::Kind::Building) {
+            out.push_back(soldier->id);
+        }
+    }
+    return out;
+}
+
 void Engine::board(AiPlayer& p, Ship& s, const City& at, std::uint32_t max) {
-    std::vector<Soldier*> near = soldiers_near(p.player, at, 8, 16);
     SoldierOrder order;
     order.player = p.player;
     order.target = Target::other_ship(s.id);
-    for (Soldier* soldier : near) {
+    for (const std::uint32_t id : boarders(p, at)) {
         if (order.soldiers.size() >= max) {
             break;
         }
-        if (soldier->target.kind != Target::Kind::Building) {
-            order.soldiers.push_back(soldier->id);
-        }
+        order.soldiers.push_back(id);
     }
     if (!order.soldiers.empty()) {
         execute(order);
@@ -985,12 +993,7 @@ void Engine::board(AiPlayer& p, Ship& s, const City& at, std::uint32_t max) {
 bool Engine::move_to_board(AiPlayer& p, Ship& s, ShipNote& n, const City& home) {
     // Open1602 (BD): to water from which the soldiers at the Kontor can go on board. The mission
     // and its counter go on, so a ship that finds no boarding there still ends its mission.
-    std::vector<std::uint32_t> soldiers;  // those board() would order aboard
-    for (const Soldier* soldier : soldiers_near(p.player, home, 8, 16)) {
-        if (soldier->target.kind != Target::Kind::Building) {
-            soldiers.push_back(soldier->id);
-        }
-    }
+    const std::vector<std::uint32_t> soldiers = boarders(p, home);
     if (soldiers.empty()) {
         return false;
     }

@@ -897,6 +897,8 @@ private:
     void buy_pirate_peace(AiPlayer& p);
     void ship_send(AiPlayer& p, Ship& s, const Target& t, std::uint8_t mission, std::uint32_t param);
     void mission_end(AiPlayer& p, Ship& s, ShipNote& n);
+    /// The soldiers board() orders aboard at `at`: those near its Kontor not headed into a building.
+    [[nodiscard]] std::vector<std::uint32_t> boarders(const AiPlayer& p, const City& at);
     void board(AiPlayer& p, Ship& s, const City& at, std::uint32_t max);
     /// Open1602 (BD): sends ship `s` to boarding_water() for the soldiers board() would order at
     /// `home`, if any; whether it did.
