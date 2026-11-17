@@ -14,6 +14,7 @@ namespace o1602::sim {
 namespace {
 
 constexpr std::uint8_t kBlocked = 1;
+constexpr std::uint8_t kTarget = 2;  // a cell the search may stop at (A*, F17)
 constexpr std::uint8_t kVisited = 4;
 constexpr std::uint8_t kKnown = 8;  // the cell's tile has been looked at
 constexpr std::uint32_t kInfinite = 0xFFFFFFFFU;
@@ -292,6 +293,105 @@ LandCourse LandPlanner::plan(const LandMap& map, const LandPlan& r) {
     const auto moved = [](std::size_t cell, std::ptrdiff_t by) {
         return static_cast<std::size_t>(static_cast<std::ptrdiff_t>(cell) + by);
     };
+    std::optional<std::size_t> goal;
+    std::int32_t goal_distance = 0x7FFFFFFF;
+    std::optional<std::size_t> edge;
+    std::int32_t edge_distance = sea_distance(r.aim_x - r.start_x, r.aim_y - r.start_y);
+    // Only an aim beyond the window is approached over its edge; one inside it that cannot be
+    // reached gives no way at all, as at sea.
+    const bool aim_outside = r.aim_x < x0 || r.aim_y < y0 || r.aim_x >= x_end || r.aim_y >= y_end;
+
+    // A* (F17). The original searches the whole window and then takes the reached goal (or edge
+    // cell) nearest the aim. Where the goal area is known, the cells that choice would take first
+    // are known before the search: the walkable goal cells nearest the aim, or, without goal cells
+    // in the window, the walkable edge cells nearest it. The search heads for them and stops at the
+    // first one; only if none of them can be reached does it go on through the whole window and
+    // choose as the original. An attack takes the first goal reached, so there the search heads for
+    // the goal area. Costs are never below a road's (64 straight, 91 diagonal), so the estimates
+    // below never overrate the way, and the ways found are as short as the original's.
+    CellRect box{};          // the cells the search heads for (their bounds)
+    bool heads_for = false;  // box set: estimates by the distance to it
+    std::int32_t reach = 0;  // first_goal: estimates by the distance to the goal area minus this
+    if (r.goal_area && r.goal) {
+        const CellRect& area = *r.goal_area;
+        if (r.first_goal) {
+            box = area;
+            reach = r.goal_reach;
+            heads_for = true;
+        } else {
+            std::vector<std::size_t>& targets = m_targets;
+            targets.clear();
+            std::int32_t best = 0x7FFFFFFF;
+            const auto consider = [&](std::int32_t x, std::int32_t y, std::int32_t limit) {
+                const std::int32_t d = sea_distance(r.aim_x - x, r.aim_y - y);
+                if (d > best || d >= limit) {
+                    return;
+                }
+                const std::size_t c = at(x, y);
+                if ((state_of(c) & kBlocked) != 0 || c == start) {
+                    return;
+                }
+                if (d < best) {
+                    best = d;
+                    targets.clear();
+                }
+                targets.push_back(c);
+            };
+            // Goal cells in the window: within goal_reach of the area.
+            const std::int32_t gx0 = std::max(x0, area.x0 - r.goal_reach);
+            const std::int32_t gy0 = std::max(y0, area.y0 - r.goal_reach);
+            const std::int32_t gx1 = std::min(x_end - 1, area.x1 + r.goal_reach);
+            const std::int32_t gy1 = std::min(y_end - 1, area.y1 + r.goal_reach);
+            for (std::int32_t y = gy0; y <= gy1; ++y) {
+                for (std::int32_t x = gx0; x <= gx1; ++x) {
+                    if (r.goal(x, y)) {
+                        consider(x, y, 0x7FFFFFFF);
+                    }
+                }
+            }
+            const bool goals = !targets.empty();
+            if (!goals && aim_outside) {
+                // The edge cells nearer the aim than the soldier.
+                for (std::int32_t x = x0; x < x_end; ++x) {
+                    consider(x, y0, edge_distance);
+                    consider(x, y_end - 1, edge_distance);
+                }
+                for (std::int32_t y = y0 + 1; y < y_end - 1; ++y) {
+                    consider(x0, y, edge_distance);
+                    consider(x_end - 1, y, edge_distance);
+                }
+            }
+            if (!targets.empty()) {
+                heads_for = true;
+                box = CellRect{x_end, y_end, x0 - 1, y0 - 1};
+                for (const std::size_t c : targets) {
+                    m_state[c] |= kTarget;
+                    const auto cx = static_cast<std::int32_t>(c % static_cast<std::size_t>(stride)) - 1 + x0;
+                    const auto cy = static_cast<std::int32_t>(c / static_cast<std::size_t>(stride)) - 1 + y0;
+                    box.x0 = std::min(box.x0, cx);
+                    box.y0 = std::min(box.y0, cy);
+                    box.x1 = std::max(box.x1, cx);
+                    box.y1 = std::max(box.y1, cy);
+                }
+            }
+        }
+    }
+    const auto estimate = [&](std::int32_t x, std::int32_t y) -> std::uint32_t {
+        if (!heads_for) {
+            return 0;
+        }
+        const std::int32_t dx = std::max({box.x0 - x, x - box.x1, 0});
+        const std::int32_t dy = std::max({box.y0 - y, y - box.y1, 0});
+        if (r.first_goal) {
+            // A goal cell lies within `reach` of the area on both axes.
+            const std::int32_t d = std::max(dx, dy) - reach;
+            return d > 0 ? static_cast<std::uint32_t>(d) * kStepStraight : 0U;
+        }
+        const auto lo = static_cast<std::uint32_t>(std::min(dx, dy));
+        const auto hi = static_cast<std::uint32_t>(std::max(dx, dy));
+        return kStepStraight * (hi - lo) + kStepDiagonal * lo;
+    };
+
     m_heap.clear();
     std::uint32_t seq = 0;
     const auto later = [](const Node& a, const Node& b) { return a.cost != b.cost ? a.cost > b.cost : a.seq > b.seq; };
@@ -300,14 +400,8 @@ LandCourse LandPlanner::plan(const LandMap& map, const LandPlan& r) {
         std::push_heap(m_heap.begin(), m_heap.end(), later);
     };
     m_cost[start] = 0;
-    push(0, start);
-    std::optional<std::size_t> goal;
-    std::int32_t goal_distance = 0x7FFFFFFF;
-    std::optional<std::size_t> edge;
-    std::int32_t edge_distance = sea_distance(r.aim_x - r.start_x, r.aim_y - r.start_y);
-    // Only an aim beyond the window is approached over its edge; one inside it that cannot be
-    // reached gives no way at all, as at sea.
-    const bool aim_outside = r.aim_x < x0 || r.aim_y < y0 || r.aim_x >= x_end || r.aim_y >= y_end;
+    push(estimate(r.start_x, r.start_y), start);
+    std::optional<std::size_t> target;
     while (!m_heap.empty()) {
         std::pop_heap(m_heap.begin(), m_heap.end(), later);
         const Node n = m_heap.back();
@@ -316,6 +410,13 @@ LandCourse LandPlanner::plan(const LandMap& map, const LandPlan& r) {
             continue;
         }
         m_state[n.cell] |= kVisited;
+        if (r.visited != nullptr) {
+            ++*r.visited;
+        }
+        if ((m_state[n.cell] & kTarget) != 0) {
+            target = n.cell;
+            break;
+        }
         const auto cx = static_cast<std::int32_t>(n.cell % static_cast<std::size_t>(stride)) - 1 + x0;
         const auto cy = static_cast<std::int32_t>(n.cell / static_cast<std::size_t>(stride)) - 1 + y0;
         if (n.cell != start && r.goal && r.goal(cx, cy)) {
@@ -324,14 +425,16 @@ LandCourse LandPlanner::plan(const LandMap& map, const LandPlan& r) {
                 goal = n.cell;
                 break;
             }
-            if (d < goal_distance) {
+            // Among equally near cells the cheapest way: the first one taken in the original's
+            // order, also where A* takes cells in another order.
+            if (d < goal_distance || (d == goal_distance && goal && m_cost[n.cell] < m_cost[*goal])) {
                 goal_distance = d;
                 goal = n.cell;
             }
         }
         if (aim_outside && (cx == x0 || cy == y0 || cx == x_end - 1 || cy == y_end - 1)) {
             const std::int32_t d = sea_distance(r.aim_x - cx, r.aim_y - cy);
-            if (d < edge_distance) {
+            if (d < edge_distance || (d == edge_distance && edge && m_cost[n.cell] < m_cost[*edge])) {
                 edge_distance = d;
                 edge = n.cell;
             }
@@ -348,19 +451,23 @@ LandCourse LandPlanner::plan(const LandMap& map, const LandPlan& r) {
                  (state_of(moved(n.cell, static_cast<std::ptrdiff_t>(step_y(dir)) * stride)) & kBlocked) != 0)) {
                 continue;  // no cut corners
             }
-            const std::uint32_t cost = n.cost + (diagonal ? diagonal_cost(speed) : straight_cost(speed));
+            const std::uint32_t cost = m_cost[n.cell] + (diagonal ? diagonal_cost(speed) : straight_cost(speed));
             if (cost < m_cost[nc]) {
                 m_cost[nc] = cost;
                 m_state[nc] = static_cast<std::uint8_t>((m_state[nc] & 0x0FU) | ((dir + 1U) << 4U));
-                push(cost, nc);
+                push(cost + estimate(cx + step_x(dir), cy + step_y(dir)), nc);
             }
         }
     }
-    const std::optional<std::size_t> end = goal ? goal : edge;
+    // A cell headed for: a goal cell, or the edge cell nearest the aim when the window holds none.
+    const bool target_goal = target && r.goal &&
+                             r.goal(static_cast<std::int32_t>(*target % static_cast<std::size_t>(stride)) - 1 + x0,
+                                    static_cast<std::int32_t>(*target / static_cast<std::size_t>(stride)) - 1 + y0);
+    const std::optional<std::size_t> end = target ? target : goal ? goal : edge;
     if (!end) {
         return course;
     }
-    course.reached_goal = goal.has_value();
+    course.reached_goal = target ? target_goal : goal.has_value();
     m_dirs.clear();
     std::size_t cell = *end;
     while (cell != start) {
@@ -396,6 +503,162 @@ LandCourse LandPlanner::plan(const LandMap& map, const LandPlan& r) {
     course.end_x = x;
     course.end_y = y;
     return course;
+}
+
+std::optional<std::pair<std::int32_t, std::int32_t>> LandPlanner::waypoint(const LandMap& map, const LandRoute& r) {
+    // A* over tiles, eight neighbours without cut corners, on the same costs as the cells (a tile
+    // is two cells wide). The box holds the start, the target and a margin for the detour.
+    constexpr std::int32_t kMargin = 64;
+    constexpr std::uint32_t kRouteWeight = 2;
+    constexpr std::uint8_t kTileKnown = 1;
+    constexpr std::uint8_t kTileBlocked = 2;
+    constexpr std::uint8_t kTileClosed = 4;
+    const auto tile_of = [](std::int32_t c) { return (c >= 0 ? c : c - 1) / 2; };
+    const std::int32_t sx = tile_of(r.start_x);
+    const std::int32_t sy = tile_of(r.start_y);
+    const std::int32_t gx0 = tile_of(r.goal_area.x0 - r.goal_reach);
+    const std::int32_t gy0 = tile_of(r.goal_area.y0 - r.goal_reach);
+    const std::int32_t gx1 = tile_of(r.goal_area.x1 + r.goal_reach);
+    const std::int32_t gy1 = tile_of(r.goal_area.y1 + r.goal_reach);
+    const std::int32_t bx0 = std::max(0, std::min(sx, gx0) - kMargin);
+    const std::int32_t by0 = std::max(0, std::min(sy, gy0) - kMargin);
+    const std::int32_t bx1 = std::max(sx, gx1) + kMargin;
+    const std::int32_t by1 = std::max(sy, gy1) + kMargin;
+    const std::int32_t w = bx1 - bx0 + 1;
+    const std::int32_t h = by1 - by0 + 1;
+    const auto area = static_cast<std::size_t>(w) * static_cast<std::size_t>(h);
+    if (m_tile_stamp.size() < area) {
+        m_tile_cost.resize(area);
+        m_tile_stamp.assign(area, 0);
+        m_tile_state.resize(area);
+        m_tile_speed.resize(area);
+        m_stamp = 0;
+    }
+    if (++m_stamp == 0) {
+        std::fill(m_tile_stamp.begin(), m_tile_stamp.end(), 0U);
+        m_stamp = 1;
+    }
+    const auto at = [&](std::int32_t x, std::int32_t y) {
+        return static_cast<std::size_t>(y - by0) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x - bx0);
+    };
+    const auto inside = [&](std::int32_t x, std::int32_t y) { return x >= bx0 && y >= by0 && x <= bx1 && y <= by1; };
+    // The entry of a tile, looked at the first time the search meets it.
+    const auto entry = [&](std::int32_t x, std::int32_t y) -> std::size_t {
+        const std::size_t i = at(x, y);
+        if (m_tile_stamp[i] != m_stamp) {
+            m_tile_stamp[i] = m_stamp;
+            m_tile_cost[i] = kInfinite;
+            std::uint8_t speed = 32;
+            const bool walk = map.tile(x, y, r.speed_type, &speed, r.walker) == LandMap::Cell::Walk;
+            m_tile_state[i] = walk ? kTileKnown : static_cast<std::uint8_t>(kTileKnown | kTileBlocked);
+            m_tile_speed[i] = speed;
+        }
+        return i;
+    };
+    const auto at_goal = [&](std::int32_t x, std::int32_t y) {
+        const std::int32_t dx = std::max({r.goal_area.x0 - (2 * x + 1), 2 * x - r.goal_area.x1, 0});
+        const std::int32_t dy = std::max({r.goal_area.y0 - (2 * y + 1), 2 * y - r.goal_area.y1, 0});
+        return sea_distance(dx, dy) <= r.goal_reach;
+    };
+    const auto estimate = [&](std::int32_t x, std::int32_t y) -> std::uint32_t {
+        const auto dx = static_cast<std::uint32_t>(std::max({gx0 - x, x - gx1, 0}));
+        const auto dy = static_cast<std::uint32_t>(std::max({gy0 - y, y - gy1, 0}));
+        const std::uint32_t lo = std::min(dx, dy);
+        const std::uint32_t hi = std::max(dx, dy);
+        // Weighted twice (the way needs to be good, not the cheapest): far fewer tiles taken.
+        return kRouteWeight * 2U * (kStepStraight * (hi - lo) + kStepDiagonal * lo);
+    };
+    m_heap.clear();
+    std::uint32_t seq = 0;
+    const auto later = [](const Node& a, const Node& b) { return a.cost != b.cost ? a.cost > b.cost : a.seq > b.seq; };
+    const auto push = [&](std::uint32_t cost, std::size_t i) {
+        m_heap.push_back(Node{cost, seq++, static_cast<std::uint32_t>(i)});
+        std::push_heap(m_heap.begin(), m_heap.end(), later);
+    };
+    const std::size_t start = entry(sx, sy);
+    m_tile_state[start] = kTileKnown;  // the soldier's own tile is open (it may stand on a gate)
+    m_tile_cost[start] = 0;
+    push(estimate(sx, sy), start);
+    std::uint32_t taken = 0;
+    std::optional<std::size_t> found;
+    while (!m_heap.empty() && taken < r.max_tiles) {
+        std::pop_heap(m_heap.begin(), m_heap.end(), later);
+        const Node n = m_heap.back();
+        m_heap.pop_back();
+        if ((m_tile_state[n.cell] & kTileClosed) != 0) {
+            continue;
+        }
+        m_tile_state[n.cell] |= kTileClosed;
+        ++taken;
+        const auto cx = static_cast<std::int32_t>(n.cell % static_cast<std::size_t>(w)) + bx0;
+        const auto cy = static_cast<std::int32_t>(n.cell / static_cast<std::size_t>(w)) + by0;
+        if (at_goal(cx, cy)) {
+            found = n.cell;
+            break;
+        }
+        const std::uint8_t speed = m_tile_speed[n.cell];
+        for (std::uint8_t dir = 0; dir < 8; ++dir) {
+            const std::int32_t nx = cx + step_x(dir);
+            const std::int32_t ny = cy + step_y(dir);
+            if (!inside(nx, ny)) {
+                continue;
+            }
+            const std::size_t ni = entry(nx, ny);
+            if ((m_tile_state[ni] & (kTileBlocked | kTileClosed)) != 0) {
+                continue;  // a built-over target is reached from a tile within its reach
+            }
+            const bool diagonal = (dir & 1U) != 0;
+            const auto blocked = [&](std::int32_t x, std::int32_t y) {
+                return !inside(x, y) || (m_tile_state[entry(x, y)] & kTileBlocked) != 0;
+            };
+            if (diagonal && (blocked(nx, cy) || blocked(cx, ny))) {
+                continue;  // no cut corners
+            }
+            const std::uint32_t cost =
+                m_tile_cost[n.cell] + 2U * (diagonal ? diagonal_cost(speed) : straight_cost(speed));
+            if (cost < m_tile_cost[ni]) {
+                m_tile_cost[ni] = cost;
+                m_tile_state[ni] = static_cast<std::uint8_t>((m_tile_state[ni] & 0x0FU) | ((dir + 1U) << 4U));
+                push(cost + estimate(nx, ny), ni);
+            }
+        }
+    }
+    if (r.visited != nullptr) {
+        *r.visited += taken;
+    }
+    if (!found) {
+        return std::nullopt;
+    }
+    // Back from the target to the start, then the last tile before the route leaves the window.
+    m_dirs.clear();
+    std::size_t i = *found;
+    while (i != start) {
+        const auto from = static_cast<std::uint8_t>(m_tile_state[i] >> 4U);
+        if (from == 0) {
+            return std::nullopt;
+        }
+        const auto dir = static_cast<std::uint8_t>(from - 1U);
+        m_dirs.push_back(dir);
+        const auto x = static_cast<std::int32_t>(i % static_cast<std::size_t>(w)) + bx0 - step_x(dir);
+        const auto y = static_cast<std::int32_t>(i / static_cast<std::size_t>(w)) + by0 - step_y(dir);
+        i = at(x, y);
+    }
+    const std::int32_t reach = std::max(1, r.radius - 2);
+    std::int32_t x = sx;
+    std::int32_t y = sy;
+    for (auto d = m_dirs.rbegin(); d != m_dirs.rend(); ++d) {
+        const std::int32_t nx = x + step_x(*d);
+        const std::int32_t ny = y + step_y(*d);
+        if (std::max(std::abs(2 * nx - r.start_x), std::abs(2 * ny - r.start_y)) > reach) {
+            break;
+        }
+        x = nx;
+        y = ny;
+    }
+    if (x == sx && y == sy) {
+        return std::nullopt;
+    }
+    return std::pair{2 * x, 2 * y};
 }
 
 }  // namespace o1602::sim

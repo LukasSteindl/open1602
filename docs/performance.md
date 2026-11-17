@@ -147,6 +147,7 @@ o1602-tool bench --minutes 600 --out late.o1602     # keep the end state, e.g. f
 o1602-tool bench --minutes 60 --repeat 5            # the fastest of five runs per tick, for comparing code
 o1602-tool bench --players 4 --minutes 240 --ai classic --per-player  # the original's computers, each one's economy
 o1602-tool bench --players 12 --seed 909 --reload-at 280 --reload-minutes 10  # does a loaded game go on the same?
+o1602-tool bench late.o1602 --minutes 10 --repeat 3 --army 250  # many units on the move: how they walk
 ```
 
 `--out` writes the game as it is at the end of its last minute, so a run that loads the file lines
@@ -164,6 +165,17 @@ castles, its taxes, running costs, sales and purchases per minute, and per class
 satisfaction and tax rate: the way to compare the economies of the two kinds of computers.
 `--reveal none|original|all` and `--reveal-resources` set the settings that show towns and every
 island's resources from the start, which the improved computers' exploring depends on.
+
+`--army N` puts N land units (swordsmen, cavalry, musketeers, cannoneers in turn) next to the first
+warehouse of every settler player and gives them orders every 30 s of game time, in groups of 12
+that keep their shape: a third marches across its island, a third to another city's warehouse on
+it, a third stands. After the step table it prints how the units walked: the way searches per tick
+and how often the budget of `Military::kPlansPerTick` was used up, the units turned away and of
+them those that had a way still to go, the share of the time on the way spent standing, walk
+animations without moving, how long units with an order waited for a way (and which one waited
+longest), tempo changes and turns, and how far from the ordered cell the units ended. The units
+come from the bench's own random numbers (`--seed`), so two versions of the code get the same
+orders.
 
 Tick times are the CPU time of the game thread where the system has a precise per-thread clock
 (Linux, macOS); elsewhere, and with `--wall`, they are wall-clock times. A single run's p99 and

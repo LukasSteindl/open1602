@@ -2910,6 +2910,65 @@ TEST_CASE("ai: an improved computer raises the taxes its content inhabitants bea
     CHECK(improved <= sim::CityOrder::kMaxTax);
 }
 
+TEST_CASE("ai: an improved computer builds a mine only where the carts of its Kontor or markets reach it") {
+    // Only a Kontor's or market's carts fetch a mine's goods: a mine out of their reach fills, idles
+    // and is torn down as exhausted. Beside the city's roads a mine is reached, far inland it is not,
+    // and a planned road to the roads brings a site in the Kontor's circle within reach.
+    Game g;
+    g.buildings = make_buildings("  @Nummer: 13\n  Id: 20601\n  Kind: 11\n  Gfx: 13\n  Size: 1, 2\n",
+                                 "    Ware: 1\n    Maxlager: 30\n");
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    found_city(g, s, 300'000);
+    const sim::City* city = computer_city(g);
+    REQUIRE(city != nullptr);
+    sim::ai::State state;
+    sim::ai::Engine engine(s, state);
+    sim::ai::AiPlayer p;
+    p.player = kComputer;
+    p.island = city->island;
+    p.city = city->index;
+    const assets::BuildingType& mine = *g.buildings.by_id(20601);
+    const sim::IslandMap& map = g.world.islands()[city->island].map;
+    const auto road = [&](std::uint32_t x, std::uint32_t y) {
+        const sim::MapCell& c = map.top(x, y);
+        const assets::BuildingType* b = c.empty() ? nullptr : g.buildings.by_sprite(c.sprite);
+        return b != nullptr && b->id >= 20401 && b->id <= 20414;
+    };
+    // The Kontor's road north and south (column 43), as the city laid it.
+    REQUIRE(road(43, 12));
+    REQUIRE(road(43, 20));
+    REQUIRE(!road(42, 20));
+    REQUIRE(!road(41, 20));
+    CHECK(engine.mine_reached(p, mine, 42, 12, {}));
+    CHECK(!engine.mine_reached(p, mine, 25, 30, {}));
+    CHECK(!engine.mine_reached(p, mine, 40, 20, {}));
+    const std::vector<sim::BuildItem> planned{sim::BuildItem{20411, 42, 20, 0, 0}, sim::BuildItem{20411, 41, 20, 0, 0}};
+    CHECK(engine.mine_reached(p, mine, 40, 20, planned));
+}
+
+TEST_CASE("ai: an improved computer's guard leaves soldiers on their way aboard a ship") {
+    // Attack ships board the soldiers at the home Kontor; the guard sent them back to its post every
+    // few seconds, so the ships sailed empty. The original's guard takes them as before.
+    for (const bool original : {true, false}) {
+        Game g;
+        sim::Rules rules;
+        rules.bugs.classic_ai = original;
+        sim::Simulation s(g.world, g.buildings, g.figures, rules);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        const sim::Target post = sim::Target::spot(41, 41);
+        sim::Soldier soldier;
+        soldier.owner = kComputer;
+        CHECK(engine.guard_takes(soldier, post));
+        soldier.target = post;
+        CHECK(!engine.guard_takes(soldier, post));
+        soldier.target = sim::Target::building(1, 4, 4);
+        CHECK(!engine.guard_takes(soldier, post));
+        soldier.target = sim::Target::other_ship(7);
+        CHECK(engine.guard_takes(soldier, post) == original);
+    }
+}
+
 TEST_CASE("ai: an improved computer lands soldiers at its city where they can walk into the city") {
     // At a Kontor walled in by the city's own wall the nearest cell to land on can be a pocket cut
     // off from the city: the computer sails to water off the city's walkable land instead. Without

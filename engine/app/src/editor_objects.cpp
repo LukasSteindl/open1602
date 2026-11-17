@@ -638,11 +638,32 @@ void MapViewer::editor_ship_model(EditorModel& m) const {
     ship.name = ship_name(*s);
     ship.room = sim::hold_capacity(*s);
     for (const sim::CargoSlot& slot : s->cargo) {
-        ship.holds.push_back(EditorGood{slot.ware, slot.ware != 0 ? ware_name(slot.ware) : std::string(),
-                                        slot.ware != 0 ? slot.amount : 0U});
+        const std::string name = slot.ware == 0 ? std::string()
+                                 : sim::is_soldier_ware(slot.ware)
+                                     ? editor_unit_name(static_cast<std::uint16_t>(sim::hold_unit(slot)))
+                                     : ware_name(slot.ware);
+        ship.holds.push_back(EditorGood{slot.ware, name, slot.ware != 0 ? slot.amount : 0U});
     }
     for (const std::uint8_t ware : world.goods().trade_wares()) {
         ship.wares.push_back(EditorGood{ware, ware_name(ware), 0});
+    }
+    // A ship (not a cart) takes the original's four kinds of land units, a hold each; its cannons,
+    // and an offer for sale where its owner is a human or computer.
+    if (!s->cart()) {
+        for (const std::uint32_t family : assets::figure::kUnitFamilies) {
+            if (m_figures.get(family) != nullptr) {
+                ship.units.push_back(
+                    EditorGood{sim::unit_ware(family), editor_unit_name(static_cast<std::uint16_t>(family)), 0});
+            }
+        }
+        if (const assets::FigureType* type = m_figures.get(s->figure)) {
+            ship.max_cannons = type->ship.max_cannons;
+        }
+        ship.cannons = s->cannons;
+        ship.for_sale = s->for_sale;
+        const sim::Player* owner = world.player(s->owner);
+        ship.can_sell =
+            owner != nullptr && (owner->role == sim::PlayerRole::Human || owner->role == sim::PlayerRole::Computer);
     }
     // The route: its stops by the cities it can go to, their wares.
     ship.cart = s->cart();
@@ -792,6 +813,24 @@ void MapViewer::editor_ship_request(const EditorRequest& request) {
         }
         m_editor->document.perform(std::move(op).value());
         m_editor->notice.clear();
+        return;
+    }
+    if (request.kind == EditorRequest::Kind::ShipName) {
+        if (editor_perform(editor::rename_ship(world, m_editor->pick.id, request.name))) {
+            editor_notice(ui::tr("editor.ship.renamed", {request.name}), false, "ship renamed");
+        }
+        return;
+    }
+    if (request.kind == EditorRequest::Kind::ShipCannons) {
+        if (editor_perform(editor::set_ship_cannons(world, m_figures, m_editor->pick.id, request.amount))) {
+            m_editor->notice.clear();
+        }
+        return;
+    }
+    if (request.kind == EditorRequest::Kind::ShipSale) {
+        if (editor_perform(editor::set_ship_for_sale(world, m_editor->pick.id, request.index != 0))) {
+            m_editor->notice.clear();
+        }
         return;
     }
     auto op = editor::set_ship_cargo(world, m_editor->pick.id, request.index, request.ware, request.amount);

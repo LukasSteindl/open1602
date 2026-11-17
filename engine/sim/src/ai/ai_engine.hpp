@@ -239,6 +239,14 @@ public:
     /// Whether a city of the computer (of any computer for the original's) lies on an island that
     /// grows `crop` fully (ai_settle.cpp).
     [[nodiscard]] bool crop_available(const AiPlayer& p, std::uint8_t crop) const;
+    /// Whether guard() sends soldier `s` near the Kontor to `post` (ai_military.cpp).
+    [[nodiscard]] bool guard_takes(const Soldier& s, const Target& post) const;
+
+    // ai_build.cpp
+    /// Whether a Kontor's or market's carts of `p`'s city reach a mine `mine` placed at one of
+    /// task_mine's placements around slope tile (x, y), with the planned `road` laid.
+    [[nodiscard]] bool mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
+                                    std::span<const BuildItem> road) const;
 
     // ai_military.cpp
     /// Open1602 (F5): when the cell where ship `s`'s soldiers would land at `p`'s city `c` is cut

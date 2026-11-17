@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cctype>
+#include <cstdlib>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -888,4 +889,22 @@ TEST_CASE("ui: a form's tooltip lies below what it explains, within the screen, 
         CHECK(items[i].kind == ui::DrawItem::Kind::Text);
         CHECK(items[i].text.find("...") == std::string::npos);
     }
+}
+
+TEST_CASE("ui: a tooltip stays within the bounds set for the form, also left of its origin") {
+    // A form laid out from a column 1500 units into a 2000 x 1300 window: a dialog left of the
+    // column has negative x, and the tooltip of its row stays beside the row, inside the window.
+    ui::Form form;
+    form.set_bounds(ui::Rect{-1500, 0, 2000, 1300});
+    form.tooltip(ui::Rect{-1400, 300, 300, 30}, "Hello world");
+    auto items = form.draw({nullptr, nullptr, nullptr});
+    REQUIRE(items.size() == 3);
+    CHECK(std::abs(items[0].x + 1400) <= 1);  // pixels are rounded towards zero
+    CHECK(items[0].y == 334);
+    // At the window's right edge it moves left to stay inside.
+    form.clear();
+    form.tooltip(ui::Rect{480, 300, 20, 30}, "Hello world");
+    items = form.draw({nullptr, nullptr, nullptr});
+    REQUIRE(items.size() == 3);
+    CHECK(items[0].x + items[0].w <= 496);
 }

@@ -559,6 +559,10 @@ CommandResult Simulation::execute(const Command& command) {
     const std::size_t first = m_construction_events.size();
     if (const auto* build = std::get_if<BuildOrder>(&command)) {
         result.build = execute_build(*m_world, *m_buildings, *build, m_city_names, m_construction_events.sink());
+        if (result.build->placed > 0) {
+            // Peaceful neutral buildings in the new land go over to its city.
+            (void)take_peaceful_neutrals(*m_world, *m_buildings, build->island, m_construction_events.sink());
+        }
         if (build->unpaid_as_blueprints) {
             // What the gold or goods did not reach is planned, to be built once they suffice.
             BlueprintOrder unpaid;

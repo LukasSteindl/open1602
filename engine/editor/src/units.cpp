@@ -3,12 +3,14 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "o1602/editor/islands.hpp"
 #include "o1602/editor/scenario_rules.hpp"
+#include "o1602/sim/game_data.hpp"
 #include "o1602/sim/land_paths.hpp"
 #include "o1602/sim/sea_paths.hpp"
 #include "o1602/sim/ship.hpp"
@@ -52,7 +54,36 @@ const sim::City* cart_home(const sim::World& world, const assets::BuildingTable&
             }
         }
     }
-    return nullptr;
+    // Farther off, on the owner's land: its city on the island whose Kontor lies nearest, else its
+    // first city there (a scenario may start a cart anywhere on its owner's roads).
+    const std::uint16_t island = world.cell(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)).island;
+    if (island >= world.islands().size()) {
+        return nullptr;
+    }
+    const sim::WorldIsland& isl = world.islands()[island];
+    const std::int64_t lx = std::int64_t{x} - isl.x;
+    const std::int64_t ly = std::int64_t{y} - isl.y;
+    if (lx < 0 || ly < 0 || lx >= std::int64_t{isl.map.width()} || ly >= std::int64_t{isl.map.height()} ||
+        isl.map.top(static_cast<std::uint32_t>(lx), static_cast<std::uint32_t>(ly)).owner != owner) {
+        return nullptr;  // only on the owner's own land
+    }
+    const sim::City* best = nullptr;
+    std::int64_t best_d = 0;
+    for (const sim::City& city : world.cities()) {
+        if (city.owner != owner || city.island != island) {
+            continue;
+        }
+        std::int64_t d = std::numeric_limits<std::int64_t>::max();
+        if (city.warehouse_x && city.warehouse_y) {
+            d = std::abs(std::int64_t{isl.x} + *city.warehouse_x - x) +
+                std::abs(std::int64_t{isl.y} + *city.warehouse_y - y);
+        }
+        if (best == nullptr || d < best_d) {
+            best = &city;
+            best_d = d;
+        }
+    }
+    return best;
 }
 
 /// Every order that names `gone` cleared.
@@ -310,8 +341,11 @@ annokit::core::Result<std::unique_ptr<Operation>> set_ship_cargo(const sim::Worl
     if (ship == nullptr || slot >= ship->cargo.size()) {
         return make_error(ErrorCode::NotFound, "no such ship or hold");
     }
+    // A land unit in the hold of a ship (not a cart): at full health it fills the hold, as boarding
+    // puts it there.
+    const bool unit = !ship->cart() && sim::is_soldier_ware(ware);
     const auto& trade = world.goods().trade_wares();
-    if (ware != 0 && std::find(trade.begin(), trade.end(), ware) == trade.end()) {
+    if (ware != 0 && !unit && std::find(trade.begin(), trade.end(), ware) == trade.end()) {
         return make_error(ErrorCode::OutOfRange, "ware " + std::to_string(ware) + " is no trade ware");
     }
     if (amount > sim::hold_capacity(*ship)) {
@@ -320,11 +354,67 @@ annokit::core::Result<std::unique_ptr<Operation>> set_ship_cargo(const sim::Worl
     sim::World after = world;
     sim::CargoSlot& hold = after.ship(id)->cargo[slot];
     hold = sim::CargoSlot{};  // no price paid, no unit of a package
-    if (ware != 0 && amount > 0) {
+    if (unit) {
+        hold.ware = ware;
+        hold.amount = sim::kHoldCapacity;
+    } else if (ware != 0 && amount > 0) {
         hold.ware = ware;
         hold.amount = amount;
     }
     return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "ship_cargo"));
+}
+
+annokit::core::Result<std::unique_ptr<Operation>> rename_ship(const sim::World& world, std::uint32_t id,
+                                                              std::string_view name) {
+    if (world.ship(id) == nullptr) {
+        return make_error(ErrorCode::NotFound, "no such ship");
+    }
+    if (!sim::valid_name(name, sim::ShipCommand::kMaxNameLength)) {
+        return make_error(ErrorCode::InvalidFormat,
+                          "a name of 1 to " + std::to_string(sim::ShipCommand::kMaxNameLength) + " bytes");
+    }
+    sim::World after = world;
+    after.ship(id)->name = std::string(name);
+    return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "ship_rename"));
+}
+
+annokit::core::Result<std::unique_ptr<Operation>> set_ship_cannons(const sim::World& world,
+                                                                   const assets::FigureTable& figures, std::uint32_t id,
+                                                                   std::uint32_t cannons) {
+    const sim::Ship* ship = world.ship(id);
+    if (ship == nullptr) {
+        return make_error(ErrorCode::NotFound, "no such ship");
+    }
+    const assets::FigureType* type = figures.get(ship->figure);
+    if (ship->cart() || type == nullptr || type->ship.max_cannons == 0) {
+        return make_error(ErrorCode::Unsupported, "this ship carries no cannons");
+    }
+    if (cannons > type->ship.max_cannons) {
+        return make_error(ErrorCode::OutOfRange, "more cannons than the ship takes");
+    }
+    sim::World after = world;
+    after.ship(id)->cannons = static_cast<std::uint8_t>(cannons);
+    return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "ship_cannons"));
+}
+
+annokit::core::Result<std::unique_ptr<Operation>> set_ship_for_sale(const sim::World& world, std::uint32_t id, bool on,
+                                                                    std::uint16_t factor) {
+    const sim::Ship* ship = world.ship(id);
+    if (ship == nullptr) {
+        return make_error(ErrorCode::NotFound, "no such ship");
+    }
+    if (ship->cart() || !cart_owner_ok(world, ship->owner)) {
+        return make_error(ErrorCode::Unsupported, "only a human's or computer's ship is for sale");
+    }
+    if (factor > sim::ShipCommand::kMaxSaleFactor) {
+        return make_error(ErrorCode::OutOfRange,
+                          "a price factor of 0 to " + std::to_string(sim::ShipCommand::kMaxSaleFactor));
+    }
+    sim::World after = world;
+    sim::Ship& s = *after.ship(id);
+    s.for_sale = on;
+    s.sale_factor = on ? factor : std::uint16_t{128};
+    return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "ship_sale"));
 }
 
 annokit::core::Result<std::unique_ptr<Operation>> edit_route(const sim::World& world,

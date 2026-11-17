@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <string_view>
 
+#include "banner_graphic.hpp"
 #include "goods_window.hpp"
 
 #include "o1602/sim/ships.hpp"
@@ -276,3 +277,92 @@ void TradeLists::fill(const sim::City& city, const assets::Goods& goods, bool bu
 }
 
 }  // namespace o1602::app::panel_detail
+
+namespace o1602::app {
+
+namespace {
+constexpr std::int32_t kOwnerName = 900;  ///< offsets from the name's Id
+constexpr std::int32_t kOwnerShadow = 901;
+constexpr std::int32_t kOwnerArms = 902;
+constexpr std::int32_t kArmsWidth = 32;
+constexpr std::int32_t kArmsHeight = 40;
+}  // namespace
+
+assets::GadgetLayout with_owner_heading(assets::GadgetLayout layout, const OwnerHeading& h) {
+    const assets::Gadget* found = layout.find(h.name);
+    if (found == nullptr) {
+        return layout;
+    }
+    const assets::Gadget name = *found;
+    const std::int32_t gfx = layout.constant("GFXPIRAT").value_or(543) + 5;
+    // The name line beside the arms: from after the plate's round left end to a gap before them
+    // (or from after them to the plate's end, if they stand left of its middle).
+    constexpr std::int32_t kKnob = 24;
+    assets::Gadget line = name;
+    line.id = h.name + kOwnerName;
+    line.no_select = true;
+    const std::int32_t middle = name.pos[0] + name.size[0] / 2;
+    if (h.arms_x >= middle) {
+        line.pos[0] = name.pos[0] + kKnob;
+        line.size[0] = std::max(0, h.arms_x - 6 - line.pos[0]);
+    } else {
+        line.pos[0] = h.arms_x + kArmsWidth + 6;
+        const std::int32_t end = h.text_end > 0 ? h.text_end : name.pos[0] + name.size[0];
+        line.size[0] = std::max(0, end - line.pos[0]);
+    }
+    line.offset[0] = static_cast<std::int16_t>(line.size[0] / 2);
+    layout.gadgets.push_back(line);
+    assets::Gadget shadow;
+    shadow.id = h.name + kOwnerShadow;
+    shadow.kind = assets::GadgetKind::GraphicRaster;
+    shadow.no_select = true;
+    shadow.gfx = gfx;
+    shadow.pos = {h.arms_x, name.pos[1] - 4};
+    shadow.offset = {7, 7};
+    shadow.size = {kArmsWidth, kArmsHeight};
+    layout.gadgets.push_back(shadow);
+    assets::Gadget arms = shadow;
+    arms.id = h.name + kOwnerArms;
+    arms.kind = assets::GadgetKind::Graphic;
+    arms.offset = {0, 0};
+    layout.gadgets.push_back(arms);
+    return layout;
+}
+
+void show_owner(ui::Panel& panel, const OwnerHeading& h, std::string name, sim::PlayerId owner, const PanelContext& c) {
+    const sim::Player* p = c.local != sim::kNoPlayer && owner != c.local ? c.world().player(owner) : nullptr;
+    const assets::Gadget* arms = panel.layout().find(h.name + kOwnerArms);
+    const bool shown = p != nullptr && arms != nullptr;
+    panel.set_visible(h.name, !shown);
+    if (h.cover != 0) {
+        panel.set_visible(h.cover, !shown);
+    }
+    for (const std::int32_t id : {h.name + kOwnerName, h.name + kOwnerShadow, h.name + kOwnerArms}) {
+        panel.set_visible(id, shown);
+    }
+    if (!shown) {
+        panel.set_text(h.name, std::move(name));
+        return;
+    }
+    // The name alone, cut to fit beside the arms; the owner's name is their help line.
+    const assets::Gadget* line = panel.layout().find(h.name + kOwnerName);
+    panel.set_text(h.name + kOwnerName, std::move(name));
+    if (line != nullptr) {
+        panel.set_fit(h.name + kOwnerName, true, line->offset[0] + line->size[0]);
+    }
+    panel.set_hover_only(h.name + kOwnerArms, true);
+    const render::BannerArt art = render::BannerArt::arms_at(arms->gfx);
+    set_banner_graphic(panel, h.name + kOwnerShadow, art, c.banner(owner));
+    set_banner_graphic(panel, h.name + kOwnerArms, art, c.banner(owner));
+}
+
+std::optional<std::string> owner_help(std::int32_t id, const OwnerHeading& h, sim::PlayerId owner,
+                                      const PanelContext& c) {
+    if (id != h.name + kOwnerArms && id != h.name + kOwnerName) {
+        return std::nullopt;
+    }
+    const sim::Player* p = owner != c.local ? c.world().player(owner) : nullptr;
+    return p != nullptr ? std::optional<std::string>(player_name(*p)) : std::nullopt;
+}
+
+}  // namespace o1602::app

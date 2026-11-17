@@ -831,9 +831,12 @@ void Engine::cart_supply(AiPlayer& p) {
             std::uint16_t best_price = 1000;
             for (std::size_t i = 0; i < m_world.cities().size(); ++i) {
                 const City& c = m_world.cities()[i];
+                // Only to partners at peace: a cart drives overland, through the partner's warriors
+                // or soldiers (a scenario may leave a trade treaty with natives it is at war with).
                 if (c.island != home.island || c.owner == p.player || !c.warehouse_x || !c.warehouse_y ||
                     m_world.player(c.owner) == nullptr ||
-                    m_world.diplomacy().relation(p.player, c.owner).trade != Treaty::Signed) {
+                    m_world.diplomacy().relation(p.player, c.owner).trade != Treaty::Signed ||
+                    m_world.diplomacy().hostile(p.player, c.owner)) {
                     continue;
                 }
                 const City::Trade* t = c.trade_of(w);

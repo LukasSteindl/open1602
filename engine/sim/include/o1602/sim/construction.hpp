@@ -353,6 +353,13 @@ bool destroy_building(World& world, const assets::BuildingTable& buildings, std:
 bool capture_neutral_building(World& world, const assets::BuildingTable& buildings, std::uint16_t island,
                               TilePos origin, PlayerId taker, std::vector<ConstructionEvent>* events);
 
+/// Peaceful neutral buildings (scenario_flag::kNeutralPeace on their player): every one of them on
+/// the island that the land of a human's or computer's city covers whole goes over to that city
+/// (capture_neutral_building), as a building in the circle of a new Kontor or market. The number
+/// taken; none where the neutral buildings are hostile.
+std::size_t take_peaceful_neutrals(World& world, const assets::BuildingTable& buildings, std::uint16_t island,
+                                   std::vector<ConstructionEvent>* events);
+
 /// Whether crops of `ware` grow on the tile: the island's fertility for the ware
 /// (0, 64 or 128), weighted with the Randwachs of the ground and lowered by a drought on the
 /// island, picks one of five patterns.
