@@ -153,6 +153,8 @@ public:
     bool unload(const UnloadOrder& order);
     /// The cell where `ship`'s soldiers would land if it unloaded now (unload()), if any.
     [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_cell(const Ship& ship) const;
+    /// Whether a soldier on cell (x, y) is near enough to `ship` to go on board (arrived()).
+    [[nodiscard]] static bool boards_from(const Ship& ship, std::int32_t x, std::int32_t y) noexcept;
 
     /// Units a player has: on land, in castles and on board ships.
     [[nodiscard]] std::uint32_t army_size(PlayerId player) const;

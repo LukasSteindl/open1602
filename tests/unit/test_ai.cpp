@@ -2963,3 +2963,54 @@ TEST_CASE("ai: an improved computer lands soldiers at its city where they can wa
         }
     }
 }
+
+TEST_CASE("ai: an improved computer moves its ship to where the soldiers at the Kontor can board it") {
+    // Soldiers go on board only within the engine's boarding range of the ship. Off a stretch of
+    // shore that walls cut off from the Kontor, the soldiers called from the Kontor end their ways
+    // out of range: the computer moves the ship to water off the Kontor's walkable shore instead.
+    // Without the wall the soldiers reach the ship where it is.
+    for (const bool walled : {false, true}) {
+        Game g;
+        g.buildings = make_buildings(kWallRecords);
+        sim::Simulation s(g.world, g.buildings, g.figures);
+        found_city(g, s);
+        const sim::City* city = computer_city(g);
+        REQUIRE(city != nullptr);
+        REQUIRE(city->warehouse_x.has_value());
+        REQUIRE(city->warehouse_y.has_value());
+        sim::IslandMap& map = g.world.island(city->island).map;
+        const std::int32_t kx = *city->warehouse_x;
+        const std::int32_t ky = *city->warehouse_y;
+        const std::int32_t cut = ky + 5;  // the wall's row across the strip of land below the Kontor
+        if (walled) {
+            for (std::int32_t x = kx - 1; x < 46; ++x) {  // the felled column west of the Kontor too
+                REQUIRE(map.place(*g.buildings.by_id(22501), x, cut, 0, 0, kComputer, city->index).ok());
+            }
+        }
+        sim::Ship& ship = g.world.ships().front();
+        const sim::WorldIsland& isl = g.world.islands()[city->island];
+        ship.x = static_cast<std::uint16_t>(static_cast<std::int32_t>(isl.x) + 47);
+        ship.y = static_cast<std::uint16_t>(static_cast<std::int32_t>(isl.y) + cut + 6);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        sim::ai::AiPlayer p;
+        p.player = kComputer;
+        const auto water = engine.boarding_water(p, ship, *city);
+        CHECK(water.has_value() == walled);
+        if (water) {
+            // From there a tile above the wall, walkable to the Kontor, is within boarding range.
+            sim::Ship there = ship;
+            there.x = static_cast<std::uint16_t>(water->x);
+            there.y = static_cast<std::uint16_t>(water->y);
+            CHECK(static_cast<std::int32_t>(there.y) - static_cast<std::int32_t>(isl.y) < cut);
+            bool boards = false;
+            for (std::int32_t y = ky; y < cut; ++y) {
+                for (std::int32_t x = kx; x < 46; ++x) {
+                    boards = boards || sim::Military::boards_from(there, 2 * (static_cast<std::int32_t>(isl.x) + x),
+                                                                  2 * (static_cast<std::int32_t>(isl.y) + y));
+                }
+            }
+            CHECK(boards);
+        }
+    }
+}
