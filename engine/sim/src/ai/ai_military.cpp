@@ -1032,6 +1032,16 @@ void Engine::missions(AiPlayer& p) {
                 break;
             }
             case 2: {
+                // Open1602 (F5): at a city whose landing cell is cut off, first to a beach of the city.
+                const City* at = target.kind == Target::Kind::City ? city(target.island, target.city) : nullptr;
+                if (rivals() && at != nullptr && at->owner == p.player) {
+                    if (const auto shore = landing_shore(p, *s, *at)) {
+                        log(p, "ship %u lands off %u,%u: the landing cell is cut off from the city", s->id, shore->x,
+                            shore->y);
+                        ship_send(p, *s, *shore, 2, 0);
+                        break;
+                    }
+                }
                 UnloadOrder order;
                 order.player = p.player;
                 order.ship = s->id;
@@ -1607,7 +1617,6 @@ std::vector<std::uint8_t> Engine::land_reach(PlayerId owner, std::uint16_t islan
     const auto w = static_cast<std::int32_t>(isl.map.width());
     const auto h = static_cast<std::int32_t>(isl.map.height());
     std::vector<std::uint8_t> reach(static_cast<std::size_t>(w) * static_cast<std::size_t>(h), 0);
-    const LandMap& land = m_sim.m_combat.land();
     const auto at = [w](std::int32_t x, std::int32_t y) {
         return static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x);
     };
@@ -1624,6 +1633,19 @@ std::vector<std::uint8_t> Engine::land_reach(PlayerId owner, std::uint16_t islan
             open.emplace_back(x, y);
         }
     }
+    walk_flood(owner, island, reach, std::move(open));
+    return reach;
+}
+
+void Engine::walk_flood(PlayerId owner, std::uint16_t island, std::vector<std::uint8_t>& reach,
+                        std::vector<std::pair<std::int32_t, std::int32_t>> open) const {
+    const WorldIsland& isl = island_of(island);
+    const auto w = static_cast<std::int32_t>(isl.map.width());
+    const auto h = static_cast<std::int32_t>(isl.map.height());
+    const LandMap& land = m_sim.m_combat.land();
+    const auto at = [w](std::int32_t x, std::int32_t y) {
+        return static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x);
+    };
     constexpr std::array<std::pair<std::int32_t, std::int32_t>, 4> kSteps = {{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
     while (!open.empty()) {
         const auto [x, y] = open.back();
@@ -1640,7 +1662,105 @@ std::vector<std::uint8_t> Engine::land_reach(PlayerId owner, std::uint16_t islan
             open.emplace_back(nx, ny);
         }
     }
+}
+
+std::vector<std::uint8_t> Engine::walk_reach_to(const AiPlayer& p, const City& c, bool kontor) const {
+    // The tiles of `c`'s island from which `p`'s soldiers can walk up to the city's buildings (with
+    // `kontor`, to its Kontor), one flag per tile; none at all when nothing of the city is in reach.
+    const WorldIsland& isl = island_of(c.island);
+    const auto w = static_cast<std::int32_t>(isl.map.width());
+    const auto h = static_cast<std::int32_t>(isl.map.height());
+    const LandMap& land = m_sim.m_combat.land();
+    const auto at = [w](std::int32_t x, std::int32_t y) {
+        return static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x);
+    };
+    const auto walk = [&](std::int32_t x, std::int32_t y) {
+        return x >= 0 && y >= 0 && x < w && y < h &&
+               land.tile(static_cast<std::int32_t>(isl.x) + x, static_cast<std::int32_t>(isl.y) + y, 0, nullptr,
+                         p.player) == LandMap::Cell::Walk;
+    };
+    const std::int32_t goal = kontor ? kind::kHq : kind::kBuilding;
+    std::vector<std::uint8_t> reach(static_cast<std::size_t>(w) * static_cast<std::size_t>(h), 0);
+    std::vector<std::pair<std::int32_t, std::int32_t>> open;
+    constexpr std::array<std::pair<std::int32_t, std::int32_t>, 4> kSteps = {{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
+    for (std::int32_t y = 0; y < h; ++y) {
+        for (std::int32_t x = 0; x < w; ++x) {
+            const Tile t = tile(c.island, x, y);
+            if (!t.valid() || t.city != c.index || t.owner != c.owner || t.kind != goal) {
+                continue;
+            }
+            for (const auto& [dx, dy] : kSteps) {
+                if (walk(x + dx, y + dy) && reach[at(x + dx, y + dy)] == 0) {
+                    reach[at(x + dx, y + dy)] = 1;
+                    open.emplace_back(x + dx, y + dy);
+                }
+            }
+        }
+    }
+    walk_flood(p.player, c.island, reach, std::move(open));
     return reach;
+}
+
+std::optional<Target> Engine::landing_shore(const AiPlayer& p, const Ship& s, const City& c) const {
+    // Open1602 (F5): soldiers land on the nearest cell they can stand on, which at a Kontor behind
+    // the city's own coast wall is the pocket by the pier, cut off from the city. The tiles the
+    // city's buildings can be walked to from; when the landing cell is not among them, the water
+    // off the shore tile among them nearest to the ship from which they would land among them.
+    const auto landing = m_sim.military().landing_cell(s);
+    if (!landing) {
+        return std::nullopt;
+    }
+    const WorldIsland& isl = island_of(c.island);
+    const auto w = static_cast<std::int32_t>(isl.map.width());
+    const auto h = static_cast<std::int32_t>(isl.map.height());
+    const auto at = [w](std::int32_t x, std::int32_t y) {
+        return static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x);
+    };
+    constexpr std::array<std::pair<std::int32_t, std::int32_t>, 4> kSteps = {{{1, 0}, {-1, 0}, {0, 1}, {0, -1}}};
+    std::vector<std::uint8_t> reach = walk_reach_to(p, c, false);
+    if (std::ranges::none_of(reach, [](std::uint8_t r) { return r != 0; })) {
+        return std::nullopt;  // nothing of the city to walk to
+    }
+    const std::int32_t lx = landing->first / 2 - static_cast<std::int32_t>(isl.x);
+    const std::int32_t ly = landing->second / 2 - static_cast<std::int32_t>(isl.y);
+    if (lx < 0 || ly < 0 || lx >= w || ly >= h || reach[at(lx, ly)] != 0) {
+        return std::nullopt;
+    }
+    const auto shore = [&](std::int32_t x, std::int32_t y) {
+        return std::ranges::any_of(kSteps, [&](const std::pair<std::int32_t, std::int32_t>& d) {
+            const Tile n = tile(c.island, x + d.first, y + d.second);
+            return n.valid() && (n.kind == kind::kBeach || n.kind == kind::kBeachOuter || n.kind == kind::kBeachInner ||
+                                 n.kind == kind::kBeachVariant || n.kind == kind::kBeachMouth);
+        });
+    };
+    std::vector<std::pair<std::int32_t, std::int32_t>> shores;  // distance to the ship, tile
+    for (std::int32_t y = 0; y < h; ++y) {
+        for (std::int32_t x = 0; x < w; ++x) {
+            if (reach[at(x, y)] != 0 && shore(x, y)) {
+                const std::int32_t d =
+                    sea_distance(static_cast<std::int32_t>(isl.x) + x - static_cast<std::int32_t>(s.x),
+                                 static_cast<std::int32_t>(isl.y) + y - static_cast<std::int32_t>(s.y));
+                shores.emplace_back(d, static_cast<std::int32_t>(at(x, y)));
+            }
+        }
+    }
+    std::ranges::sort(shores);
+    Ship there = s;
+    for (const auto& [d, i] : shores) {
+        const Target t = water_near(c.island, i % w, i / w);
+        there.x = static_cast<std::uint16_t>(t.x);
+        there.y = static_cast<std::uint16_t>(t.y);
+        const auto cell = m_sim.military().landing_cell(there);
+        if (!cell) {
+            continue;
+        }
+        const std::int32_t x = cell->first / 2 - static_cast<std::int32_t>(isl.x);
+        const std::int32_t y = cell->second / 2 - static_cast<std::int32_t>(isl.y);
+        if (x >= 0 && y >= 0 && x < w && y < h && reach[at(x, y)] != 0) {
+            return t;
+        }
+    }
+    return std::nullopt;
 }
 
 void Engine::reachable_goals(const AiPlayer& a, std::uint16_t island, const City& hostile,

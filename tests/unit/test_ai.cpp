@@ -2909,3 +2909,57 @@ TEST_CASE("ai: an improved computer raises the taxes its content inhabitants bea
     CHECK(improved > 128);
     CHECK(improved <= sim::CityOrder::kMaxTax);
 }
+
+TEST_CASE("ai: an improved computer lands soldiers at its city where they can walk into the city") {
+    // At a Kontor walled in by the city's own wall the nearest cell to land on can be a pocket cut
+    // off from the city: the computer sails to water off the city's walkable land instead. Without
+    // the wall it lands where it is.
+    for (const bool walled : {false, true}) {
+        Game g;
+        g.buildings =
+            make_buildings(kWallRecords + "  @Nummer: 18\n  Id: 20701\n  Kind: 14\n  Gfx: 35\n  Size: 2, 2\n");
+        sim::Simulation s(g.world, g.buildings, g.figures);
+        found_city(g, s);
+        const sim::City* city = computer_city(g);
+        REQUIRE(city != nullptr);
+        REQUIRE(city->warehouse_x.has_value());
+        REQUIRE(city->warehouse_y.has_value());
+        sim::IslandMap& map = g.world.island(city->island).map;
+        // The Kontor (2 x 3) on the beach's land side, the city's road along its west side.
+        const std::int32_t kx = *city->warehouse_x;
+        const std::int32_t ky = *city->warehouse_y;
+        REQUIRE(map.place(*g.buildings.by_id(20701), kx - 6, ky + 1, 0, 0, kComputer, city->index).ok());
+        const std::int32_t below = ky + 3;  // the row below the Kontor
+        if (walled) {
+            // A pocket of the two tiles below the Kontor, between the wall and the beach.
+            for (const auto& [x, y] :
+                 {std::pair{kx - 1, below}, std::pair{kx, below + 1}, std::pair{kx + 1, below + 1}}) {
+                REQUIRE(map.place(*g.buildings.by_id(22501), x, y, 0, 0, kComputer, city->index).ok());
+            }
+        }
+        sim::Ship& ship = g.world.ships().front();
+        const sim::WorldIsland& isl = g.world.islands()[city->island];
+        ship.x = static_cast<std::uint16_t>(static_cast<std::int32_t>(isl.x) + kx + 3);
+        ship.y = static_cast<std::uint16_t>(static_cast<std::int32_t>(isl.y) + below);
+        const auto cell = s.military().landing_cell(ship);
+        REQUIRE(cell.has_value());
+        REQUIRE(cell->first / 2 - static_cast<std::int32_t>(isl.x) == kx + 1);
+        REQUIRE(cell->second / 2 - static_cast<std::int32_t>(isl.y) == below);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        sim::ai::AiPlayer p;
+        p.player = kComputer;
+        const auto shore = engine.landing_shore(p, ship, *city);
+        CHECK(shore.has_value() == walled);
+        if (shore) {
+            // From there the soldiers land outside the pocket.
+            sim::Ship there = ship;
+            there.x = static_cast<std::uint16_t>(shore->x);
+            there.y = static_cast<std::uint16_t>(shore->y);
+            const auto landed = s.military().landing_cell(there);
+            REQUIRE(landed.has_value());
+            const std::int32_t ly = landed->second / 2 - static_cast<std::int32_t>(isl.y);
+            CHECK((ly < ky || ly > below + 1));
+        }
+    }
+}

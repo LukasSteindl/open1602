@@ -12,3 +12,5 @@ kAnyCrop | engine/sim/src/ai/ai_state.hpp | derived from: a crop id no ware has 
 2 | engine/sim/src/ai/ai_military.cpp | derived from: rounding to the nearest whole cannon (adding half the divisor, most / 2) in guessed_cannons
 kFarms | engine/sim/src/ai/ai_settle.cpp | derived from: the colony crops and their farms' plan slots, the pairs of colony_candidates' kPairs and the planner's crop table
 2 | engine/sim/src/ai/ai_settle.cpp | derived from: the fail_level slot_fail sets after repeated tries ("no site after repeated tries"), as home_shortfall reads it
+kSteps | engine/sim/src/ai/ai_military.cpp | derived from: the four neighbours of a tile, the same table walk_flood (land_reach's flood) and way_in use
+4 | engine/sim/src/ai/ai_military.cpp | derived from: the four neighbours of a tile (kSteps), as in walk_flood and way_in
