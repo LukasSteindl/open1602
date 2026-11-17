@@ -577,6 +577,14 @@ bool Engine::guard_post(AiPlayer& p, City& c, CityPlan& r, std::int32_t& x, std:
     return false;
 }
 
+bool Engine::guard_takes(const Soldier& s, const Target& post) const {
+    // Not one in a building or already on the way to the post. Open1602: nor, for an improved
+    // computer, one on its way aboard a ship (board()): the guard sent it back to the post every
+    // few seconds, so attack ships sailed without soldiers.
+    return s.target.kind != Target::Kind::Building && !(s.target == post) &&
+           !(rivals() && s.target.kind == Target::Kind::Ship);
+}
+
 void Engine::guard(AiPlayer& p, City& c, std::int32_t x, std::int32_t y, std::uint32_t n, bool castle_island) {
     // Soldiers beyond the reserve at the Kontor go to the post.
     std::vector<Soldier*> near = soldiers_near(p.player, c, 8, 16);
@@ -600,7 +608,7 @@ void Engine::guard(AiPlayer& p, City& c, std::int32_t x, std::int32_t y, std::ui
     order.player = p.player;
     order.target = post;
     for (std::size_t i = reserve; i < near.size(); ++i) {
-        if (near[i]->target.kind != Target::Kind::Building && !(near[i]->target == post)) {
+        if (guard_takes(*near[i], post)) {
             order.soldiers.push_back(near[i]->id);
         }
     }

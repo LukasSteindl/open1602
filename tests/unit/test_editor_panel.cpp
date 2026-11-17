@@ -2018,8 +2018,9 @@ TEST_CASE("editor panel: the description dialog steps the stars and types the te
     panel.set_room(184, 564);
     panel.set_screen(1024, 768, 1024 - EditorPanel::kWidth);
     EditorModel m = document();
-    const std::vector<std::string> values = {"Two Coasts",   "Zwei Kuesten", "Found a city.", "(none)",
-                                             "3 of 5 stars", "Merlin",       "1.0",           "No"};
+    const std::vector<std::string> values = {"Two Coasts", "Zwei Kuesten", "Found a city.",
+                                             "(none)",     "3 of 5 stars", "Merlin",
+                                             "1.0",        "No",           "Peaceful, taken by land"};
     for (std::size_t i = 0; i < app::kEditorScenarioRows; ++i) {
         m.scenario_rows.push_back(app::EditorRule{"Row " + std::to_string(i), values[i], true});
         m.scenario_texts.push_back(app::scenario_row_is_text(static_cast<app::EditorScenarioRow>(i)) ? values[i] : "");
@@ -2035,6 +2036,11 @@ TEST_CASE("editor panel: the description dialog steps the stars and types the te
     CHECK(r->kind == EditorRequest::Kind::ScenarioStep);
     CHECK(r->index == static_cast<std::size_t>(app::EditorScenarioRow::Stars));
     CHECK(r->amount == 1);
+    // So do the neutral buildings, hostile or peaceful.
+    r = click(panel, m, "Peaceful, taken by land");
+    REQUIRE(r.has_value());
+    CHECK(r->kind == EditorRequest::Kind::ScenarioStep);
+    CHECK(r->index == static_cast<std::size_t>(app::EditorScenarioRow::NeutralPeace));
 
     // A text opens the field with the text as it is; Esc leaves it unchanged.
     r = click(panel, m, "Merlin");

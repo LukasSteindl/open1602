@@ -161,8 +161,13 @@ void Diplomacy::reset(const std::vector<Player>& players, const std::vector<Fact
             // Peace with everyone except the pirates; the pirates are at peace only with the
             // trader and themselves. The neutral buildings stand against the settlers alone, whose
             // soldiers take them; the others pass them by.
-            const bool war = neutral ? (ra == FactionBehaviour::Settlers || rb == FactionBehaviour::Settlers)
-                                     : pirates && !(ra == FactionBehaviour::Trader || rb == FactionBehaviour::Trader);
+            // Open1602: a map may make them peaceful (scenario_flag::kNeutralPeace).
+            const bool peaceful =
+                (ra == FactionBehaviour::Neutral && players[a].scenario.has(scenario_flag::kNeutralPeace)) ||
+                (rb == FactionBehaviour::Neutral && players[b].scenario.has(scenario_flag::kNeutralPeace));
+            const bool war = neutral
+                                 ? !peaceful && (ra == FactionBehaviour::Settlers || rb == FactionBehaviour::Settlers)
+                                 : pirates && !(ra == FactionBehaviour::Trader || rb == FactionBehaviour::Trader);
             r.peace = war && a != b ? Treaty::None : Treaty::Signed;
             Treaty trade = Treaty::None;
             switch (ra) {
@@ -353,7 +358,9 @@ bool Diplomacy::set_alliance(const World& world, PlayerId a, PlayerId b, Treaty 
             break;
         case Treaty::Offered:
             m_notices.push({DiplomacyNotice::Kind::AllianceOffered, b, a});
-            add_event(b, a, DiplomacyEventType::FriendlyGesture, now_ms);
+            // A friendly gesture, but only one per partner: offered again after a withdrawal or a
+            // refusal, it is renewed, so that offering over and over does not pile up goodwill.
+            renew_event(b, a, DiplomacyEventType::FriendlyGesture, now_ms);
             ab.alliance = Treaty::Offered;
             ba.alliance = Treaty::Received;
             break;
@@ -366,6 +373,18 @@ bool Diplomacy::set_alliance(const World& world, PlayerId a, PlayerId b, Treaty 
             break;
     }
     return true;
+}
+
+void Diplomacy::renew_event(PlayerId a, PlayerId b, DiplomacyEventType type, std::uint64_t now_ms) {
+    if (a < m_count && type != DiplomacyEventType::None) {
+        for (DiplomacyEvent& e : m_events[a]) {
+            if (e.type == type && e.partner == b) {
+                e.time_ms = now_ms;
+                return;
+            }
+        }
+    }
+    add_event(a, b, type, now_ms);
 }
 
 void Diplomacy::add_event(PlayerId a, PlayerId b, DiplomacyEventType type, std::uint64_t now_ms) {

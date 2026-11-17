@@ -1099,12 +1099,13 @@ TEST_CASE("military: at most a fixed number of way searches per tick, the others
     Field f;
     f.start();
     std::vector<std::uint32_t> ids;
-    for (std::int32_t i = 0; i < 18; ++i) {
-        ids.push_back(f.add(kSword, 0, 2 * 12, 2 * 11 + 2 * i).id);
+    for (std::int32_t i = 0; i < 150; ++i) {
+        ids.push_back(f.add(kSword, 0, 2 * (11 + i % 15), 2 * (11 + i / 15)).id);
     }
     for (std::size_t i = 0; i < ids.size(); ++i) {
-        const std::uint32_t cy = 2 * 11 + 2 * static_cast<std::uint32_t>(i);
-        REQUIRE(f.military->order(sim::SoldierOrder{0, {ids[i]}, sim::Target::spot(2 * 30, cy)}));
+        const auto x = static_cast<std::uint32_t>(2 * (26 + i % 13));
+        const auto y = static_cast<std::uint32_t>(2 * (11 + i / 13));
+        REQUIRE(f.military->order(sim::SoldierOrder{0, {ids[i]}, sim::Target::spot(x, y)}));
     }
     const auto planned = [&] {
         std::size_t n = 0;
@@ -1114,6 +1115,8 @@ TEST_CASE("military: at most a fixed number of way searches per tick, the others
         return n;
     };
     f.run(50);
+    CHECK(f.military->plan_stats().searches == sim::Military::kPlansPerTick);
+    CHECK(f.military->plan_stats().cells < sim::Military::kCellsPerTick);
     CHECK(planned() == sim::Military::kPlansPerTick);
     for (std::size_t i = 0; i < sim::Military::kPlansPerTick; ++i) {
         CHECK(!f.world.soldier(ids[i])->motion.path.empty());
@@ -1122,11 +1125,53 @@ TEST_CASE("military: at most a fixed number of way searches per tick, the others
     CHECK(planned() == 2 * sim::Military::kPlansPerTick);
     f.run(50);
     CHECK(planned() == ids.size());
-    f.run(20'000);
+    f.run(40'000);
     for (std::size_t i = 0; i < ids.size(); ++i) {
-        CHECK(f.world.soldier(ids[i])->cell_x() == 2 * 30);
         CHECK(f.world.soldier(ids[i])->target.empty());
     }
+}
+
+namespace {
+
+/// A wall of forest across the island at island column 27 (world tiles 37), and `count` units of
+/// player 0 west of it, each sent to a place east of it that it cannot reach: every search of
+/// theirs takes all the cells of the west part of the island.
+std::vector<std::uint32_t> walled_out(Field& f, std::uint32_t count) {
+    sim::IslandMap& map = f.world.island(0).map;
+    for (std::int32_t y = 0; y < 20; ++y) {
+        REQUIRE(map.place(*f.buildings.by_id(kForest), 27, y, 0, 0).ok());
+    }
+    f.start();
+    std::vector<std::uint32_t> ids;
+    for (std::uint32_t i = 0; i < count; ++i) {
+        ids.push_back(
+            f.add(kSword, 0, static_cast<std::int32_t>(2 * (22 + i % 10)), static_cast<std::int32_t>(2 * (20 + i / 10)))
+                .id);
+    }
+    return ids;
+}
+
+void send_east(Field& f, const std::vector<std::uint32_t>& ids) {
+    for (std::size_t i = 0; i < ids.size(); ++i) {
+        REQUIRE(f.military->order(
+            sim::SoldierOrder{0, {ids[i]}, sim::Target::spot(2 * 39, static_cast<std::uint32_t>(2 * (10 + i % 20)))}));
+    }
+}
+
+}  // namespace
+
+TEST_CASE("military: the searches of a tick stop when they have taken the tick's cells (F17)") {
+    // Ways that cannot be found take all the cells they can reach: after the cells of the tick no
+    // further unit searches in it, however few searches have run.
+    Field f;
+    const std::vector<std::uint32_t> ids = walled_out(f, 20);
+    send_east(f, ids);
+    f.run(50);
+    const sim::Military::PlanStats stats = f.military->plan_stats();
+    CHECK(stats.searches < 20);
+    CHECK(stats.searches >= 1);
+    CHECK(stats.cells >= sim::Military::kCellsPerTick);
+    CHECK(stats.turned_away > 0);
 }
 
 TEST_CASE("military: units that search a lot never keep a later unit from its way for good (TB-1)") {
@@ -1157,6 +1202,30 @@ TEST_CASE("military: units that search a lot never keep a later unit from its wa
     CHECK(!f.world.soldier(id)->motion.path.empty());
     f.run(5'000);
     CHECK(f.world.soldier(id)->cell_x() == 2 * (10 + 28));
+}
+
+TEST_CASE("military: a unit with a way to go walks on when the searches of the tick are used up (F17)") {
+    // A hundred units walled out of their places get their orders anew every tick, so every tick's
+    // searches go to them; the unit after them in the list has its way already and needs none: it
+    // must not stand with its walk playing.
+    Field f;
+    const std::vector<std::uint32_t> busy = walled_out(f, 100);
+    const std::uint32_t id = f.add(kSword, 0, 2 * 11, 2 * 12).id;
+    REQUIRE(f.military->order(sim::SoldierOrder{0, {id}, sim::Target::spot(2 * 34, 2 * 12)}));
+    f.run(100);
+    REQUIRE(!f.world.soldier(id)->motion.path.empty());
+    std::size_t stood = 0;
+    std::size_t used_up = 0;
+    for (std::uint32_t t = 0; t < 60; ++t) {
+        send_east(f, busy);
+        const std::int32_t before = f.world.soldier(id)->pos_x;
+        f.run(50);
+        used_up += f.military->plan_stats().turned_away > 0 ? 1U : 0U;
+        stood += f.world.soldier(id)->pos_x == before ? 1U : 0U;
+        CHECK(f.military->plan_stats().turned_away_walking == 0);
+    }
+    CHECK(used_up > 50);
+    CHECK(stood == 0);
 }
 
 TEST_CASE("military: idle units look again at times spread by their number (TB-1)") {
@@ -1233,8 +1302,9 @@ TEST_CASE("military: a battle of two armies develops the same on every platform 
     }
     f.run(45'000);
     CHECK(f.count(sim::MilitaryEvent::Kind::SoldierKilled) > 0);
-    // Chasing leaves half the way searches of a tick to units with a way to go.
-    test::check_golden("battle after 45 s", test::world_hash(f.world, f.buildings), 0xab469661249e4857ULL);
+    // Chasing leaves half the way searches and half the searched cells of a tick to units with a
+    // way to go; searches head for their goal (A*, F17).
+    test::check_golden("battle after 45 s", test::world_hash(f.world, f.buildings), 0xe7930b594ea8cc19ULL);
 }
 
 namespace {
@@ -1423,4 +1493,26 @@ TEST_CASE("military: soldiers destroy an enemy trade cart; it does not fight bac
               return e.kind == sim::ShipEvent::Kind::Sunk && e.ship == cart_id;
           }) == 1);
     CHECK(f.world.player(0)->ships_sunk == sunk_before);  // no ship of the score
+}
+
+TEST_CASE("military: a unit walled in by standing units walks out past them (F17)") {
+    // Eight own units stand round it; with their cells blocked no way leads out, and the original
+    // gave the order up after four plans.
+    Field f;
+    f.start();
+    for (std::int32_t dy = -1; dy <= 1; ++dy) {
+        for (std::int32_t dx = -1; dx <= 1; ++dx) {
+            if (dx != 0 || dy != 0) {
+                f.add(kSword, 0, 30 + dx, 30 + dy);
+            }
+        }
+    }
+    const std::uint32_t id = f.add(kSword, 0, 30, 30).id;
+    REQUIRE(f.military->order(sim::SoldierOrder{0, {id}, sim::Target::spot(2 * 32, 2 * 15)}));
+    f.run(30'000);
+    const sim::Soldier* s = f.world.soldier(id);
+    REQUIRE(s != nullptr);
+    CHECK(s->target.empty());
+    CHECK(s->cell_x() == 2 * 32);
+    CHECK(s->cell_y() == 2 * 15);
 }

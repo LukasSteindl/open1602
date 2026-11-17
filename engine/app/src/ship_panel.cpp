@@ -218,7 +218,7 @@ assets::GadgetLayout with_route_row(assets::GadgetLayout route, const std::optio
 class ShipPanel final : public SelectionPanel {
 public:
     explicit ShipPanel(ShipLayouts l)
-        : m_ship(std::move(l.ship), 1.0),
+        : m_ship(with_owner_heading(std::move(l.ship), kHeading), 1.0),
           m_transfer(std::move(l.transfer), 1.0),
           m_trade(std::move(l.trade), 1.0),
           m_route(with_route_row(std::move(l.route), l.musik), 1.0),
@@ -444,6 +444,9 @@ public:
         const sim::Ship* ship = c.world().ship(s.ship);
         if (ship == nullptr) {
             return std::nullopt;
+        }
+        if (auto owner = owner_help(id, kHeading, ship->owner, c)) {
+            return owner;
         }
         const auto line = [&](std::size_t n) { return std::optional<std::string>(help_line(c, n)); };
         // The name frame: the game's line names a ship, a trade cart has its own.
@@ -671,6 +674,9 @@ public:
 private:
     enum class Page : std::uint8_t { Root, Transfer, Trade, Route, PickOwn, PickForeign, Pirates, PirateOrder };
     static constexpr std::int32_t kName = 38002;
+    /// The heading with the owner of someone else's ship: the arms over the plate's round left end,
+    /// the name between them and the anchor with its rope at the right end.
+    static constexpr OwnerHeading kHeading{kName, 6, 0, 192};
     static constexpr std::int32_t kRepair = 38003;
     static constexpr std::int32_t kSale = 38004;
     static constexpr std::int32_t kTrade = 38005;
@@ -866,7 +872,9 @@ private:
 
     void refresh_root(const sim::Ship& ship, const Context& k, const PanelContext& c) {
         // The name: a click on it types a new one (own ships that are not sinking).
-        m_ship.set_text(kName, c.shown_name(NameTarget::of(ship), ship_name(ship)));
+        // Someone else's ship: the owner's coat of arms at the plate's left end.
+        show_owner(m_ship, kHeading, k.foreign ? ship_name(ship) : c.shown_name(NameTarget::of(ship), ship_name(ship)),
+                   ship.owner, c);
         m_ship.set_no_select(kName, !can_rename(c.world(), c.local, NameTarget::of(ship)));
         const bool own = !k.foreign;
         const bool idle = own && !k.moving;

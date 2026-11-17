@@ -2611,7 +2611,8 @@ Hud::Resources MapViewer::resources() const {
     }
     const sim::WorldIsland& island = m_state->world.islands()[cell.island];
     const sim::City* city = m_state->world.city(cell.island, island.map.top(cell.local_x, cell.local_y).city);
-    if (city == nullptr || !island.discovered_by(m_local_player)) {
+    // A spectator (no player of its own) sees every city, as in the city list.
+    if (city == nullptr || (m_local_player != sim::kNoPlayer && !island.discovered_by(m_local_player))) {
         return r;
     }
     if (city->owner == m_local_player) {

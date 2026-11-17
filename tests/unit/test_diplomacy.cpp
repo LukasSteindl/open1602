@@ -365,3 +365,23 @@ TEST_CASE("diplomacy: alliances between players at peace, ended by war (Open1602
     CHECK(!d.allied(0, 3));
     CHECK(d.relation(0, 3).peace == Treaty::Signed);
 }
+
+TEST_CASE("diplomacy: offering an alliance over and over is one friendly gesture (Open1602)") {
+    sim::World world(64, 64);
+    world.set_players(original_players());
+    using Order = sim::DiplomacyOrder;
+    const sim::Diplomacy& d = world.diplomacy();
+    const auto gestures = [&] {
+        return std::count_if(d.events(1).begin(), d.events(1).end(), [](const sim::DiplomacyEvent& e) {
+            return e.type == DiplomacyEventType::FriendlyGesture && e.partner == 0;
+        });
+    };
+    // Offered and withdrawn ten times, then offered again: the partner remembers one gesture.
+    for (int i = 0; i < 10; ++i) {
+        CHECK(sim::apply_diplomacy(world, Order{0, 1, Order::Kind::Alliance, Treaty::Offered}));
+        CHECK(sim::apply_diplomacy(world, Order{0, 1, Order::Kind::Alliance, Treaty::None}));
+    }
+    CHECK(sim::apply_diplomacy(world, Order{0, 1, Order::Kind::Alliance, Treaty::Offered}));
+    CHECK(gestures() == 1);
+    CHECK(d.mood(world, 1, 0, 0, world.time_ms()) <= 30);
+}

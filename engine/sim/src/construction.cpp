@@ -73,6 +73,33 @@ Footprint footprint_of(const assets::BuildingType& b, std::int32_t x, std::int32
     return f;
 }
 
+/// Water, shore, or a building that stands on water (F18).
+bool watery(const assets::BuildingType& b) noexcept {
+    switch (b.kind) {
+        case kind::kRiver:
+        case kind::kRiverCorner:
+        case kind::kBridge:
+        case kind::kSea:
+        case kind::kSurf:
+        case kind::kSurfCorner:
+        case kind::kRiverMouth:
+        case kind::kBeach:
+        case kind::kBeachMouth:
+        case kind::kBeachOuter:
+        case kind::kBeachInner:
+        case kind::kBeachVariant:
+        case kind::kBeachHouse:
+        case kind::kBeachRuin:
+        case kind::kPier:
+        case kind::kWallBeach:
+        case kind::kTowerBeach:
+        case kind::kHarbour:
+            return true;
+        default:
+            return false;
+    }
+}
+
 const assets::BuildingType* type_at(const IslandMap& map, const assets::BuildingTable& buildings, std::int32_t x,
                                     std::int32_t y) {
     if (!map.contains(x, y)) {
@@ -1938,6 +1965,20 @@ public:
     void restore_ground(const Footprint& f, std::uint8_t city) {
         IslandMap& m = map();
         const assets::BuildingType* meadow = m_buildings.by_id(kMeadowId);
+        // Water in the ground layer that no water, shore or building on water borders any more
+        // comes back as meadow (F18): the ground can hold water where the island showed grass (the
+        // island template's water under grass of a city), and the old water would stand amid land
+        // with no shore. A river or the sea under a bridge or pier still borders its water.
+        bool by_water = false;
+        for (std::int32_t ty = f.y - 1; !by_water && ty <= f.y + static_cast<std::int32_t>(f.h); ++ty) {
+            for (std::int32_t tx = f.x - 1; !by_water && tx <= f.x + static_cast<std::int32_t>(f.w); ++tx) {
+                if (f.contains(tx, ty)) {
+                    continue;
+                }
+                const assets::BuildingType* n = type_at(m, m_buildings, tx, ty);
+                by_water = !m.contains(tx, ty) || (n != nullptr && watery(*n));
+            }
+        }
         for (std::uint32_t j = 0; j < f.h; ++j) {
             for (std::uint32_t i = 0; i < f.w; ++i) {
                 const std::int32_t tx = f.x + static_cast<std::int32_t>(i);
@@ -1945,7 +1986,8 @@ public:
                 const MapCell top = m.top(static_cast<std::uint32_t>(tx), static_cast<std::uint32_t>(ty));
                 const MapCell& ground = m.ground(static_cast<std::uint32_t>(tx), static_cast<std::uint32_t>(ty));
                 const assets::BuildingType* g = ground.empty() ? nullptr : m_buildings.by_sprite(ground.sprite);
-                if (g == nullptr || (g->kind == kind::kForest && meadow != nullptr)) {
+                if (g == nullptr || (g->kind == kind::kForest && meadow != nullptr) ||
+                    (!by_water && watery(*g) && meadow != nullptr)) {
                     if (meadow != nullptr) {
                         (void)m.build(*meadow, tx, ty, 0, 0, top.owner, city);
                     }
@@ -2946,6 +2988,57 @@ bool capture_neutral_building(World& world, const assets::BuildingTable& buildin
     builder.take_over(f, b->city, to);
     builder.finish();
     return true;
+}
+
+std::size_t take_peaceful_neutrals(World& world, const assets::BuildingTable& buildings, std::uint16_t island,
+                                   std::vector<ConstructionEvent>* events) {
+    if (island >= world.islands().size()) {
+        return 0;
+    }
+    // The neutral cities on the island whose player keeps the peace, and who could take them.
+    std::vector<std::uint8_t> neutral;
+    std::vector<PlayerId> takers;
+    for (const City& c : world.cities()) {
+        if (c.island != island) {
+            continue;
+        }
+        const Player* p = world.player(c.owner);
+        if (p != nullptr && world.acts_as(c.owner, FactionBehaviour::Neutral) &&
+            p->scenario.has(scenario_flag::kNeutralPeace)) {
+            neutral.push_back(c.index);
+        } else if (world.acts_as(c.owner, FactionBehaviour::Settlers) &&
+                   std::ranges::find(takers, c.owner) == takers.end()) {
+            takers.push_back(c.owner);
+        }
+    }
+    if (neutral.empty() || takers.empty()) {
+        return 0;
+    }
+    std::vector<TilePos> origins;
+    const IslandMap& map = world.islands()[island].map;
+    for (std::uint32_t y = 0; y < map.height(); ++y) {
+        for (std::uint32_t x = 0; x < map.width(); ++x) {
+            const MapCell& cell = map.top(x, y);
+            if (std::ranges::find(neutral, cell.city) == neutral.end()) {
+                continue;
+            }
+            const auto b =
+                building_at(world, buildings, island, {static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)});
+            if (b && b->origin.x == static_cast<std::int32_t>(x) && b->origin.y == static_cast<std::int32_t>(y)) {
+                origins.push_back(b->origin);
+            }
+        }
+    }
+    std::size_t taken = 0;
+    for (const TilePos& o : origins) {
+        for (const PlayerId taker : takers) {
+            if (capture_neutral_building(world, buildings, island, o, taker, events)) {
+                ++taken;
+                break;
+            }
+        }
+    }
+    return taken;
 }
 
 bool computer_city_gone(const World& world, const assets::BuildingTable& buildings, std::uint16_t island,

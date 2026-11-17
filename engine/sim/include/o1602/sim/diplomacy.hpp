@@ -142,6 +142,9 @@ public:
     bool set_alliance(const World& world, PlayerId a, PlayerId b, Treaty v, std::uint64_t now_ms);
     /// Adds an event to a's memory about b.
     void add_event(PlayerId a, PlayerId b, DiplomacyEventType type, std::uint64_t now_ms);
+    /// Open1602: as add_event, but an event of that type a already holds about b is only renewed,
+    /// not added a second time.
+    void renew_event(PlayerId a, PlayerId b, DiplomacyEventType type, std::uint64_t now_ms);
     /// Damage player `victim` received from `attacker` (hits on ships, soldiers, buildings).
     void add_damage(PlayerId victim, PlayerId attacker, std::uint32_t damage) noexcept;
     /// Kontor trade worth `gold` between them: friendlier both ways.
