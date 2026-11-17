@@ -2929,7 +2929,7 @@ TEST_CASE("ai: an improved computer builds a mine only where the carts of its Ko
     p.city = city->index;
     const assets::BuildingType& mine = *g.buildings.by_id(20601);
     const sim::IslandMap& map = g.world.islands()[city->island].map;
-    const auto road = [&](std::int32_t x, std::int32_t y) {
+    const auto road = [&](std::uint32_t x, std::uint32_t y) {
         const sim::MapCell& c = map.top(x, y);
         const assets::BuildingType* b = c.empty() ? nullptr : g.buildings.by_sprite(c.sprite);
         return b != nullptr && b->id >= 20401 && b->id <= 20414;
