@@ -240,6 +240,12 @@ public:
     /// grows `crop` fully (ai_settle.cpp).
     [[nodiscard]] bool crop_available(const AiPlayer& p, std::uint8_t crop) const;
 
+    // ai_build.cpp
+    /// Whether a Kontor's or market's carts of `p`'s city reach a mine `mine` placed at one of
+    /// task_mine's placements around slope tile (x, y), with the planned `road` laid.
+    [[nodiscard]] bool mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
+                                    std::span<const BuildItem> road) const;
+
 private:
     // ---- ai_core.cpp ----
     void step(AiPlayer& p);
