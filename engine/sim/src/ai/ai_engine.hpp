@@ -18,6 +18,7 @@
 #include <optional>
 #include <span>
 #include <string>
+#include <tuple>
 #include <utility>
 #include <vector>
 
@@ -254,6 +255,9 @@ public:
     /// off from the city's buildings, the water nearest to the ship from which they would land on
     /// land walkable to the city; nothing when they land there now or no such water is found.
     [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
+    /// Open1602 (F4): whether units released from `p`'s castle `e` on `island` can walk from the
+    /// cell they step out on to the city's Kontor (true too where the check does not apply).
+    [[nodiscard]] bool way_out(const AiPlayer& p, std::uint16_t island, const CastleEntry& e) const;
 
 private:
     // ---- ai_core.cpp ----
@@ -1112,6 +1116,9 @@ private:
     /// reach no store (only the log).
     std::vector<std::uint32_t> m_yard_unreached;
     void log_yard(const AiPlayer& p, YardWait why) const;
+    /// The castles way_out() keeps units in, as player, island, x, y (only the log: a castle is
+    /// logged when its way out closes, not at every recruit pass).
+    mutable std::vector<std::tuple<PlayerId, std::uint16_t, std::uint16_t, std::uint16_t>> m_castles_kept;
     /// Per city, the minutes of statistics log_supply() last wrote at (only the log).
     std::vector<std::uint32_t> m_supply_logged;
     /// Free land from which `grown` grows a stage's orders, during the grow pass of `run_stage`.
