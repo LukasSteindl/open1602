@@ -73,6 +73,33 @@ Footprint footprint_of(const assets::BuildingType& b, std::int32_t x, std::int32
     return f;
 }
 
+/// Water, shore, or a building that stands on water (F18).
+bool watery(const assets::BuildingType& b) noexcept {
+    switch (b.kind) {
+        case kind::kRiver:
+        case kind::kRiverCorner:
+        case kind::kBridge:
+        case kind::kSea:
+        case kind::kSurf:
+        case kind::kSurfCorner:
+        case kind::kRiverMouth:
+        case kind::kBeach:
+        case kind::kBeachMouth:
+        case kind::kBeachOuter:
+        case kind::kBeachInner:
+        case kind::kBeachVariant:
+        case kind::kBeachHouse:
+        case kind::kBeachRuin:
+        case kind::kPier:
+        case kind::kWallBeach:
+        case kind::kTowerBeach:
+        case kind::kHarbour:
+            return true;
+        default:
+            return false;
+    }
+}
+
 const assets::BuildingType* type_at(const IslandMap& map, const assets::BuildingTable& buildings, std::int32_t x,
                                     std::int32_t y) {
     if (!map.contains(x, y)) {
@@ -1938,6 +1965,20 @@ public:
     void restore_ground(const Footprint& f, std::uint8_t city) {
         IslandMap& m = map();
         const assets::BuildingType* meadow = m_buildings.by_id(kMeadowId);
+        // Water in the ground layer that no water, shore or building on water borders any more
+        // comes back as meadow (F18): the ground can hold water where the island showed grass (the
+        // island template's water under grass of a city), and the old water would stand amid land
+        // with no shore. A river or the sea under a bridge or pier still borders its water.
+        bool by_water = false;
+        for (std::int32_t ty = f.y - 1; !by_water && ty <= f.y + static_cast<std::int32_t>(f.h); ++ty) {
+            for (std::int32_t tx = f.x - 1; !by_water && tx <= f.x + static_cast<std::int32_t>(f.w); ++tx) {
+                if (f.contains(tx, ty)) {
+                    continue;
+                }
+                const assets::BuildingType* n = type_at(m, m_buildings, tx, ty);
+                by_water = !m.contains(tx, ty) || (n != nullptr && watery(*n));
+            }
+        }
         for (std::uint32_t j = 0; j < f.h; ++j) {
             for (std::uint32_t i = 0; i < f.w; ++i) {
                 const std::int32_t tx = f.x + static_cast<std::int32_t>(i);
@@ -1945,7 +1986,8 @@ public:
                 const MapCell top = m.top(static_cast<std::uint32_t>(tx), static_cast<std::uint32_t>(ty));
                 const MapCell& ground = m.ground(static_cast<std::uint32_t>(tx), static_cast<std::uint32_t>(ty));
                 const assets::BuildingType* g = ground.empty() ? nullptr : m_buildings.by_sprite(ground.sprite);
-                if (g == nullptr || (g->kind == kind::kForest && meadow != nullptr)) {
+                if (g == nullptr || (g->kind == kind::kForest && meadow != nullptr) ||
+                    (!by_water && watery(*g) && meadow != nullptr)) {
                     if (meadow != nullptr) {
                         (void)m.build(*meadow, tx, ty, 0, 0, top.owner, city);
                     }
