@@ -249,6 +249,16 @@ public:
     /// quarry, whose stone the stonemason fetches.
     [[nodiscard]] bool mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
                                     std::span<const BuildItem> road) const;
+    /// Open1602 (F3r): the circles of the stonemasons of `p`'s city, which fetch the stone from the
+    /// quarries' tiles inside them; empty without a mason.
+    [[nodiscard]] std::vector<Catchment> mason_circles(const AiPlayer& p) const;
+    /// Whether a quarry `quarry` placed at (x0, y0) with `rotation` has a tile in one of `circles`.
+    [[nodiscard]] bool masons_reach(std::span<const Catchment> circles, const assets::BuildingType& quarry,
+                                    std::int32_t x0, std::int32_t y0, std::uint8_t rotation) const;
+    /// Whether one of task_mine's placements of `quarry` around slope tile (x, y) has a tile in one
+    /// of `circles`; true without circles.
+    [[nodiscard]] bool masons_reach(std::span<const Catchment> circles, const assets::BuildingType& quarry,
+                                    std::int32_t x, std::int32_t y) const;
 
     // ai_military.cpp
     /// Open1602 (F5): when the cell where ship `s`'s soldiers would land at `p`'s city `c` is cut
@@ -651,7 +661,9 @@ private:
     bool search_hunter(AiPlayer& p);
     bool search_market(AiPlayer& p);
     bool search_claim(AiPlayer& p);
-    bool mine_path(AiPlayer& p, std::uint8_t ware, std::vector<BuildItem>& road);
+    /// `circles`: only a slope where a quarry reaches one of them (masons_reach).
+    bool mine_path(AiPlayer& p, std::uint8_t ware, std::vector<BuildItem>& road,
+                   std::span<const Catchment> circles = {});
     /// Open1602: when no road's end leads to a fishing hut's site (search_fisher), the shortest way
     /// over the city's open ground from its roads or its Kontor to a beach tile with fish, up to
     /// kFisherPath tiles; the road along it goes to `road`, the site to the search.
@@ -679,6 +691,9 @@ private:
     bool search_shipyard(AiPlayer& p);
     bool search_mine(AiPlayer& p, std::uint8_t ware);
     bool search_mine_wide(AiPlayer& p, std::uint8_t ware);
+    /// Open1602 (F3r): the stonemasons' circles a quarry of the current search must reach (empty
+    /// for other mines, a classic computer or a city without a mason).
+    [[nodiscard]] std::vector<Catchment> quarry_circles(const AiPlayer& p, std::uint8_t ware) const;
     std::int32_t coast_walk(AiPlayer& p, std::int32_t x, std::int32_t y, std::uint8_t dir, std::int32_t* cx,
                             std::int32_t* cy, bool water);
     std::int32_t mountain_walk(AiPlayer& p, std::int32_t x, std::int32_t y, std::uint8_t dir, std::uint8_t ware,

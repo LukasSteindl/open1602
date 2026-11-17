@@ -698,6 +698,66 @@ bool Engine::mine_reached(const AiPlayer& p, const assets::BuildingType& mine, s
     });
 }
 
+std::vector<Catchment> Engine::mason_circles(const AiPlayer& p) const {
+    std::vector<Catchment> circles;
+    const IslandMap& map = m_world.islands()[p.island].map;
+    for (const Production& pr : m_world.productions()) {
+        if (!pr.used || pr.island != p.island || !map.contains(pr.x, pr.y)) {
+            continue;
+        }
+        const MapCell& cell = map.top(pr.x, pr.y);
+        const assets::BuildingType* b = cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
+        if (cell.city != p.city || b == nullptr || b->destroyed || b->raw_ware != ware::kStone) {
+            continue;
+        }
+        circles.push_back(catchment_of(*b, cell.rotation, TilePos{pr.x, pr.y}));
+    }
+    return circles;
+}
+
+namespace {
+
+/// Whether tile (x, y) lies in circle `a`, as the circle's workers find their goals.
+bool in_circle(const Catchment& a, std::int32_t x, std::int32_t y) {
+    std::int32_t dx = x - a.centre.x;
+    std::int32_t dy = y - a.centre.y;
+    dx = dx > 0 ? dx - a.parity_x : -dx;
+    dy = dy > 0 ? dy - a.parity_y : -dy;
+    return dy <= a.radius && dx <= a.radius &&
+           (a.radius <= 1 || dx <= circle_table(a.radius)[static_cast<std::size_t>(dy)]);
+}
+
+}  // namespace
+
+bool Engine::masons_reach(std::span<const Catchment> circles, const assets::BuildingType& quarry, std::int32_t x0,
+                          std::int32_t y0, std::uint8_t rotation) const {
+    std::uint32_t w = 1;
+    std::uint32_t h = 1;
+    rotated_size(quarry, rotation, w, h);
+    for (std::int32_t y = y0; y < y0 + static_cast<std::int32_t>(h); ++y) {
+        for (std::int32_t x = x0; x < x0 + static_cast<std::int32_t>(w); ++x) {
+            if (std::ranges::any_of(circles, [&](const Catchment& a) { return in_circle(a, x, y); })) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+bool Engine::masons_reach(std::span<const Catchment> circles, const assets::BuildingType& quarry, std::int32_t x,
+                          std::int32_t y) const {
+    return circles.empty() || std::ranges::any_of(kMineOffsets, [&](const MineOffset& o) {
+               return masons_reach(circles, quarry, x + o.dx, y + o.dy, o.rotation);
+           });
+}
+
+std::vector<Catchment> Engine::quarry_circles(const AiPlayer& p, std::uint8_t w) const {
+    if (classic() || w != ware::kStone) {
+        return {};
+    }
+    return mason_circles(p);
+}
+
 void Engine::task_mine(AiPlayer& p) {
     const assets::BuildingType* b = by_id(p.search.building);
     if (b == nullptr) {
@@ -714,9 +774,23 @@ void Engine::task_mine(AiPlayer& p) {
     log(p, "mine search ware %u: best %d at %d,%d segments %zu", b->ware, s.best, s.best_x1, s.best_y1,
         p.segments.size());
     std::vector<BuildItem> path;
-    if (s.best < 1 && (classic() || !mine_path(p, b->ware, path))) {
-        slot_fail(p, s.slot);
-        return;
+    // Open1602 (F3r): a quarry only where a stonemason's circle holds it, as the searches chose;
+    // without such a slope one where a new mason can go (the old rule, the mason follows it).
+    const std::vector<Catchment> circles = quarry_circles(p, b->ware);
+    bool outside = false;
+    if (s.best < 1) {
+        if (classic()) {
+            slot_fail(p, s.slot);
+            return;
+        }
+        if (!mine_path(p, b->ware, path, circles)) {
+            if (circles.empty() || !mine_path(p, b->ware, path)) {
+                slot_fail(p, s.slot);
+                return;
+            }
+            outside = true;
+            log(p, "quarry at %d,%d: no stone slope within a stonemason's reach", p.search.best_x1, p.search.best_y1);
+        }
     }
     // The mine on the slope (1 x 2, facing the rock).
     const assets::BuildingType* mine = by_id(p.search.building);
@@ -759,6 +833,9 @@ void Engine::task_mine(AiPlayer& p) {
         order.island = p.island;
         order.orient_to_road = false;
         order.items.push_back(BuildItem{mine->id, hx + o.dx, hy + o.dy, o.rotation, 0});
+        if (!outside && !circles.empty() && !masons_reach(circles, *mine, hx + o.dx, hy + o.dy, o.rotation)) {
+            continue;
+        }
         const BuildPlan plan = plan_build(m_world, m_buildings, order);
         if (plan.items.front().ok()) {
             placed = build(p, order.items, false);
