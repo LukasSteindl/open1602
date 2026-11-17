@@ -682,6 +682,11 @@ constexpr std::array kMineOffsets{MineOffset{0, 0, 0}, MineOffset{-1, 0, 1}, Min
 
 bool Engine::mine_reached(const AiPlayer& p, const assets::BuildingType& mine, std::int32_t x, std::int32_t y,
                           std::span<const BuildItem> road) const {
+    if (mine.prod_kind == prod::kQuarry) {
+        // The stonemason fetches the stone from the quarry's tiles himself (as a farmer his crop);
+        // no cart ever comes for it.
+        return true;
+    }
     return std::ranges::any_of(kMineOffsets, [&](const MineOffset& o) {
         std::uint32_t w = 1;
         std::uint32_t h = 1;
