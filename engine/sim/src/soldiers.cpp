@@ -31,6 +31,7 @@ constexpr std::int32_t kDoctorGoal = 1;    // cells from an own doctor: the sold
 constexpr std::int32_t kOthersRange = 8;   // cells: other figures block planning within 4 tiles
 constexpr std::int32_t kCrowded = 3;       // cells: walking slower next to another figure
 constexpr std::uint8_t kMaxFailures = 3;
+constexpr std::uint32_t kRouteTiles = 16'384;  // tiles a coarse way to a far target may take (F17)
 // Way searches and cells chasing leaves to units with a way to go.
 constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;
 constexpr std::uint32_t kChaseReserveCells = Military::kCellsPerTick / 2;
@@ -465,9 +466,9 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
     r.aim_y = ay;
     const CellRect rect = *cells;
     const LandMap& land = m_combat->land();
+    const std::int32_t range = static_cast<std::int32_t>(type->combat.range8) / 4;
     if (hostile_goal) {
         // Cells from which the target is in range and in sight; the first reached wins.
-        const std::int32_t range = static_cast<std::int32_t>(type->combat.range8) / 4;
         r.first_goal = true;
         r.goal_area = rect;
         r.goal_reach = range;
@@ -487,6 +488,32 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         r.goal = [rect, goal](std::int32_t x, std::int32_t y) { return rect.distance(x, y) <= goal; };
     }
     std::uint32_t taken = 0;
+    // A target beyond the window: the leg heads for the coarse way's last tile in the window, not
+    // for the window edge nearest the target (F17, Open1602: the original never finds a detour that
+    // leaves its window).
+    bool via = false;
+    if (std::max(std::abs(ax - r.start_x), std::abs(ay - r.start_y)) > radius) {
+        LandRoute route;
+        route.start_x = r.start_x;
+        route.start_y = r.start_y;
+        route.radius = radius;
+        route.speed_type = r.speed_type;
+        route.walker = r.walker;
+        route.goal_area = rect;
+        route.goal_reach = r.goal_reach;
+        route.max_tiles = kRouteTiles;
+        route.visited = &taken;
+        if (const auto point = m_planner.waypoint(land, route)) {
+            via = true;
+            const CellRect tile{point->first, point->second, point->first + 1, point->second + 1};
+            r.aim_x = point->first;
+            r.aim_y = point->second;
+            r.first_goal = false;
+            r.goal_area = tile;
+            r.goal_reach = 1;
+            r.goal = [tile](std::int32_t x, std::int32_t y) { return tile.distance(x, y) <= 1; };
+        }
+    }
     r.visited = &taken;
     const LandCourse course = m_planner.plan(land, r);
     m_stats.cells += taken;
@@ -495,7 +522,7 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         m_plans_left = 0;  // the cells of the tick are used up: no new search in it
     }
     if (course.path.empty()) {
-        return course.reached_goal;
+        return !via && course.reached_goal;
     }
     s.motion.path = course.path;
     s.motion.path_index = 0;
