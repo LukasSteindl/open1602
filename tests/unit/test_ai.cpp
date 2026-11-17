@@ -2945,3 +2945,26 @@ TEST_CASE("ai: an improved computer builds a mine only where the carts of its Ko
     const std::vector<sim::BuildItem> planned{sim::BuildItem{20411, 42, 20, 0, 0}, sim::BuildItem{20411, 41, 20, 0, 0}};
     CHECK(engine.mine_reached(p, mine, 40, 20, planned));
 }
+
+TEST_CASE("ai: an improved computer's guard leaves soldiers on their way aboard a ship") {
+    // Attack ships board the soldiers at the home Kontor; the guard sent them back to its post every
+    // few seconds, so the ships sailed empty. The original's guard takes them as before.
+    for (const bool original : {true, false}) {
+        Game g;
+        sim::Rules rules;
+        rules.bugs.classic_ai = original;
+        sim::Simulation s(g.world, g.buildings, g.figures, rules);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        const sim::Target post = sim::Target::spot(41, 41);
+        sim::Soldier soldier;
+        soldier.owner = kComputer;
+        CHECK(engine.guard_takes(soldier, post));
+        soldier.target = post;
+        CHECK(!engine.guard_takes(soldier, post));
+        soldier.target = sim::Target::building(1, 4, 4);
+        CHECK(!engine.guard_takes(soldier, post));
+        soldier.target = sim::Target::other_ship(7);
+        CHECK(engine.guard_takes(soldier, post) == original);
+    }
+}
