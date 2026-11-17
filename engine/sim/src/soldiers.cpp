@@ -35,6 +35,8 @@ constexpr std::uint8_t kMaxFailures = 3;
 // to the coarse way to its target (F17, Open1602; kept with the failures, so savegames keep it).
 constexpr std::uint8_t kFailureCount = 0x7F;
 constexpr std::uint8_t kOnDetour = 0x80;
+// Cells a search can take among the units that block it (those within kOthersRange).
+constexpr auto kWalledIn = static_cast<std::uint32_t>((2 * kOthersRange + 1) * (2 * kOthersRange + 1));
 constexpr std::uint32_t kRouteTiles = 16'384;  // tiles a coarse way to a far target may take (F17)
 // Way searches and cells chasing leaves to units with a way to go.
 constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;
@@ -164,8 +166,14 @@ void Military::turned_away(Soldier& s) {
         m_first_id = s.id;
     }
     ++m_stats.turned_away;
+    const std::uint32_t wait_us = std::max<std::uint32_t>(1, m_tick_ms) * 1000U;
     if (s.motion.path_index < s.motion.path.size()) {
         ++m_stats.turned_away_walking;
+    } else if (s.anim == kAnimWalk && s.motion.duration_us == wait_us) {
+        // Turned away a second tick in a row without a way: it stands rather than walking on the
+        // spot (F17). After one tick it goes on walking, so a short wait at the end of a leg does
+        // not break the walk.
+        s.anim = kAnimStand;
     }
     start_wait(s, std::max<std::uint32_t>(1, m_tick_ms));
 }
@@ -531,11 +539,13 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         }
     }
     r.visited = &taken;
+    const std::uint32_t before = taken;
     LandCourse course = m_planner.plan(land, r);
-    if (course.path.empty() && !course.reached_goal && !r.blocked.empty()) {
+    if (course.path.empty() && !course.reached_goal && !r.blocked.empty() && taken - before <= kWalledIn) {
         // Walled in by other units (F17, Open1602): the original waits until they move, and gives
         // the order up after four plans; a unit inside a crowd that stands never gets out. The way
-        // then leads past them; units do not stop one another on the way.
+        // then leads past them; units do not stop one another on the way. A search that took more
+        // cells than lie among the units that block got out of the crowd: the land stopped it.
         r.blocked.clear();
         course = m_planner.plan(land, r);
     }
