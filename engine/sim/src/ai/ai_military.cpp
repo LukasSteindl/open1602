@@ -985,7 +985,16 @@ void Engine::board(AiPlayer& p, Ship& s, const City& at, std::uint32_t max) {
 bool Engine::move_to_board(AiPlayer& p, Ship& s, ShipNote& n, const City& home) {
     // Open1602 (BD): to water from which the soldiers at the Kontor can go on board. The mission
     // and its counter go on, so a ship that finds no boarding there still ends its mission.
-    const auto water = boarding_water(p, s, home);
+    std::vector<std::uint32_t> soldiers;  // those board() would order aboard
+    for (const Soldier* soldier : soldiers_near(p.player, home, 8, 16)) {
+        if (soldier->target.kind != Target::Kind::Building) {
+            soldiers.push_back(soldier->id);
+        }
+    }
+    if (soldiers.empty()) {
+        return false;
+    }
+    const auto water = boarding_water(p, s, home, soldiers);
     if (!water || (water->x == s.x && water->y == s.y)) {
         return false;
     }
@@ -1784,18 +1793,19 @@ std::optional<Target> Engine::landing_shore(const AiPlayer& p, const Ship& s, co
     return std::nullopt;
 }
 
-std::optional<Target> Engine::boarding_water(const AiPlayer& p, const Ship& s, const City& c) const {
+std::optional<Target> Engine::boarding_water(const AiPlayer& p, const Ship& s, const City& c,
+                                             const std::vector<std::uint32_t>& soldiers) const {
     // Open1602 (BD): soldiers go on board only from a cell within the engine's boarding range of the
-    // ship. Off a Kontor whose nearby shore is cut off from it (walls, buildings, a pocket by the
-    // pier), the soldiers called from the Kontor end their ways out of range and stand: a player
-    // moves the ship to where they can reach it.
+    // ship. Off a quay strip that the Kontor itself, a tower, a wall or trees cut off from the land
+    // behind, the soldiers gathered there end their ways out of range and stand: a player moves the
+    // ship to where they can reach it. The tiles they can walk to are flooded from where they stand.
     const WorldIsland& isl = island_of(c.island);
     const auto w = static_cast<std::int32_t>(isl.map.width());
     const auto h = static_cast<std::int32_t>(isl.map.height());
     const auto at = [w](std::int32_t x, std::int32_t y) {
         return static_cast<std::size_t>(y) * static_cast<std::size_t>(w) + static_cast<std::size_t>(x);
     };
-    const std::vector<std::uint8_t> reach = walk_reach_to(p, c, true);
+    const std::vector<std::uint8_t> reach = land_reach(p.player, c.island, soldiers);
     const auto boards = [&](const Ship& ship, std::int32_t x, std::int32_t y) {
         const std::int32_t cx = 2 * (static_cast<std::int32_t>(isl.x) + x);
         const std::int32_t cy = 2 * (static_cast<std::int32_t>(isl.y) + y);

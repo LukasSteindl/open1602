@@ -245,10 +245,11 @@ public:
     /// off from the city's buildings, the water nearest to the ship from which they would land on
     /// land walkable to the city; nothing when they land there now or no such water is found.
     [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
-    /// Open1602 (BD): when no tile walkable to `p`'s Kontor in city `c` lies within boarding range of
-    /// ship `s`, the water nearest to the ship from which one does; nothing when one does now or no
-    /// such water is found.
-    [[nodiscard]] std::optional<Target> boarding_water(const AiPlayer& p, const Ship& s, const City& c) const;
+    /// Open1602 (BD): when no tile `soldiers` (of `p`, at city `c`) can walk to lies within boarding
+    /// range of ship `s`, the water nearest to the ship from which one does; nothing when one does now
+    /// or no such water is found.
+    [[nodiscard]] std::optional<Target> boarding_water(const AiPlayer& p, const Ship& s, const City& c,
+                                                       const std::vector<std::uint32_t>& soldiers) const;
 
 private:
     // ---- ai_core.cpp ----
@@ -897,7 +898,8 @@ private:
     void ship_send(AiPlayer& p, Ship& s, const Target& t, std::uint8_t mission, std::uint32_t param);
     void mission_end(AiPlayer& p, Ship& s, ShipNote& n);
     void board(AiPlayer& p, Ship& s, const City& at, std::uint32_t max);
-    /// Open1602 (BD): sends ship `s` to boarding_water() at `home`, if any; whether it did.
+    /// Open1602 (BD): sends ship `s` to boarding_water() for the soldiers board() would order at
+    /// `home`, if any; whether it did.
     bool move_to_board(AiPlayer& p, Ship& s, ShipNote& n, const City& home);
     void missions(AiPlayer& p);
     void plan_landing(AiPlayer& p, Ship& s, ShipNote& n);
