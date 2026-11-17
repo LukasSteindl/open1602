@@ -58,6 +58,9 @@ inline constexpr std::uint32_t kRivalDevelopment = 0x200;  ///< minds humans bey
 /// Open1602's own: the pirates keep their peace with the player whatever their mood, until the
 /// player attacks them. The original's files do not hold it (kOriginalFlags).
 inline constexpr std::uint32_t kPiratePeace = 0x10000;
+/// Open1602's own, on the neutral buildings' player: they are at peace with everyone, and a
+/// building of theirs goes over to a city whose land comes to cover all of it, without a fight.
+inline constexpr std::uint32_t kNeutralPeace = 0x20000;
 /// The switches the original's files hold.
 inline constexpr std::uint32_t kOriginalFlags = 0x3FE;
 }  // namespace scenario_flag

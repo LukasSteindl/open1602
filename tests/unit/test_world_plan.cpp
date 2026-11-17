@@ -326,6 +326,22 @@ TEST_CASE("world plan: together, all ships start at one place, as in the origina
     }
 }
 
+TEST_CASE("world plan: together, no island comes near any of the ships, with up to twelve players") {
+    // The ships wait up to eight tiles from the common start, farther from the ninth player on; the
+    // islands keep their distance from each of them, not only from the middle.
+    for (const std::uint8_t players : {std::uint8_t{4}, std::uint8_t{8}, std::uint8_t{12}}) {
+        for (std::uint64_t seed = 1; seed <= 12; ++seed) {
+            sim::WorldSettings s;
+            s.starts = sim::WorldSettings::Starts::Together;
+            s.players = players;
+            s.seed = seed;
+            auto p = sim::plan_world(s, templates());
+            REQUIRE(p.ok());
+            check_plan(*p, s);
+        }
+    }
+}
+
 TEST_CASE("world plan: players five on are computers behind the factions, each with a ship at its start") {
     // The seven slots of a level's file: four players, free trader, pirates, natives.
     sim::World world(600, 400);

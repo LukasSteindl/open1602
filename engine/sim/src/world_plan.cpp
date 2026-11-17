@@ -126,6 +126,16 @@ struct Point {
     std::int32_t y = 0;
 };
 
+/// Where the ship of player `p` waits when all start together: the original's offsets around the
+/// common start, from the ninth player on a ring of three tiles more per eight players.
+Point together_ship(const Point& start, std::size_t p) {
+    static constexpr std::array<Point, 8> kTogether = {
+        {{0, 0}, {0, -7}, {-5, 5}, {-4, -1}, {5, 4}, {6, -5}, {-7, -6}, {2, 8}}};
+    const Point& o = kTogether[p % kTogether.size()];
+    const auto ring = static_cast<std::int32_t>(p / kTogether.size()) * 3;
+    return Point{start.x + o.x + (o.x >= 0 ? ring : -ring), start.y + o.y};
+}
+
 std::int64_t distance2(std::int32_t ax, std::int32_t ay, std::int32_t bx, std::int32_t by) {
     const std::int64_t dx = ax - bx;
     const std::int64_t dy = ay - by;
@@ -247,6 +257,9 @@ private:
     std::vector<std::string>* m_warnings;
     Random m_random;
     std::vector<Point> m_starts;
+    /// Where the ships wait when that is not a start itself (all start together): islands keep the
+    /// same distance from these, so that no ship starts on or against the coast.
+    std::vector<Point> m_ships;
     std::vector<std::int32_t> m_home;  ///< index into m_islands per start, -1 none
     std::uint32_t m_reach = 0;
     std::vector<Planned> m_islands;
@@ -267,11 +280,13 @@ bool Planner::fits(const Rect& r) const {
         }
     }
     const auto clear = static_cast<std::int32_t>(kShipClear);
-    for (const Point& s : m_starts) {
-        const std::int32_t dx = std::max({r.x - s.x, 0, s.x - (r.x + r.w - 1)});
-        const std::int32_t dy = std::max({r.y - s.y, 0, s.y - (r.y + r.h - 1)});
-        if (std::max(dx, dy) < clear) {
-            return false;
+    for (const std::vector<Point>* points : {&m_starts, &m_ships}) {
+        for (const Point& s : *points) {
+            const std::int32_t dx = std::max({r.x - s.x, 0, s.x - (r.x + r.w - 1)});
+            const std::int32_t dy = std::max({r.y - s.y, 0, s.y - (r.y + r.h - 1)});
+            if (std::max(dx, dy) < clear) {
+                return false;
+            }
         }
     }
     return true;
@@ -401,6 +416,9 @@ void Planner::place_starts() {
     const std::int32_t n = m_s.players;
     if (m_s.starts == WorldSettings::Starts::Together || n == 1) {
         m_starts.push_back(Point{w / 2, h / 2});
+        for (std::size_t p = 1; p < m_s.players; ++p) {
+            m_ships.push_back(together_ship(m_starts.front(), p));
+        }
         m_reach = 90;
         return;
     }
@@ -1112,15 +1130,12 @@ WorldPlan Planner::finish() {
     for (std::size_t i = area_of.size(); i > 1; --i) {
         std::swap(area_of[i - 1], area_of[draw_area.below(static_cast<std::uint32_t>(i))]);
     }
-    static constexpr std::array<Point, 8> kTogether = {
-        {{0, 0}, {0, -7}, {-5, 5}, {-4, -1}, {5, 4}, {6, -5}, {-7, -6}, {2, 8}}};
     for (std::size_t p = 0; p < m_s.players; ++p) {
         StartArea a;
         if (m_s.starts == WorldSettings::Starts::Together) {
-            const Point& o = kTogether[p % kTogether.size()];
-            const auto ring = static_cast<std::int32_t>(p / kTogether.size()) * 3;
-            a.x = static_cast<std::uint32_t>(m_starts[0].x + o.x + (o.x >= 0 ? ring : -ring));
-            a.y = static_cast<std::uint32_t>(m_starts[0].y + o.y);
+            const Point ship = together_ship(m_starts[0], p);
+            a.x = static_cast<std::uint32_t>(ship.x);
+            a.y = static_cast<std::uint32_t>(ship.y);
             a.home_island = 0xFF;
         } else {
             const std::size_t i = area_of[p];

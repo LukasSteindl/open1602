@@ -10,6 +10,7 @@
 // Open1602 computes everything on every computer from the same state (ADR 0004).
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <optional>
 #include <unordered_set>
@@ -128,11 +129,17 @@ struct MilitaryEvent {
 
 class Military {
 public:
-    /// Way searches of all soldiers in one tick (TB-1), about 1.6 ms each. Soldiers over the
+    /// Way searches of all soldiers in one tick (TB-1): at most kPlansPerTick, and new ones only while
+    /// the tick's searches have taken fewer than kCellsPerTick cells from their queues (a search that
+    /// has begun ends, so a tick takes at most one window of 91 x 91 cells more; the original's whole
+    /// window was 8 281 cells, and 8 such searches the budget before). Counted in cells, not time,
+    /// so that every computer of a network game lets the same units search. Soldiers over the
     /// budget decide again in the next tick, and the first of them goes first then: units that
     /// search a lot (computers' soldiers chasing enemies they cannot reach) never keep a unit
-    /// further down the list from its way for good.
-    static constexpr std::uint32_t kPlansPerTick = 8;
+    /// further down the list from its way for good. Since the searches head for their goal (A*,
+    /// F17) most take a few hundred cells, so many more units get their way in a tick.
+    static constexpr std::uint32_t kPlansPerTick = 64;
+    static constexpr std::uint32_t kCellsPerTick = 24'000;
 
     Military(World& world, const assets::BuildingTable& buildings, const assets::FigureTable& figures,
              const Rules& rules, Combat& combat);
@@ -158,6 +165,17 @@ public:
 
     /// Units a player has: on land, in castles and on board ships.
     [[nodiscard]] std::uint32_t army_size(PlayerId player) const;
+
+    /// What the way searches did in the last tick, for measurements (o1602-tool bench); not part of
+    /// the game's state.
+    struct PlanStats {
+        std::uint32_t searches = 0;     ///< way searches run
+        std::uint32_t turned_away = 0;  ///< units the budget sent to wait a tick
+        /// Of those, units with a way still to go: they needed no search to walk on.
+        std::uint32_t turned_away_walking = 0;
+        std::uint32_t cells = 0;  ///< cells the searches took from their queues
+    };
+    [[nodiscard]] const PlanStats& plan_stats() const noexcept { return m_stats; }
     /// A castle's pack donkey brought weapons (the logistics call this; amount 0: the trip failed).
     void castle_delivery(std::uint16_t island, std::uint16_t x, std::uint16_t y, std::uint8_t ware,
                          std::uint32_t amount);
@@ -231,15 +249,17 @@ private:
     /// How near (in cells) the soldier walks to a friendly target: onto a free place itself, next
     /// to an own doctor, within a few cells of anything else.
     [[nodiscard]] std::int32_t friendly_goal(const Soldier& s, const Target& t) const;
-    /// The cells where a unit stands without an order or is headed to as its place, the units in
-    /// `leaving` left out (they are given a new place).
-    [[nodiscard]] std::unordered_set<std::uint64_t> occupied_cells(
-        const std::unordered_set<std::uint32_t>& leaving) const;
-    /// The cell nearest (x, y) that a soldier can stand on and that is not in `occupied`, among
-    /// equally near ones the one nearest (from_x, from_y); (x, y) itself when there is none near.
-    [[nodiscard]] std::pair<std::int32_t, std::int32_t> free_cell(
-        std::int32_t x, std::int32_t y, std::int32_t from_x, std::int32_t from_y,
-        const std::unordered_set<std::uint64_t>& occupied) const;
+    /// Half width of the window free_cell() looks in, cells.
+    static constexpr std::int32_t kSpread = 6;
+    /// The cells of the window around (x, y) where a unit stands without an order or is headed to as
+    /// its place, unit `leaving` left out (it is given a new place); row by row from the upper left.
+    using Occupancy = std::array<bool, (2 * kSpread + 1) * (2 * kSpread + 1)>;
+    [[nodiscard]] Occupancy occupied_cells(std::uint32_t leaving, std::int32_t x, std::int32_t y) const;
+    /// The cell nearest (x, y) that a soldier can stand on and that is not taken in `occupied` (the
+    /// window around (x, y)), among equally near ones the one nearest (from_x, from_y); (x, y) itself
+    /// when there is none near.
+    [[nodiscard]] std::pair<std::int32_t, std::int32_t> free_cell(std::int32_t x, std::int32_t y, std::int32_t from_x,
+                                                                  std::int32_t from_y, const Occupancy& occupied) const;
     [[nodiscard]] bool attackable(const Soldier& s, const Target& t) const;
     [[nodiscard]] std::optional<std::uint8_t> fire_direction(const Soldier& s, const assets::FigureType& type,
                                                              const Target& t) const;
@@ -293,7 +313,9 @@ private:
     Fleet* m_fleet = nullptr;
     LandPlanner m_planner;
     std::uint32_t m_plans_left = 0;  ///< way searches still allowed in this tick (TB-1)
+    std::uint32_t m_cells_left = 0;  ///< cells the searches of this tick may still take
     std::uint32_t m_tick_ms = 0;     ///< game time of the running tick
+    PlanStats m_stats;
     /// The first unit the budget turned away in the last tick, which goes first in the next one
     /// (kNoUnit: none).
     std::uint32_t m_first_id = kNoUnit;

@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "../test_framework.hpp"
+#include "names.hpp"
 #include "selection_panels.hpp"
 
 #include "o1602/assets/cod_parser.hpp"
@@ -1282,10 +1283,19 @@ TEST_CASE("selection panels: the military windows of one land unit and of a grou
     CHECK(go->on);
     out.clear();
 
-    // Another player's unit takes no orders.
+    // One's own unit: the heading without an owner.
+    CHECK(!p->help(65002 + 902, none, c).has_value());
+
+    // Another player's unit takes no orders; its heading shows the owner's coat of arms, whose
+    // help line names the owner.
     units.select(t.world, ui::UnitRef{ui::UnitRef::Kind::Soldier, foreign});
     p = panels.military_panel_for(c);
     REQUIRE(p != nullptr);
+    p->refresh(none, c);
+    REQUIRE(p->panel().layout().find(65002 + 902) != nullptr);
+    const std::optional<std::string> owner = p->help(65002 + 902, none, c);
+    REQUIRE(owner.has_value());
+    CHECK(*owner == app::player_name(t.world.players()[kOther]));
     p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, 65023}, none, c, out);
     CHECK(out.empty());
 

@@ -51,8 +51,9 @@ namespace o1602::sim {
                                           std::uint32_t nests) noexcept;
 
 /// The pirate nest's offer: its N most valuable wares (N = Maxware of its Kontor) for
-/// sale at 40 % of the base price, everything else off. The pirates' task 5 runs it every 42 s,
-/// and the pirate step again whenever the nest eats 10 t of its food.
+/// sale at 40 % of the base price, no other sales. What it buys stays as the map set it (Open1602;
+/// the original clears that too), and a ware it buys is not offered. The pirates' task 5 runs it
+/// every 42 s, and the pirate step again whenever the nest eats 10 t of its food.
 void pirate_nest_offer(World& world, const assets::BuildingTable& buildings, City& nest);
 
 /// The human and computer players when Rules::trader_reach scales the free trader to them (more

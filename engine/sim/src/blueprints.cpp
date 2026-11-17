@@ -121,6 +121,9 @@ std::size_t build(World& world, const assets::BuildingTable& buildings, PlayerId
         built += plan.placed;
         drop_covered_blueprints(world, buildings, std::span(*sink).subspan(first));
     }
+    if (built > 0) {
+        (void)take_peaceful_neutrals(world, buildings, island, events);  // as for a building ordered
+    }
     return built;
 }
 

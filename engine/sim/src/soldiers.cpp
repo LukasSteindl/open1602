@@ -29,12 +29,20 @@ constexpr std::int32_t kMeleeRange8 = 8;
 constexpr std::int32_t kFriendlyGoal = 7;  // cells around an object a soldier may stop at
 constexpr std::int32_t kDoctorGoal = 1;    // cells from an own doctor: the soldier goes in
 constexpr std::int32_t kOthersRange = 8;   // cells: other figures block planning within 4 tiles
-constexpr std::int32_t kSpread = 6;        // cells: how far a place moves to a free cell
 constexpr std::int32_t kCrowded = 3;       // cells: walking slower next to another figure
 constexpr std::uint8_t kMaxFailures = 3;
-constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;  // way searches chasing leaves
-constexpr std::int32_t kWanderRange = 9;                              // tiles around home
-constexpr std::int32_t kBoardRange = 9;  // cells from an own ship: the soldier goes on board
+// Soldier::failures: the plans in a row that found no way (low bits), and whether the soldier keeps
+// to the coarse way to its target (F17, Open1602; kept with the failures, so savegames keep it).
+constexpr std::uint8_t kFailureCount = 0x7F;
+constexpr std::uint8_t kOnDetour = 0x80;
+// Cells a search can take among the units that block it (those within kOthersRange).
+constexpr auto kWalledIn = static_cast<std::uint32_t>((2 * kOthersRange + 1) * (2 * kOthersRange + 1));
+constexpr std::uint32_t kRouteTiles = 16'384;  // tiles a coarse way to a far target may take (F17)
+// Way searches and cells chasing leaves to units with a way to go.
+constexpr std::uint32_t kChaseReserve = Military::kPlansPerTick / 2;
+constexpr std::uint32_t kChaseReserveCells = Military::kCellsPerTick / 2;
+constexpr std::int32_t kWanderRange = 9;  // tiles around home
+constexpr std::int32_t kBoardRange = 9;   // cells from an own ship: the soldier goes on board
 constexpr std::uint8_t kAnimWalk = 0;
 constexpr std::uint8_t kAnimStand = 1;
 constexpr std::uint8_t kAnimAttack = 2;
@@ -156,6 +164,16 @@ void Military::turned_away(Soldier& s) {
     // walk playing and did not follow its orders for minutes.
     if (m_first_id == kNoUnit) {
         m_first_id = s.id;
+    }
+    ++m_stats.turned_away;
+    const std::uint32_t wait_us = std::max<std::uint32_t>(1, m_tick_ms) * 1000U;
+    if (s.motion.path_index < s.motion.path.size()) {
+        ++m_stats.turned_away_walking;
+    } else if (s.anim == kAnimWalk && s.motion.duration_us == wait_us) {
+        // Turned away a second tick in a row without a way: it stands rather than walking on the
+        // spot (F17). After one tick it goes on walking, so a short wait at the end of a leg does
+        // not break the walk.
+        s.anim = kAnimStand;
     }
     start_wait(s, std::max<std::uint32_t>(1, m_tick_ms));
 }
@@ -423,6 +441,17 @@ bool Military::attack(Soldier& s, const assets::FigureType& type, const Target& 
     return false;
 }
 
+namespace {
+
+/// One more plan without a way; the detour mark stays.
+void failed(Soldier& s) {
+    const auto count =
+        static_cast<std::uint8_t>(std::min<std::uint32_t>((s.failures & kFailureCount) + 1U, kFailureCount));
+    s.failures = static_cast<std::uint8_t>((s.failures & kOnDetour) | count);
+}
+
+}  // namespace
+
 bool Military::plan(Soldier& s, std::int32_t radius, bool hostile_goal) {
     return plan_to(s, s.target, radius, hostile_goal);
 }
@@ -434,11 +463,12 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         return false;
     }
     m_plans_left = m_plans_left != 0 ? m_plans_left - 1 : 0;
+    ++m_stats.searches;
     LandPlan r;
     r.start_x = s.cell_x();
     r.start_y = s.cell_y();
     r.radius = radius;
-    if (s.failures != 0) {
+    if ((s.failures & kFailureCount) != 0) {
         // After a failure the window moves by half its size in a random diagonal.
         const std::uint32_t d = m_world->random(RandomStream::Military).next() & 3U;
         r.shift_x = (d & 1U) != 0 ? radius / 2 : -radius / 2;
@@ -459,10 +489,12 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
     r.aim_y = ay;
     const CellRect rect = *cells;
     const LandMap& land = m_combat->land();
+    const std::int32_t range = static_cast<std::int32_t>(type->combat.range8) / 4;
     if (hostile_goal) {
         // Cells from which the target is in range and in sight; the first reached wins.
-        const std::int32_t range = static_cast<std::int32_t>(type->combat.range8) / 4;
         r.first_goal = true;
+        r.goal_area = rect;
+        r.goal_reach = range;
         r.goal = [rect, range, &land](std::int32_t x, std::int32_t y) {
             if (rect.distance(x, y) > range) {
                 return false;
@@ -474,16 +506,61 @@ bool Military::plan_to(Soldier& s, const Target& target, std::int32_t radius, bo
         // The object itself or a cell next to it, as near to it as can be. An own doctor only takes the
         // soldier in from the next cell, so the way must end there: the original plans anew until then.
         const std::int32_t goal = friendly_goal(s, target);
+        r.goal_area = rect;
+        r.goal_reach = goal;
         r.goal = [rect, goal](std::int32_t x, std::int32_t y) { return rect.distance(x, y) <= goal; };
     }
-    const LandCourse course = m_planner.plan(land, r);
+    std::uint32_t taken = 0;
+    // A target beyond the window, after a plan found no way: the leg heads for the coarse way's last
+    // tile in the window, not for the window edge nearest the target, and so do the following legs
+    // (F17, Open1602: the original never finds a detour that leaves its window). Ways that work are
+    // planned as the original does, without the coarse way's cost.
+    bool via = false;
+    if (s.failures != 0 && std::max(std::abs(ax - r.start_x), std::abs(ay - r.start_y)) > radius) {
+        LandRoute route;
+        route.start_x = r.start_x;
+        route.start_y = r.start_y;
+        route.radius = radius;
+        route.speed_type = r.speed_type;
+        route.walker = r.walker;
+        route.goal_area = rect;
+        route.goal_reach = r.goal_reach;
+        route.max_tiles = kRouteTiles;
+        route.visited = &taken;
+        if (const auto point = m_planner.waypoint(land, route)) {
+            via = true;
+            const CellRect tile{point->first, point->second, point->first + 1, point->second + 1};
+            r.aim_x = point->first;
+            r.aim_y = point->second;
+            r.first_goal = false;
+            r.goal_area = tile;
+            r.goal_reach = 1;
+            r.goal = [tile](std::int32_t x, std::int32_t y) { return tile.distance(x, y) <= 1; };
+        }
+    }
+    r.visited = &taken;
+    const std::uint32_t before = taken;
+    LandCourse course = m_planner.plan(land, r);
+    if (course.path.empty() && !course.reached_goal && !r.blocked.empty() && taken - before <= kWalledIn) {
+        // Walled in by other units (F17, Open1602): the original waits until they move, and gives
+        // the order up after four plans; a unit inside a crowd that stands never gets out. The way
+        // then leads past them; units do not stop one another on the way. A search that took more
+        // cells than lie among the units that block got out of the crowd: the land stopped it.
+        r.blocked.clear();
+        course = m_planner.plan(land, r);
+    }
+    m_stats.cells += taken;
+    m_cells_left = m_cells_left > taken ? m_cells_left - taken : 0U;
+    if (m_cells_left == 0) {
+        m_plans_left = 0;  // the cells of the tick are used up: no new search in it
+    }
     if (course.path.empty()) {
-        return course.reached_goal;
+        return !via && course.reached_goal;
     }
     s.motion.path = course.path;
     s.motion.path_index = 0;
     s.radius = static_cast<std::uint8_t>(radius);
-    s.failures = 0;
+    s.failures = via ? kOnDetour : 0;
     return true;
 }
 
@@ -515,37 +592,38 @@ std::int32_t Military::friendly_goal(const Soldier& s, const Target& t) const {
     return kFriendlyGoal;
 }
 
-namespace {
-
-std::uint64_t cell_key(std::int32_t x, std::int32_t y) noexcept {
-    return (static_cast<std::uint64_t>(static_cast<std::uint32_t>(y)) << 32U) | static_cast<std::uint32_t>(x);
-}
-
-}  // namespace
-
-std::unordered_set<std::uint64_t> Military::occupied_cells(const std::unordered_set<std::uint32_t>& leaving) const {
-    std::unordered_set<std::uint64_t> occupied;
+Military::Occupancy Military::occupied_cells(std::uint32_t leaving, std::int32_t x, std::int32_t y) const {
+    // One pass over the units without building a set of every cell: only the window counts (F17:
+    // with thousands of units arriving in groups the set cost most of the soldiers' time).
+    Occupancy taken{};
+    const auto mark = [&](std::int32_t cx, std::int32_t cy) {
+        const std::int32_t i = cx - x + kSpread;
+        const std::int32_t j = cy - y + kSpread;
+        if (i >= 0 && j >= 0 && i <= 2 * kSpread && j <= 2 * kSpread) {
+            taken[static_cast<std::size_t>(j * (2 * kSpread + 1) + i)] = true;
+        }
+    };
     for (const Soldier& o : m_world->soldiers()) {
-        if (o.away() || o.owner == kNoPlayer || leaving.contains(o.id)) {
+        if (o.away() || o.owner == kNoPlayer || o.id == leaving) {
             continue;
         }
         if (o.target.empty()) {
-            occupied.insert(cell_key(o.cell_x(), o.cell_y()));
+            mark(o.cell_x(), o.cell_y());
         } else if (o.target.kind == Target::Kind::Spot) {
-            occupied.insert(cell_key(static_cast<std::int32_t>(o.target.x), static_cast<std::int32_t>(o.target.y)));
+            mark(static_cast<std::int32_t>(o.target.x), static_cast<std::int32_t>(o.target.y));
         }
     }
-    return occupied;
+    return taken;
 }
 
 std::pair<std::int32_t, std::int32_t> Military::free_cell(std::int32_t x, std::int32_t y, std::int32_t from_x,
-                                                          std::int32_t from_y,
-                                                          const std::unordered_set<std::uint64_t>& occupied) const {
+                                                          std::int32_t from_y, const Occupancy& occupied) const {
     const LandMap& land = m_combat->land();
-    const auto free = [&](std::int32_t cx, std::int32_t cy) {
-        return land.cell(cx, cy, 0) == LandMap::Cell::Walk && !occupied.contains(cell_key(cx, cy));
+    const auto free = [&](std::int32_t dx, std::int32_t dy) {
+        return land.cell(x + dx, y + dy, 0) == LandMap::Cell::Walk &&
+               !occupied[static_cast<std::size_t>((dy + kSpread) * (2 * kSpread + 1) + dx + kSpread)];
     };
-    if (free(x, y)) {
+    if (free(0, 0)) {
         return {x, y};
     }
     std::pair<std::int32_t, std::int32_t> best{x, y};
@@ -554,7 +632,7 @@ std::pair<std::int32_t, std::int32_t> Military::free_cell(std::int32_t x, std::i
     for (std::int32_t dy = -kSpread; dy <= kSpread; ++dy) {
         for (std::int32_t dx = -kSpread; dx <= kSpread; ++dx) {
             const std::int32_t d = sea_distance(dx, dy);
-            if (d > 2 * kSpread || !free(x + dx, y + dy)) {
+            if (d > 2 * kSpread || !free(dx, dy)) {
                 continue;
             }
             const std::int32_t from = sea_distance(x + dx - from_x, y + dy - from_y);
@@ -605,7 +683,10 @@ bool Military::arrived(Soldier& s) {
             }
         }
     }
-    if (d > friendly_goal(s, s.target)) {
+    // friendly_goal() is 0 or kFriendlyGoal here (the doctor is handled above): farther away the
+    // unit has not arrived without asking the land (F17: that look cost a quarter of the soldiers'
+    // time with thousands walking).
+    if (d > kFriendlyGoal || d > friendly_goal(s, s.target)) {
         return false;
     }
     if (s.target.kind == Target::Kind::Spot && !s.patrol.active) {
@@ -619,7 +700,7 @@ bool Military::arrived(Soldier& s) {
             return stacked;
         });
         if (stacked) {
-            const std::unordered_set<std::uint64_t> occupied = occupied_cells({s.id});
+            const Occupancy occupied = occupied_cells(s.id, s.cell_x(), s.cell_y());
             const auto [fx, fy] = free_cell(s.cell_x(), s.cell_y(), s.cell_x(), s.cell_y(), occupied);
             if (fx != s.cell_x() || fy != s.cell_y()) {
                 s.target = Target::spot(static_cast<std::uint32_t>(fx), static_cast<std::uint32_t>(fy));
@@ -754,11 +835,15 @@ void Military::decide(Soldier& s) {
         island != World::kSea) {
         s.island = island;
     }
-    if (m_plans_left == 0) {
-        // No way search left in this tick: the unit decides in the next one (TB-1).
+    // Only a unit that needs a way search waits for the budget (TB-1); one with a way still to go
+    // walks on without one, so that it does not stand with its walk playing (F17).
+    const auto out_of_plans = [&]() {
+        if (m_plans_left != 0) {
+            return false;
+        }
         turned_away(s);
-        return;
-    }
+        return true;
+    };
     if (!s.target.empty() && !target_valid(s.target)) {
         next_queued(s);
         m.path.clear();
@@ -796,7 +881,7 @@ void Military::decide(Soldier& s) {
                 computer_controlled(*m_world, s.owner, m_rules->bugs.classic_ai) || s.patrol.active || s.attack_move;
             if (enemy.empty() && !s.hold && (hunter || (melee && !walking))) {
                 std::size_t tried = 0;
-                bool out_of_plans = false;
+                bool no_searches = false;
                 for (const Candidate& c : candidates) {
                     if (!hunter) {
                         const auto cells = target_cells(c.unit);
@@ -810,15 +895,15 @@ void Military::decide(Soldier& s) {
                     if (melee && on_other_island(s, c.unit)) {
                         // No way leads there on foot; skip the search, which would only fail
                         // (review point 18), but take its random draw so the game stays the same.
-                        if (s.failures != 0) {
+                        if ((s.failures & kFailureCount) != 0) {
                             m_world->random(RandomStream::Military).next();
                         }
                         continue;
                     }
-                    if (m_plans_left <= kChaseReserve) {
+                    if (m_plans_left <= kChaseReserve || m_cells_left <= kChaseReserveCells) {
                         // The rest of the budget is for units with a way to go: chasing is their
                         // own idea, a way is mostly an order.
-                        out_of_plans = true;
+                        no_searches = true;
                         break;
                     }
                     if (plan_to(s, c.unit, kChaseRadius, true)) {
@@ -826,7 +911,9 @@ void Military::decide(Soldier& s) {
                         break;
                     }
                 }
-                if (out_of_plans && !chase) {
+                // Out of searches with a way still to go: on along it, chasing waits for the
+                // next decision.
+                if (no_searches && !chase && m.path_index >= m.path.size()) {
                     turned_away(s);
                     return;
                 }
@@ -842,9 +929,12 @@ void Military::decide(Soldier& s) {
             rest(s);
             return;
         }
+        if (out_of_plans()) {
+            return;
+        }
         if (!plan_to(s, enemy, kPlanRadius, true)) {
-            ++s.failures;
-            if (s.failures > kMaxFailures && enemy == s.target) {
+            failed(s);
+            if ((s.failures & kFailureCount) > kMaxFailures && enemy == s.target) {
                 next_queued(s);
                 s.failures = 0;
             }
@@ -868,9 +958,12 @@ void Military::decide(Soldier& s) {
             }
         }
         if (!s.target.empty()) {
+            if (out_of_plans()) {
+                return;
+            }
             if (!plan(s, kPlanRadius, attackable(s, s.target))) {
-                ++s.failures;
-                if (s.failures > kMaxFailures) {
+                failed(s);
+                if ((s.failures & kFailureCount) > kMaxFailures) {
                     next_queued(s);
                     s.failures = 0;
                 }
@@ -878,8 +971,9 @@ void Military::decide(Soldier& s) {
                 return;
             }
         }
-    } else if (s.target.moving() && now >= s.next_follow_ms) {
-        // Following a moving target: a new way every 3 s (step 8).
+    } else if (s.target.moving() && now >= s.next_follow_ms && m_plans_left != 0) {
+        // Following a moving target: a new way every 3 s (step 8); without a search left in this
+        // tick on along the old way, and again at the end of the next run.
         s.next_follow_ms = now + kFollowMs;
         if (const auto cells = target_cells(s.target);
             cells && cells->distance(s.cell_x(), s.cell_y()) > kFriendlyGoal) {

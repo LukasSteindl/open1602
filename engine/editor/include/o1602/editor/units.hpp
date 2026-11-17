@@ -7,6 +7,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string_view>
 
 #include "annokit/core/result.hpp"
 
@@ -41,14 +42,15 @@ enum class UnitRefusal : std::uint8_t {
                                     std::int64_t y);
 
 /// Whether a trade cart of `owner` can go on world tile (x, y): a human or computer player's, on
-/// ground carts drive on within reach of a Kontor or market of one of its cities, no other cart on
+/// ground carts drive on, on the land of one of its cities, no other cart on
 /// the tile, and no more carts on the island than the game gives the owner there (one, or with
 /// Rules::more_carts of the scenario's settings one for each of its Kontors and markets).
 [[nodiscard]] UnitRefusal cart_fits(const sim::World& world, const assets::BuildingTable& buildings,
                                     sim::PlayerId owner, std::int64_t x, std::int64_t y);
 
 /// A trade cart for `owner` on world tile (x, y), facing `direction` (0..7), empty and idle, at
-/// home in the nearest of the owner's cities it reaches, as the city's button sends it out.
+/// home in the nearest of the owner's cities it reaches, as the city's button sends it out; out
+/// of every city's reach, in the owner's city of the island whose Kontor lies nearest.
 /// Fails (InvalidFormat) with the refusal's name where it cannot go.
 [[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> place_cart(const sim::World& world,
                                                                            const assets::BuildingTable& buildings,
@@ -70,11 +72,34 @@ enum class UnitRefusal : std::uint8_t {
     sim::PlayerId owner, std::uint16_t family, std::int64_t x, std::int64_t y, std::uint8_t direction);
 
 /// The hold `slot` of ship `id` loaded with `amount` (1/32 t, at most sim::hold_capacity) of the
-/// trade ware `ware`; 0 tons or ware 0: empty. Fails (NotFound) without the ship or the hold,
-/// (OutOfRange) for a ware that is no trade ware or too much.
+/// trade ware `ware`; 0 tons or ware 0: empty. A ship (not a trade cart) also takes a land unit
+/// (a soldier ware, sim::unit_ware of its figure) at full health, whatever `amount` says, as
+/// boarding puts it there. Fails (NotFound) without the ship or the hold, (OutOfRange) for a ware
+/// that is no trade ware or unit or too much.
 [[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> set_ship_cargo(const sim::World& world,
                                                                                std::uint32_t id, std::size_t slot,
                                                                                std::uint8_t ware, std::uint32_t amount);
+
+/// Ship or trade cart `id` named `name` (1 to sim::ShipCommand::kMaxNameLength bytes, Windows-1252),
+/// as its owner renames it in the game. Fails (NotFound) without it, (InvalidFormat) for a name the
+/// game refuses.
+[[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> rename_ship(const sim::World& world, std::uint32_t id,
+                                                                            std::string_view name);
+
+/// Ship `id` with `cannons` mounted cannons, at most the ship type's (Maxkanon). Fails (NotFound)
+/// without the ship, (Unsupported) for a trade cart, (OutOfRange) for more than the type takes.
+[[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> set_ship_cannons(const sim::World& world,
+                                                                                 const assets::FigureTable& figures,
+                                                                                 std::uint32_t id,
+                                                                                 std::uint32_t cannons);
+
+/// Ship `id` offered for sale from the game's start at its price · `factor` / 128 (0 to
+/// sim::ShipCommand::kMaxSaleFactor), or no longer (`on` false), as its owner offers it in the
+/// game. Fails (NotFound) without the ship, (Unsupported) for a trade cart or a ship of nobody
+/// who trades ships (only humans and computers), (OutOfRange) for a factor beyond the game's.
+[[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> set_ship_for_sale(const sim::World& world,
+                                                                                  std::uint32_t id, bool on,
+                                                                                  std::uint16_t factor = 128);
 
 /// The trade route of ship or trade cart `id` changed as `edit` says (its `ship` is `id`, its
 /// `player` passed over), as the owner changes it in the game (sim::Fleet::edit_route): a stop's

@@ -165,4 +165,9 @@ and hold the ground they stand on and no more. The editor gives the map their pl
   nobody's, and once the last neutral building on an island is gone, so is their city there.
   The ground of a neutral building that is gone goes to the city whose land lies around it, or is
   free.
+- **Or peaceful**: the editor's description (**Neutral buildings**) can make them peaceful for a
+  map (scenario switch `0x20000` of their player, Open1602's own). They are then at peace with the
+  humans and computers, still make no treaties and trade with nobody, and a building of theirs
+  goes over whole to a player's city once its land reaches all of it, as soon as that player
+  builds (a Kontor or market nearby, say).
 
