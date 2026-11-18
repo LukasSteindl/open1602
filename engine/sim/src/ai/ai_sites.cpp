@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <span>
 #include <vector>
 
@@ -2338,7 +2339,7 @@ bool Engine::farm_by_path(AiPlayer& p, const assets::BuildingType& b, bool grain
     return true;
 }
 
-bool Engine::mine_path(AiPlayer& p, std::uint8_t w, std::vector<BuildItem>& road) {
+bool Engine::mine_path(AiPlayer& p, std::uint8_t w, std::vector<BuildItem>& road, std::span<const Catchment> circles) {
     // Open1602: when no straight road reaches a slope (search_mine, search_mine_wide), the
     // shortest way over the city's open ground from any of its roads to a slope with the deposit's
     // rock behind it, up to kMinePath tiles; the road along it goes to `road`, the slope and the
@@ -2380,6 +2381,10 @@ bool Engine::mine_path(AiPlayer& p, std::uint8_t w, std::vector<BuildItem>& road
             std::int32_t oy = 0;
             if (t.kind == kind::kSlope) {
                 if (mountain_walk(p, nx, ny, dir, w, &ox, &oy, 1, true, false) != 0) {
+                    continue;
+                }
+                if (const assets::BuildingType* quarry = by_id(p.search.building);
+                    quarry != nullptr && !masons_reach(circles, *quarry, ox, oy)) {
                     continue;
                 }
                 // Found: bind the deposit as search_mine does, and lay the road back to the roads.
@@ -2502,6 +2507,15 @@ bool Engine::search_mine(AiPlayer& p, std::uint8_t w) {
     // One road tile per call from the start of the runs; the first mountain reached
     // within seven tiles ends the search.
     Search& s = p.search;
+    // Open1602 (F3r): an improved computer's quarry only where a stonemason fetches its stone.
+    std::optional<std::vector<Catchment>> circles;
+    const auto reached = [&](std::int32_t x, std::int32_t y) {
+        if (!circles) {
+            circles = quarry_circles(p, w);
+        }
+        const assets::BuildingType* quarry = by_id(s.building);
+        return quarry == nullptr || masons_reach(*circles, *quarry, x, y);
+    };
     for (std::int32_t k = 0; k < 4; ++k) {
         if (s.segment >= static_cast<std::int32_t>(p.segments.size())) {
             return classic() || search_mine_wide(p, w);
@@ -2513,7 +2527,7 @@ bool Engine::search_mine(AiPlayer& p, std::uint8_t w) {
             std::int32_t ox = 0;
             std::int32_t oy = 0;
             const std::int32_t steps = mountain_walk(p, s.x + kStep[dir][0], s.y + kStep[dir][1], dir, w, &ox, &oy);
-            if (steps >= 0 && steps < 8) {
+            if (steps >= 0 && steps < 8 && reached(ox, oy)) {
                 s.best = (8 - steps) * 16;
                 s.best_x0 = s.x;
                 s.best_y0 = s.y;
@@ -2555,6 +2569,14 @@ bool Engine::search_mine_wide(AiPlayer& p, std::uint8_t w) {
     const IslandMap& map = m_world.islands()[p.island].map;
     const std::int32_t height = static_cast<std::int32_t>(map.height());
     const std::int32_t end = std::min(height, s.phase + kMineRows);
+    std::optional<std::vector<Catchment>> circles;
+    const auto reached = [&](std::int32_t x, std::int32_t y) {
+        if (!circles) {
+            circles = quarry_circles(p, w);
+        }
+        const assets::BuildingType* quarry = by_id(s.building);
+        return quarry == nullptr || masons_reach(*circles, *quarry, x, y);
+    };
     for (std::int32_t y = s.phase; y < end; ++y) {
         for (std::int32_t x = 0; x < static_cast<std::int32_t>(map.width()); ++x) {
             const Tile t = tile(p.island, x, y);
@@ -2566,7 +2588,7 @@ bool Engine::search_mine_wide(AiPlayer& p, std::uint8_t w) {
                 std::int32_t oy = 0;
                 const std::int32_t steps =
                     mountain_walk(p, x + kStep[dir][0], y + kStep[dir][1], dir, w, &ox, &oy, 13, true, false);
-                if (steps >= 0 && (s.best < 1 || steps < s.extra)) {
+                if (steps >= 0 && (s.best < 1 || steps < s.extra) && reached(ox, oy)) {
                     s.best = std::max<std::int32_t>(1, (14 - steps) * 8);
                     s.best_x0 = x;
                     s.best_y0 = y;
@@ -2589,7 +2611,7 @@ bool Engine::search_mine_wide(AiPlayer& p, std::uint8_t w) {
         std::int32_t oy = 0;
         const std::int32_t steps =
             mountain_walk(p, s.best_x0 + kStep[dir][0], s.best_y0 + kStep[dir][1], dir, w, &ox, &oy, 13, true);
-        if (steps < 0) {
+        if (steps < 0 || !reached(ox, oy)) {
             s.best = 0;
         } else {
             s.best = std::max<std::int32_t>(1, (14 - steps) * 8);
