@@ -1650,6 +1650,7 @@ editor.scenario.choose_banner = Player picks the flag
 editor.scenario.empty = (empty)
 editor.scenario.text_note = An empty text takes it away.
 editor.scenario.note = The scenario list shows the name, stars and introduction; without a name, the file's name. Maps whose file names differ only in a digit at the end (Name1, Name2) are parts of one entry, and the name here names the part. The file's other languages are kept.
+editor.scenario.note_short = The scenario list shows the name, stars and introduction; without a name, the file's name.
 editor.goals.edit = Goals
 editor.script.edit = Script
 editor.goals.title = Goals and missions

@@ -1580,6 +1580,7 @@ editor.scenario.choose_banner = Flagge frei wählbar
 editor.scenario.empty = (leer)
 editor.scenario.text_note = Ein leerer Text nimmt ihn weg.
 editor.scenario.note = Name, Sterne und Einleitung zeigt die Szenarioliste; ohne Namen den Dateinamen. Karten mit gleichem Dateinamen und anderer Ziffer am Ende (Name1, Name2) sind Teile eines Eintrags, der Name hier benennt den Teil. Die übrigen Sprachen der Datei bleiben erhalten.
+editor.scenario.note_short = Name, Sterne und Einleitung zeigt die Szenarioliste; ohne Namen den Dateinamen.
 editor.goals.edit = Ziele
 editor.script.edit = Skript
 editor.goals.title = Ziele und Aufträge

@@ -2422,8 +2422,8 @@ void EditorPanel::layout_players_table(const EditorModel& model) {
     constexpr std::int32_t kNumber = 40;
     // With packages' factions to choose, a column of them takes room from the name and the colour.
     const bool factions = model.slot_factions.size() > 1;
-    const std::array<std::int32_t, 7> shares = factions ? std::array<std::int32_t, 7>{24, 12, 11, 20, 11, 10, 12}
-                                                        : std::array<std::int32_t, 7>{27, 12, 15, 22, 12, 12, 0};
+    const std::array<std::int32_t, 7> shares = factions ? std::array<std::int32_t, 7>{22, 12, 11, 19, 13, 11, 12}
+                                                        : std::array<std::int32_t, 7>{25, 12, 14, 21, 14, 14, 0};
     constexpr std::array<const char*, 7> kHeads = {
         "editor.players.name",      "editor.players.role",   "editor.players.colour", "editor.players.money",
         "editor.players.monuments", "editor.players.arches", "editor.players.faction"};
@@ -2900,7 +2900,8 @@ void EditorPanel::layout_scenario(const EditorModel& model) {
     const std::int32_t foot = m_top + m_height - kButtonH - 4;
     const std::int32_t room = foot - kGap - y - 4;
     if (room >= 2 * 20) {
-        f.paragraph(Rect{m_x, y + 4, m_w, std::min(room, 5 * 20)}, ui::tr("editor.scenario.note"), Tone::Dim, 20);
+        f.paragraph(Rect{m_x, y + 4, m_w, std::min(room, 5 * 20)}, ui::tr("editor.scenario.note"), Tone::Dim, 20,
+                    ui::tr("editor.scenario.note_short"));
     }
     const std::int32_t quarter = (m_w - 3 * kGap) / 4;
     f.button(kPackagesPage, Rect{m_x, foot, quarter, kButtonH},
