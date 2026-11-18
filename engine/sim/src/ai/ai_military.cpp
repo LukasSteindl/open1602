@@ -54,6 +54,11 @@ std::uint32_t city_param(const City& c) {
     return std::uint32_t{c.island} << 8 | c.index;
 }
 
+/// A ship's strength for a job against a city: health and cannons.
+std::uint32_t ship_strength(std::uint32_t health128, std::uint32_t cannons) {
+    return health128 / 16 + 2U * cannons;
+}
+
 }  // namespace
 
 // ---------------------------------------------------------------------------------------------
@@ -958,6 +963,11 @@ void Engine::ship_send(AiPlayer& p, Ship& s, const Target& t, std::uint8_t missi
     n.supply = false;
 }
 
+City* Engine::param_city(std::uint32_t param) {
+    // The city a mission's parameter names (city_param).
+    return city(static_cast<std::uint16_t>(param >> 8), static_cast<std::uint8_t>(param & 0xFF));
+}
+
 void Engine::mission_end(AiPlayer& p, Ship& s, ShipNote& n) {
     // Home with the troops, or stop.
     if (n.mission == 3 || n.mission == 4) {
@@ -1070,8 +1080,7 @@ void Engine::missions(AiPlayer& p) {
                     --n.counter;
                     break;
                 }
-                const City* colony =
-                    city(static_cast<std::uint16_t>(n.param >> 8), static_cast<std::uint8_t>(n.param & 0xFF));
+                const City* colony = param_city(n.param);
                 if (soldiers_aboard(*s) != 0 && colony != nullptr && colony->owner == p.player) {
                     ship_send(p, *s, Target::city_of(colony->island, colony->index), 2, 0);
                 } else {
@@ -1114,9 +1123,8 @@ void Engine::missions(AiPlayer& p) {
                         break;
                     }
                 }
-                const City* t =
-                    city(static_cast<std::uint16_t>(n.param >> 8), static_cast<std::uint8_t>(n.param & 0xFF));
-                if (aboard > 3 && t != nullptr) {
+                const City* t = param_city(n.param);
+                if (aboard > kFewSoldiers && t != nullptr) {
                     n.mission = 6;
                     plan_landing(p, *s, n);
                 } else if (aboard != 0 && home != nullptr) {
@@ -1150,6 +1158,52 @@ void Engine::missions(AiPlayer& p) {
                 }
                 break;
             }
+            case kMissionBreach: {
+                // Open1602: shooting a gap into a walled coast for a landing (breach).
+                const City* t = param_city(n.param);
+                if (t == nullptr || t->owner == p.player ||
+                    m_world.diplomacy().relation(p.player, t->owner).peace == Treaty::Signed) {
+                    log(p, "ship %u ends its breach: no war with the city any more", s->id);
+                    n.mission = 0;
+                    n.param = 0;
+                    n.counter = 0;
+                    break;
+                }
+                if (const auto gap = landing_beach(p, *t)) {
+                    log(p, "ship %u: the wall of city %u/%u is open at %d,%d", s->id, t->island, t->index, gap->first,
+                        gap->second);
+                    if (soldiers_aboard(*s) > kFewSoldiers) {
+                        ship_send(p, *s, water_near(t->island, gap->first, gap->second), kMissionLanding, t->owner);
+                    } else {
+                        n.mission = 0;
+                        n.param = 0;
+                        n.counter = 0;
+                    }
+                    break;
+                }
+                const auto wall = landing_beach(p, *t, true);
+                if (!wall || n.counter == 0 || !healthy(*s)) {
+                    log(p, "ship %u ends its breach of city %u/%u (%s)", s->id, t->island, t->index,
+                        !wall            ? "no wall left to shoot"
+                        : n.counter == 0 ? "no tries left"
+                                         : "damaged");
+                    if (soldiers_aboard(*s) != 0) {
+                        mission_end(p, *s, n);
+                    } else {
+                        n.mission = 0;
+                        n.param = 0;
+                        n.counter = 0;
+                    }
+                    break;
+                }
+                const std::uint8_t tries = n.counter;
+                ship_send(p, *s,
+                          Target::building(t->island, static_cast<std::uint32_t>(wall->first),
+                                           static_cast<std::uint32_t>(wall->second)),
+                          kMissionBreach, n.param);
+                n.counter = static_cast<std::uint8_t>(tries - 1);
+                break;
+            }
             case 10: {
                 // An improved computer's scout at the island: it explores, then is free again.
                 ExploreOrder order;
@@ -1169,7 +1223,7 @@ void Engine::missions(AiPlayer& p) {
 
 void Engine::plan_landing(AiPlayer& p, Ship& s, ShipNote& n) {
     // A beach near the target's markets, away from its towers and soldiers.
-    const City* t = city(static_cast<std::uint16_t>(n.param >> 8), static_cast<std::uint8_t>(n.param & 0xFF));
+    const City* t = param_city(n.param);
     if (t == nullptr || t->owner == p.player || building_count(*t) <= 3 ||
         m_world.diplomacy().relation(p.player, t->owner).peace == Treaty::Signed ||
         soldiers_on_island(p.player, t->island) >= 8) {
@@ -1178,13 +1232,95 @@ void Engine::plan_landing(AiPlayer& p, Ship& s, ShipNote& n) {
     }
     const auto beach = landing_beach(p, *t);
     if (!beach) {
+        if (rivals()) {
+            breach(p, s, n, *t);
+        } else {
+            mission_end(p, s, n);
+        }
+        return;
+    }
+    ship_send(p, s, water_near(t->island, beach->first, beach->second), kMissionLanding, t->owner);
+}
+
+bool Engine::beach_wall(std::uint16_t island, std::uint32_t x, std::uint32_t y) const {
+    // A wall standing on the beach: the beach wall, or a wall whose ground is beach.
+    const Tile b = tile(island, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y));
+    if (!b.valid() || !(b.kind == kind::kWall || b.kind == kind::kWallBeach)) {
+        return false;
+    }
+    const MapCell& g = island_of(island).map.ground(x, y);
+    const assets::BuildingType* gt = g.empty() ? nullptr : m_buildings.by_sprite(g.sprite);
+    return b.kind == kind::kWallBeach ||
+           (gt != nullptr && (gt->kind == kind::kBeach || gt->kind == kind::kBeachVariant));
+}
+
+bool Engine::beach_gap(std::uint16_t island, std::uint32_t x, std::uint32_t y) const {
+    // The ruin a wall on the beach leaves when it is shot down: a gap to land through.
+    const Tile b = tile(island, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y));
+    if (!b.valid() || !(b.kind == kind::kBeachRuin || b.kind == kind::kRuin)) {
+        return false;
+    }
+    const MapCell& g = island_of(island).map.ground(x, y);
+    const assets::BuildingType* gt = g.empty() ? nullptr : m_buildings.by_sprite(g.sprite);
+    return b.kind == kind::kBeachRuin ||
+           (gt != nullptr && (gt->kind == kind::kBeach || gt->kind == kind::kBeachVariant));
+}
+
+void Engine::breach(AiPlayer& p, Ship& s, ShipNote& n, const City& t) {
+    // Open1602: the target's coast is walled all along, so no beach is free to land on. As a
+    // player would, a warship shoots a gap into the wall on the beach the landing would take, and
+    // the troops wait aboard until it is open. With no warship free the troop ship shoots it itself.
+    const auto wall = landing_beach(p, t, true);
+    if (!wall) {
+        log(p, "ship %u finds no beach and no wall on the beach of city %u/%u", s.id, t.island, t.index);
         mission_end(p, s, n);
         return;
     }
-    ship_send(p, s, water_near(t->island, beach->first, beach->second), 7, t->owner);
+    const std::uint32_t param = city_param(t);
+    if (std::ranges::any_of(p.ships,
+                            [&](const ShipNote& o) { return o.mission == kMissionBreach && o.param == param; })) {
+        if (n.counter == 0) {
+            mission_end(p, s, n);
+        } else {
+            --n.counter;  // the troops wait for the gap
+        }
+        return;
+    }
+    Ship* best = nullptr;
+    std::uint32_t best_score = 0;
+    for (Ship* o : own_ships(p)) {
+        const ShipNote& on = note(p, o->id);
+        if (o->id == p.settle.ship || o->held || on.mission != 0 || on.supply || o->cannons == 0 ||
+            soldiers_aboard(*o) != 0 || !healthy(*o)) {
+            continue;
+        }
+        const std::uint32_t score = ship_strength(health128(*o), o->cannons);
+        if (score > best_score) {
+            best = o;
+            best_score = score;
+        }
+    }
+    const Target at =
+        Target::building(t.island, static_cast<std::uint32_t>(wall->first), static_cast<std::uint32_t>(wall->second));
+    if (best != nullptr) {
+        log(p, "ship %u breaches the wall at %d,%d of city %u/%u for ship %u", best->id, wall->first, wall->second,
+            t.island, t.index, s.id);
+        ship_send(p, *best, at, kMissionBreach, param);
+        return;
+    }
+    if (s.cannons == 0) {
+        log(p, "ship %u finds the coast of city %u/%u walled and no ship with cannons to breach it", s.id, t.island,
+            t.index);
+        mission_end(p, s, n);
+        return;
+    }
+    log(p, "ship %u breaches the wall at %d,%d of city %u/%u itself, %u soldiers aboard (no warship free)", s.id,
+        wall->first, wall->second, t.island, t.index, soldiers_aboard(s));
+    ship_send(p, s, at, kMissionBreach, param);
 }
 
-std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const AiPlayer& p, const City& c) const {
+std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const AiPlayer& p, const City& c,
+                                                                           bool wall) const {
     const City* t = &c;
     const std::uint16_t island = t->island;
     const WorldIsland& isl = island_of(island);
@@ -1239,7 +1375,12 @@ std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const
     for (std::uint32_t y = 0; y < map.height(); ++y) {
         for (std::uint32_t x = 0; x < map.width(); ++x) {
             const Tile b = tile(island, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y));
-            if (!b.valid() || !(b.kind == kind::kBeach || b.kind == kind::kBeachVariant)) {
+            if (!b.valid()) {
+                continue;
+            }
+            if (wall ? !(beach_wall(island, x, y) && m_world.diplomacy().hostile(p.player, b.owner))
+                     : !(b.kind == kind::kBeach || b.kind == kind::kBeachVariant ||
+                         (rivals() && beach_gap(island, x, y)))) {
                 continue;
             }
             std::int32_t near = 1000;
@@ -1295,7 +1436,7 @@ Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_
         if (free_holds(*s) + soldiers_aboard(*s) < 3) {
             continue;
         }
-        const std::uint32_t score = health128(*s) / 16 + 2U * s->cannons;
+        const std::uint32_t score = ship_strength(health128(*s), s->cannons);
         if (score > best_score) {
             best = s;
             best_score = score;
@@ -1346,7 +1487,7 @@ bool Engine::attack_ok(AiPlayer& p, const City& t) {
     // answer is the same, but most targets fail before the island or the world is walked (TB-9).
     for (const ShipNote& n : p.ships) {
         if (n.mission >= 5 && n.mission <= 9) {
-            const City* c = city(static_cast<std::uint16_t>(n.param >> 8), static_cast<std::uint8_t>(n.param & 0xFF));
+            const City* c = param_city(n.param);
             if ((n.mission <= 6 && c != nullptr && c->owner == t.owner) ||
                 (n.mission >= 7 && (n.param & 0xFF) == t.owner)) {
                 return false;
@@ -1422,7 +1563,7 @@ void Engine::raid_outpost(AiPlayer& p, const City& t) {
         if (s->id == p.settle.ship || s->held || n.mission != 0 || s->cannons == 0) {
             continue;
         }
-        const std::uint32_t score = health128(*s) / 16 + 2U * s->cannons;
+        const std::uint32_t score = ship_strength(health128(*s), s->cannons);
         if (score > best_score) {
             best = s;
             best_score = score;
@@ -2289,8 +2430,7 @@ void Engine::diplomacy(AiPlayer& p) {
                         if (n.mission == 0) {
                             continue;
                         }
-                        const City* c =
-                            city(static_cast<std::uint16_t>(n.param >> 8), static_cast<std::uint8_t>(n.param & 0xFF));
+                        const City* c = param_city(n.param);
                         const bool against = (n.mission >= 7 && (n.param & 0xFF) == b) ||
                                              (n.mission != 2 && n.mission < 7 && c != nullptr && c->owner == b);
                         if (Ship* s = m_world.ship(n.id); against && s != nullptr) {

@@ -15,3 +15,7 @@ kFarms | engine/sim/src/ai/ai_settle.cpp | derived from: the colony crops and th
 kSteps | engine/sim/src/ai/ai_military.cpp | derived from: the four neighbours of a tile, the same table walk_flood (land_reach's flood) and way_in use
 4 | engine/sim/src/ai/ai_military.cpp | derived from: the four neighbours of a tile (kSteps), as in walk_flood and way_in
 kMineOffsets | engine/sim/src/ai/ai_build.cpp | derived from: the six mine placements task_mine already tried around the slope (the inline table it replaces), now shared with the carts' reach check
+kMissionLanding | engine/sim/src/ai/ai_state.hpp | derived from: the existing ship mission 7 (troops aboard, sailing to the beach) that plan_landing sends, named
+kMissionBreach | engine/sim/src/ai/ai_state.hpp | derived from: the next free ship mission number after 10 (explore), for the breach
+11 | engine/sim/src/ai/ai_state.hpp | derived from: kMissionBreach, the next free ship mission number after 10 (explore)
+kFewSoldiers | engine/sim/src/ai/ai_state.hpp | derived from: the existing attack threshold of case 5 (aboard > 3, else "too few soldiers"), named

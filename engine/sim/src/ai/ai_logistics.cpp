@@ -79,6 +79,10 @@ const assets::FigureType* Engine::ship_type(const Ship& s) const {
     return m_sim.m_figures->get(s.figure);
 }
 
+bool Engine::healthy(const Ship& s) const {
+    return health128(s) > kHealthy;
+}
+
 std::uint32_t Engine::health128(const Ship& s) const {
     const assets::FigureType* t = ship_type(s);
     const std::uint32_t max = t != nullptr && t->ship.max_health != 0 ? t->ship.max_health : 1U;
