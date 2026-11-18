@@ -934,14 +934,20 @@ void Engine::buy_pirate_peace(AiPlayer& p) {
 // ---------------------------------------------------------------------------------------------
 // Ships on missions (with the logistics every 10 s)
 
+bool Engine::attack_move_for(const Ship& s, std::uint8_t mission) const {
+    // Raids, attacks and landings: improved computers' ships fight on the way only by such an
+    // order, as a player's do; the original's engage on their own. A ship with soldiers aboard
+    // sails on to land them, as a player steers a troop ship: it fires at what comes in range but
+    // does not chase every hostile ship near its way.
+    return rivals() && (mission == 3 || mission == 5 || mission == 7) && soldiers_aboard(s) == 0;
+}
+
 void Engine::ship_send(AiPlayer& p, Ship& s, const Target& t, std::uint8_t mission, std::uint32_t param) {
     ShipOrder order;
     order.player = p.player;
     order.ship = s.id;
     order.target = t;
-    // Raids, attacks and landings: improved computers' ships fight on the way only by such an
-    // order, as a player's do; the original's engage on their own.
-    order.attack_move = rivals() && (mission == 3 || mission == 5 || mission == 7);
+    order.attack_move = attack_move_for(s, mission);
     execute(order);
     ShipNote& n = note(p, s.id);
     n.mission = mission;
