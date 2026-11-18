@@ -109,6 +109,9 @@ struct PackageCampaign {
     /// The humans start a part with the money the local player had when winning the one before,
     /// instead of the part's own.
     bool carry_money = false;
+    /// Every part can be chosen from the start (`parts.free`), as the tutorial's chapters; false:
+    /// a part opens once the one before is won.
+    bool parts_free = false;
 
     [[nodiscard]] std::string name(std::string_view language) const;
     [[nodiscard]] std::string briefing(std::string_view language) const;

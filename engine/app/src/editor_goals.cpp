@@ -269,6 +269,9 @@ void MapViewer::editor_scenario_model(EditorModel& m) const {
                           : editor::neutral_peace(world) ? "editor.scenario.neutrals_peaceful"
                                                          : "editor.scenario.neutrals_hostile"),
                    has_neutrals};
+    m.scenario_rows[static_cast<std::size_t>(Row::ChooseBanner)] =
+        EditorRule{ui::tr("editor.scenario.choose_banner"),
+                   ui::tr(info.choose_banner ? "editor.goals.yes" : "editor.goals.no"), true};
 }
 
 void MapViewer::editor_scenario_request(const EditorRequest& request) {
@@ -297,6 +300,8 @@ void MapViewer::editor_scenario_request(const EditorRequest& request) {
                                                                        : (info.stars + kMax) % (kMax + 1));
         } else if (row == Row::OriginalLimits) {
             info.original_limits = !info.original_limits;
+        } else if (row == Row::ChooseBanner) {
+            info.choose_banner = !info.choose_banner;
         } else {
             return;
         }

@@ -54,6 +54,11 @@ void MapViewer::editor_players_model(EditorModel& m) const {
         e.arches_allowed = p.arches_allowed;
         e.colour = colour_name(p.banner);
         e.faction = p.faction;
+        e.attitude_flags = p.scenario.flags & editor::kAttitudeFlags;
+        e.own_development = p.scenario.own_development;
+        e.rival_development = p.scenario.rival_development;
+        e.own_inhabitants = p.scenario.own_inhabitants;
+        e.rival_inhabitants = p.scenario.rival_inhabitants;
         // A package's faction by the name its package gives it, else by its own id ("league" of
         // "example:league"): the table has little room. A saved game's factions have no names: the
         // installed packages' have.
@@ -146,7 +151,7 @@ void MapViewer::editor_players_request(const EditorRequest& request) {
         return;
     }
     sim::PlayerId slot = request.player.slot;
-    if (request.index == 3) {
+    if (request.index == 3 || request.index == 6) {
         const EditorPanel* panel = m_hud ? m_hud->editor_panel() : nullptr;
         slot = slots[std::min(panel != nullptr ? panel->chosen_player() : 0, slots.size() - 1)];
     }
@@ -157,6 +162,20 @@ void MapViewer::editor_players_request(const EditorRequest& request) {
     editor::PlayerValues v = editor::player_values(*p);
     if (request.index == 3) {
         v.name = request.name;
+    } else if (request.index == 6) {
+        // The money as typed: digits, a minus in front for a debt (the page checked them).
+        long long typed = 0;
+        if (std::sscanf(request.name.c_str(), "%lld", &typed) != 1) {
+            return;
+        }
+        v.money =
+            static_cast<std::int32_t>(std::clamp<long long>(typed, editor::kMinStartMoney, editor::kMaxStartMoney));
+    } else if (request.index == 5) {
+        v.attitude.flags = request.player.attitude_flags & editor::kAttitudeFlags;
+        v.attitude.own_development = request.player.own_development;
+        v.attitude.rival_development = request.player.rival_development;
+        v.attitude.own_inhabitants = request.player.own_inhabitants;
+        v.attitude.rival_inhabitants = request.player.rival_inhabitants;
     } else if (request.index == 1 || request.index == 2) {
         // The next colour, or the one before; one another player has is exchanged with it.
         const auto banners = editor::player_banners();

@@ -71,6 +71,32 @@ TEST_CASE("editor players: the slots of the humans and computers, and their valu
     CHECK(!editor::set_player(world, 2, v).ok());
 }
 
+TEST_CASE("editor players: a computer's attitude towards a player who grows past it") {
+    sim::World world = seven_slots();
+    world.player(1)->scenario.flags = sim::scenario_flag::kNoFleet;  // a switch of another kind stays
+    editor::PlayerValues v = editor::player_values(world.players()[1]);
+    CHECK(v.attitude.flags == 0);
+    v.attitude.flags = sim::scenario_flag::kOwnDevelopment | sim::scenario_flag::kRivalSize;
+    v.attitude.own_development = 64;
+    v.attitude.rival_inhabitants = 2000;
+    auto op = editor::set_player(world, 1, v);
+    REQUIRE(op.ok());
+    (*op)->apply(world);
+    const sim::ScenarioSwitches& s = world.players()[1].scenario;
+    CHECK(s.flags ==
+          (sim::scenario_flag::kNoFleet | sim::scenario_flag::kOwnDevelopment | sim::scenario_flag::kRivalSize));
+    CHECK(s.own_development == 64);
+    CHECK(s.rival_inhabitants == 2000);
+    CHECK(editor::player_values(world.players()[1]).attitude.flags ==
+          (sim::scenario_flag::kOwnDevelopment | sim::scenario_flag::kRivalSize));
+    (*op)->revert(world);
+    CHECK(world.players()[1].scenario.flags == sim::scenario_flag::kNoFleet);
+
+    // Refused: a level past the last class.
+    v.attitude.own_development = editor::kMaxDevelopment + 1;
+    CHECK(!editor::set_player(world, 1, v).ok());
+}
+
 TEST_CASE("editor players: slots added behind the neutral ones up to twelve, and the last taken away") {
     sim::World world = seven_slots();
     // The first four stay.

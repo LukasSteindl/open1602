@@ -232,7 +232,10 @@ private:
     /// Replaces the running game by a savegame (Open1602's own or the original's) while the
     /// program runs (F9); the game goes on as it was if the file cannot be read. `rules`: the
     /// settings chosen for a scenario (a savegame of Open1602 keeps its own).
-    annokit::core::Status load_game(const std::filesystem::path& path, const sim::Rules* rules = nullptr);
+    /// `banner`: the human chose it on the colour screen (a scenario of the editor that lets the
+    /// human choose, sim::ScenarioInfo::choose_banner); the player who had it takes the human's.
+    annokit::core::Status load_game(const std::filesystem::path& path, const sim::Rules* rules = nullptr,
+                                    std::optional<sim::BannerId> banner = std::nullopt);
     /// A game loaded alone that does not know this person and has several human players: they
     /// choose which one to play before it starts (ask_choice); the human players to choose from,
     /// empty if the game needs no choice.
@@ -372,6 +375,9 @@ private:
     /// `campaign`, a new one if the package has none of that name, or taken out of it as its last
     /// part (campaigns.toml).
     void editor_campaign(const std::string& campaign, bool add);
+    /// The parts of the package campaign `campaign` all open from the start (`free`) or one after
+    /// the other: `parts.free` in campaigns.toml.
+    void editor_campaign_order(const std::string& campaign, bool free);
     /// After a package's files were written: its hash again, its scenarios and campaigns read again.
     void package_written(assets::ModPackage& package);
     /// The package and the scenario's name of a map in a package's folder maps, as
@@ -648,7 +654,8 @@ private:
     /// packages' (`rules`: of the start dialog, else the options'). As part `part` (from 0) of the
     /// package campaign `campaign`, if not empty, with what the part before left.
     annokit::core::Status start_package_scenario(const std::string& id, const sim::Rules* rules,
-                                                 const std::string& campaign = {}, std::uint8_t part = 0);
+                                                 const std::string& campaign = {}, std::uint8_t part = 0,
+                                                 std::optional<sim::BannerId> banner = std::nullopt);
     /// A won part of a package's campaign: opens the next part in `progress` and keeps what it
     /// leaves to it (campaign_carry_file).
     void record_campaign_part(assets::CampaignProgress& progress, const sim::World::CampaignPart& part);

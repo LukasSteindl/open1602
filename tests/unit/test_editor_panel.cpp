@@ -1864,6 +1864,77 @@ TEST_CASE("editor panel: the tab Others sets how the players start towards nativ
     CHECK(!panel.dialog());
 }
 
+TEST_CASE("editor panel: the starting money is typed to the gold, a debt with a minus") {
+    ui::set_language("en");
+    EditorPanel panel;
+    panel.set_room(200, 560);
+    EditorModel m = four_players();
+    CHECK(!panel.command(app::EditorCommand::Players, m).has_value());
+    CHECK(!click(panel, m, "Type amount").has_value());
+    REQUIRE(panel.page() == EditorPanel::Page::PlayerMoney);
+    CHECK(panel.typing());
+    (void)panel.draw(m, kNoFonts);
+    CHECK(says(panel, "20000"));
+    panel.type("12a34-5");  // replaces the money shown; a minus only in front
+    auto r = panel.key(13);
+    REQUIRE(r.has_value());
+    CHECK(r->kind == EditorRequest::Kind::SetPlayer);
+    CHECK(r->index == 6);
+    CHECK(r->name == "12345");
+    CHECK(panel.page() == EditorPanel::Page::Players);
+
+    CHECK(!click(panel, m, "Type amount").has_value());
+    panel.type("-500");
+    r = panel.key(13);
+    REQUIRE(r.has_value());
+    CHECK(r->name == "-500");
+    // Esc goes back unchanged.
+    CHECK(!click(panel, m, "Type amount").has_value());
+    CHECK(!panel.key(27).has_value());
+    CHECK(panel.page() == EditorPanel::Page::Players);
+}
+
+TEST_CASE("editor panel: the page Attitude steps when a computer grows cross, off between") {
+    ui::set_language("en");
+    EditorPanel panel;
+    panel.set_room(200, 560);
+    EditorModel m = four_players();
+    CHECK(!panel.command(app::EditorCommand::Players, m).has_value());
+    CHECK(!click(panel, m, "Attitude").has_value());
+    REQUIRE(panel.page() == EditorPanel::Page::Attitude);
+    (void)panel.draw(m, kNoFonts);
+    for (const ui::Form::Widget& w : panel.form().widgets()) {
+        CHECK(w.rect.y + w.rect.h <= 760);
+        if (w.text == "-") {
+            CHECK(!w.enabled);  // a human's attitude: nothing reads it
+        }
+    }
+    CHECK(!click(panel, m, "Merlin").has_value());  // the next slot, a computer
+    (void)panel.draw(m, kNoFonts);
+    CHECK(says(panel, "Computer 1"));
+    CHECK(says(panel, "off"));
+    auto r = click_id(panel, m, ui::Form::Id{1140});  // itself below a level: on at the first
+    REQUIRE(r.has_value());
+    CHECK(r->kind == EditorRequest::Kind::SetPlayer);
+    CHECK(r->index == 5);
+    CHECK(r->player.slot == 1);
+    CHECK(r->player.attitude_flags == 0x100);
+    CHECK(r->player.own_development == 0);
+
+    m.player_slots[1].attitude_flags = 0x100 | 0x10;
+    m.player_slots[1].own_development = 70;  // between two steps: on to the next
+    m.player_slots[1].rival_inhabitants = 10000;
+    (void)panel.draw(m, kNoFonts);
+    CHECK(says(panel, "Citizens +18 %"));
+    CHECK(says(panel, "10000 inhabitants"));
+    r = click_id(panel, m, ui::Form::Id{1140});
+    REQUIRE(r.has_value());
+    CHECK(r->player.own_development == 80);
+    r = click_id(panel, m, ui::Form::Id{1143});  // past the last step: off
+    REQUIRE(r.has_value());
+    CHECK(r->player.attitude_flags == 0x100);
+}
+
 TEST_CASE("editor panel: in the column, the page Others shows the slot of the page Players") {
     ui::set_language("en");
     EditorPanel panel;
@@ -1874,7 +1945,7 @@ TEST_CASE("editor panel: in the column, the page Others shows the slot of the pa
         p.towards = {{true, true, 200}, {false, true, 200}, {true, true, 200}};
     }
     CHECK(!panel.command(app::EditorCommand::Players, m).has_value());
-    CHECK(!click(panel, m, "Natives, pirates, trader").has_value());
+    CHECK(!click(panel, m, "Other parties").has_value());
     REQUIRE(panel.page() == EditorPanel::Page::Neutrals);
     (void)panel.draw(m, kNoFonts);
     CHECK(says(panel, "Merlin"));
@@ -2018,9 +2089,9 @@ TEST_CASE("editor panel: the description dialog steps the stars and types the te
     panel.set_room(184, 564);
     panel.set_screen(1024, 768, 1024 - EditorPanel::kWidth);
     EditorModel m = document();
-    const std::vector<std::string> values = {"Two Coasts", "Zwei Kuesten", "Found a city.",
-                                             "(none)",     "3 of 5 stars", "Merlin",
-                                             "1.0",        "No",           "Peaceful, taken by land"};
+    const std::vector<std::string> values = {
+        "Two Coasts", "Zwei Kuesten", "Found a city.",           "(none)", "3 of 5 stars", "Merlin",
+        "1.0",        "No",           "Peaceful, taken by land", "No"};
     for (std::size_t i = 0; i < app::kEditorScenarioRows; ++i) {
         m.scenario_rows.push_back(app::EditorRule{"Row " + std::to_string(i), values[i], true});
         m.scenario_texts.push_back(app::scenario_row_is_text(static_cast<app::EditorScenarioRow>(i)) ? values[i] : "");

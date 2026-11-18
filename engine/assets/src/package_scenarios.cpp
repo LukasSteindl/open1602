@@ -342,6 +342,12 @@ void read_campaigns_file(std::vector<PackageCampaign>& campaigns, const ModPacka
                 } else {
                     c.carry_money = *e.value.boolean();
                 }
+            } else if (e.key == "parts.free") {
+                if (e.value.boolean() == nullptr) {
+                    refuse(e, "is true or false");
+                } else {
+                    c.parts_free = *e.value.boolean();
+                }
             } else if (e.key.starts_with("part.")) {
                 const std::string_view digits = std::string_view(e.key).substr(5);
                 const std::size_t n = digits.size() == 1 && digits[0] >= '1' && digits[0] <= '9'

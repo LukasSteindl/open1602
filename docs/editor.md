@@ -248,7 +248,7 @@ steps it back. Each change is one step of undo.
 |---|---|
 | Kind | Human or computer. |
 | Colour | The player's colour; one another player has goes to it in exchange. |
-| Starting money | The gold the player starts with: 1000 a click, 10 000 above 50 000; the right button takes it off again. |
+| Starting money | The gold the player starts with: 1000 a click, 10 000 above 50 000; the right button takes it off again. **Type amount** (in the table the button "..." beside it) opens a field for the exact amount, to the gold: -99 000 (a debt) to 9 999 000. |
 | Monuments, Arches | How many monuments and triumphal arches the player may build (0 to 9). |
 | Name | A click on it renames the player; left empty, the game calls the player after its colour. |
 | Faction | Shown only when a content package brings factions of the settlers' behaviour ([factions.md](modding/factions.md)): the slot's faction, the settlers or one of the packages'. The scenario keeps it, as `slot.<n>` of a package's scenario does. |
@@ -264,7 +264,7 @@ way. A change applies to both sides, and clears what
 the two remember of each other (tribute, trade, damage). A trade treaty needs peace; war ends it.
 Adding a player keeps the relations of the others; the new one starts at peace with everyone.
 
-The tab **Others** (in a narrow window the button "Natives, pirates, trader" on the page Players)
+The tab **Others** (in a narrow window the button "Other parties" on the page Players)
 shows how each player starts towards the parties of their own behaviour, a column for each the
 map has. A click steps a value, the right button goes back; each change clears what the two
 remember of each other.
@@ -277,6 +277,21 @@ remember of each other.
 | Trade at nests | Whether the player's ships may trade at the pirates' nests; they do at war too. |
 | Trader calls | Whether the free trader calls at the player's Kontors: a scenario switch the original's scenario files have as well. |
 
+The tab **Attitude** (in a narrow window the button of that name on the page Players) sets when a
+computer grows cross, as the original's editor does with the bounds of a computer's mood. Each
+threshold is off or a value; a click steps it from off through the values and back to off, the
+right button the other way. A cross computer ends peace and treaties sooner. Humans have none.
+
+| Column | What it does |
+|---|---|
+| Itself below level | Cross with everyone while its own best city is below a level: a class of inhabitants, or halfway to the next (Pioneers to Aristocrats). |
+| Human above level | Cross with a human whose best city is beyond a level. |
+| Itself below people | Cross with the humans while it has fewer inhabitants than this (50 to 10 000). |
+| Human above people | Cross with a human who has more inhabitants than this. |
+
+The original's scenario files hold the same thresholds, so a scenario keeps them when it is
+converted.
+
 ## Description
 
 **Description** (menu Scenario) sets what the scenario list shows of the scenario: its name and
@@ -288,7 +303,9 @@ written by other tools, are kept. **The original's limits** switches the check o
 size, islands, players and buildings on or off. **Neutral buildings**, on a map that has them, makes
 them hostile (the default: at war with every player, taken only by soldiers) or peaceful (at peace,
 and taken without a fight by a city whose land comes to cover them; see
-[the neutral buildings](modding/factions.md#the-neutral-buildings)).
+[the neutral buildings](modding/factions.md#the-neutral-buildings)). **Choose the flag at the
+start** (off by default) shows the player the colour screen of the endless game before the
+scenario starts; the human takes the colour chosen, and the player who had it gets the human's.
 
 The introduction is the page shown before the scenario starts; the missions' own texts are set
 under Goals.
@@ -318,6 +335,8 @@ package. The scenario list of the main menu shows the new scenario at once.
 and adds the map as the next part (`part.<n>` in `campaigns.toml`), up to five. A new campaign gets
 a name of lower case letters, digits and `_`, and the scenario's German and English names with
 "(Kampagne)" and "(campaign)" added, so the list tells the two apart, until the file gives others. **Take out** removes the map again while it is the last part and not the only one.
+**Order** sets whether the parts open in turn, each won part opening the next, or are all open
+from the start (`parts.free`).
 The file's other tables, keys and comments stay as they are. It works once the map is saved into
 the package.
 
