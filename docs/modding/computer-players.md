@@ -744,6 +744,16 @@ class may rise, and the held gate asks for a colony that grows it: partners' Kon
 the class fell back. When all its ships patrol, the supply takes one under way, the one with the
 fewest cannons: a patrol never waits at the end of a leg long enough to be taken there. A supply ship goes to the home city while one of its goods
 lasts less than ten minutes there, before any colony.
+It tells a trade ship from a warship by its type, not by the cannons on board: the supply takes a trade
+ship before a warship, a patrol takes a warship first, and only a warship without a job guards the home
+island; an idle trade ship waits for the next supply run. Once its trade ships were armed, the
+supply passed them over for an unarmed one, and the guards lay on the Kontor's berth.
+
+An improved computer arms every warship that lies at one of its Kontors with the cannons that city
+has, all the places it can fill at once, as a player mounts them, but leaves in store what a stone
+tower or castle costs while the city may still build one. The original arms only the ship
+that gets the supply job at the home Kontor, one cannon each time: its warships on patrol or supply
+runs carried a tenth of their cannons, while the cannons piled up in store.
 
 An improved computer's home city is the one the original would choose (the last with ten citizens,
 unless a later one has more free land), but only among its cities where 50 people live, once it has

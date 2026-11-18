@@ -15,3 +15,4 @@ kFarms | engine/sim/src/ai/ai_settle.cpp | derived from: the colony crops and th
 kSteps | engine/sim/src/ai/ai_military.cpp | derived from: the four neighbours of a tile, the same table walk_flood (land_reach's flood) and way_in use
 4 | engine/sim/src/ai/ai_military.cpp | derived from: the four neighbours of a tile (kSteps), as in walk_flood and way_in
 kMineOffsets | engine/sim/src/ai/ai_build.cpp | derived from: the six mine placements task_mine already tried around the slope (the inline table it replaces), now shared with the carts' reach check
+2 | engine/sim/src/ai/ai_logistics.cpp | derived from: need_tower's and need_castle's limit of two attempts per slot (s.attempts >= 2), which cannons_kept mirrors
