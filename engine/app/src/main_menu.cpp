@@ -336,7 +336,7 @@ std::optional<sim::ScenarioInfo> own_scenario_info(const std::filesystem::path& 
     if (!info || !info->meta || !info->meta->scenario) {
         return std::nullopt;
     }
-    return *info->meta->scenario;
+    return info->meta->scenario;
 }
 
 /// Scenarios of the editor whose files differ only in the digits at the end of their names
@@ -530,7 +530,7 @@ std::optional<sim::SaveMeta> scenario_meta_of(const std::filesystem::path& file)
     if (!info || !info->meta || !info->meta->scenario) {
         return std::nullopt;
     }
-    return std::move(*info->meta);
+    return std::move(info->meta);
 }
 
 /// The description of a scenario of the editor, from the head of its file; nothing for another
@@ -540,7 +540,7 @@ std::optional<sim::ScenarioInfo> scenario_info_of(const std::filesystem::path& f
     if (!meta) {
         return std::nullopt;
     }
-    return std::move(*meta->scenario);
+    return std::move(meta->scenario);
 }
 
 }  // namespace

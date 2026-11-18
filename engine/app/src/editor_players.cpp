@@ -5,6 +5,7 @@
 // change a step of undo.
 
 #include <algorithm>
+#include <charconv>
 #include <cstdio>
 #include <memory>
 #include <string>
@@ -165,7 +166,8 @@ void MapViewer::editor_players_request(const EditorRequest& request) {
     } else if (request.index == 6) {
         // The money as typed: digits, a minus in front for a debt (the page checked them).
         long long typed = 0;
-        if (std::sscanf(request.name.c_str(), "%lld", &typed) != 1) {
+        const char* const end = request.name.data() + request.name.size();
+        if (const auto [at, ec] = std::from_chars(request.name.data(), end, typed); ec != std::errc{} || at != end) {
             return;
         }
         v.money =
