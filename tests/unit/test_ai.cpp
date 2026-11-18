@@ -3150,7 +3150,7 @@ TEST_CASE("ai: an improved computer moves its ship to where the soldiers at the 
 
 TEST_CASE("ai: an improved computer's troop ship sails on to land its soldiers instead of chasing ships") {
     // Raids, attacks and landings fight on the way by an attack move. With soldiers aboard the ship
-    // sails on to land them, as a player steers a troop ship; it still fires at what comes in range.
+    // sails on to land them by a plain move, as a player steers a troop ship.
     std::uint8_t soldier = 0;
     for (std::uint32_t w = 1; w < 256 && soldier == 0; ++w) {
         soldier = assets::is_soldier_ware(w) ? static_cast<std::uint8_t>(w) : std::uint8_t{0};

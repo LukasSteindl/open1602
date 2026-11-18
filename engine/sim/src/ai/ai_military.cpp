@@ -937,8 +937,9 @@ void Engine::buy_pirate_peace(AiPlayer& p) {
 bool Engine::attack_move_for(const Ship& s, std::uint8_t mission) const {
     // Raids, attacks and landings: improved computers' ships fight on the way only by such an
     // order, as a player's do; the original's engage on their own. A ship with soldiers aboard
-    // sails on to land them, as a player steers a troop ship: it fires at what comes in range but
-    // does not chase every hostile ship near its way.
+    // sails on to land them by a plain move, as a player steers a troop ship: it neither chases
+    // nor fires on the way (only an ordered target is fought), so it does not stop at every
+    // hostile ship near its way.
     return rivals() && (mission == 3 || mission == 5 || mission == 7) && soldiers_aboard(s) == 0;
 }
 
