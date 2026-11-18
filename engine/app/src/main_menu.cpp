@@ -306,6 +306,9 @@ std::vector<MenuScenario> package_scenario_list(std::span<const assets::PackageS
             }
             s.files.emplace_back(static_cast<std::uint8_t>(i), part->file);
             s.package_parts.push_back(MenuScenario::Part{part->id, part->briefing(language)});
+            // The part's choice says the scenario's name, where it has one.
+            s.part_names.emplace_back(static_cast<std::uint8_t>(i),
+                                      part->names.empty() ? std::string() : part->name(language));
         }
         out.push_back(std::move(s));
     }
@@ -923,7 +926,7 @@ void MainMenu::refresh_mission() {
             label = text("KAMPAGNE", std::size_t{5} * s.header.campaign + digits[i]);  // "Der Retter"
         }
         if (label.empty() && !s.part_names.empty()) {
-            // Own parts: the name of the part's description, else its place among the parts.
+            // Own parts and a package's campaign: the part's name, else its place among the parts.
             const auto named = std::find_if(s.part_names.begin(), s.part_names.end(),
                                             [&](const auto& n) { return n.first == digits[i]; });
             label = named != s.part_names.end() && !named->second.empty()

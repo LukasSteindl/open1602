@@ -673,6 +673,7 @@ TEST_CASE("main menu: a package's campaign is one entry with a part per scenario
     scenarios[0].id = "isles:north";
     scenarios[0].file = std::filesystem::path("north.szs");
     scenarios[0].briefings.emplace_back("en", "Go north.");
+    scenarios[0].names.emplace_back("en", "The North");
     scenarios[1].id = "isles:south";
     scenarios[1].file = std::filesystem::path("south.szs");
     std::vector<assets::PackageCampaign> campaigns(1);
@@ -689,6 +690,9 @@ TEST_CASE("main menu: a package's campaign is one entry with a part per scenario
     CHECK(c.package_scenario.empty());
     CHECK(c.briefing == "Two winters.");
     CHECK(c.header.ranking == 2);
+    REQUIRE(c.part_names.size() == 2);  // the mission screen's choices: the name, else "Part 2"
+    CHECK(c.part_names[0].second == "The North");
+    CHECK(c.part_names[1].second.empty());
     CHECK(c.base == std::filesystem::path("isles_frost"));
     REQUIRE(c.files.size() == 2);
     CHECK(c.files[0].first == 0);
