@@ -3148,6 +3148,36 @@ TEST_CASE("ai: an improved computer moves its ship to where the soldiers at the 
     }
 }
 
+TEST_CASE("ai: an improved computer's troop ship sails on to land its soldiers instead of chasing ships") {
+    // Raids, attacks and landings fight on the way by an attack move. With soldiers aboard the ship
+    // sails on to land them by a plain move, as a player steers a troop ship.
+    std::uint8_t soldier = 0;
+    for (std::uint32_t w = 1; w < 256 && soldier == 0; ++w) {
+        soldier = assets::is_soldier_ware(w) ? static_cast<std::uint8_t>(w) : std::uint8_t{0};
+    }
+    REQUIRE(soldier != 0);
+    for (const bool classic : {false, true}) {
+        Game g;
+        sim::Rules rules;
+        rules.bugs.classic_ai = classic;
+        sim::Simulation s(g.world, g.buildings, g.figures, rules);
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        sim::Ship& ship = g.world.ships().front();
+        for (sim::CargoSlot& c : ship.cargo) {
+            c = sim::CargoSlot{};
+        }
+        CHECK(engine.attack_move_for(ship, 7) == !classic);
+        CHECK(engine.attack_move_for(ship, 5) == !classic);
+        CHECK(!engine.attack_move_for(ship, 2));
+        REQUIRE(!ship.cargo.empty());
+        ship.cargo.front().ware = soldier;
+        ship.cargo.front().amount = 1;
+        CHECK(!engine.attack_move_for(ship, 7));
+        CHECK(!engine.attack_move_for(ship, 3));
+    }
+}
+
 TEST_CASE("ai: a computer finds no way for its ship to water cut off from the sea") {
     // A lake on the island is water a ship cannot sail to from the sea: the computers ask the
     // fleet before they send a ship to water near the coast.

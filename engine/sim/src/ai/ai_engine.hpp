@@ -265,6 +265,9 @@ public:
     /// off from the city's buildings, the water nearest to the ship from which they would land on
     /// land walkable to the city; nothing when they land there now or no such water is found.
     [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
+    /// Whether ship `s` sent on `mission` fights on its way (an attack move): raids, attacks and
+    /// landings of improved computers, not while soldiers are aboard (TM).
+    [[nodiscard]] bool attack_move_for(const Ship& s, std::uint8_t mission) const;
     /// Open1602 (BD): when no tile `soldiers` (of `p`, at city `c`) can walk to lies within boarding
     /// range of ship `s`, the water nearest to the ship from which one does; nothing when one does now
     /// or no such water is found.
