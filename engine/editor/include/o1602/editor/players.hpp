@@ -26,6 +26,16 @@ inline constexpr std::int32_t kMinStartMoney = -99'000;
 /// The most monuments or triumphal arches a scenario allows a player.
 inline constexpr std::uint16_t kMaxAllowed = 99;
 
+/// The scenario switches of a player that make a computer cross with others (the original editor's
+/// "active" and "passive" mood thresholds): sim::scenario_flag::kOwnDevelopment,
+/// kRivalDevelopment, kOwnSize and kRivalSize, with their thresholds in sim::ScenarioSwitches.
+inline constexpr std::uint32_t kAttitudeFlags = sim::scenario_flag::kOwnDevelopment |
+                                                sim::scenario_flag::kRivalDevelopment | sim::scenario_flag::kOwnSize |
+                                                sim::scenario_flag::kRivalSize;
+/// The highest development a threshold takes (sim::city_development: 32 per class reached plus the
+/// share of the highest class).
+inline constexpr std::uint8_t kMaxDevelopment = 159;
+
 /// What a scenario sets of a player's slot.
 struct PlayerValues {
     sim::PlayerRole role = sim::PlayerRole::Computer;  ///< Human or Computer
@@ -36,6 +46,9 @@ struct PlayerValues {
     std::uint16_t arches_allowed = 0;
     /// Its faction (sim::World::factions()): the settlers' or a package's of the same behaviour.
     sim::FactionId faction = sim::faction::kSettlers;
+    /// The computer's attitude: only the kAttitudeFlags of `attitude.flags` and their thresholds
+    /// count; the player's other switches stay as they are.
+    sim::ScenarioSwitches attitude{};
     friend bool operator==(const PlayerValues&, const PlayerValues&) = default;
 };
 
@@ -57,7 +70,8 @@ struct PlayerValues {
 /// The slot `player` with `values`. A banner another player has goes to it in exchange for the old
 /// one, as on the colour screen. Fails (NotFound) for no human or computer, (InvalidFormat) for a
 /// name a player could not give, a role that is neither, a banner no player can have, money out
-/// of range or a faction not of slot_factions() (other than the one it has).
+/// of range, a faction not of slot_factions() (other than the one it has), an attitude switch
+/// other than kAttitudeFlags or a development threshold above kMaxDevelopment.
 [[nodiscard]] annokit::core::Result<std::unique_ptr<Operation>> set_player(const sim::World& world,
                                                                            sim::PlayerId player,
                                                                            const PlayerValues& values);

@@ -2968,6 +2968,46 @@ TEST_CASE("ai: an improved computer does not wait for carts at a quarry") {
     CHECK(engine.mine_reached(p, quarry, 25, 30, {}));
 }
 
+TEST_CASE("ai: an improved computer places a quarry where a stonemason's circle holds it") {
+    // The stonemason fetches the stone from the quarry's tiles inside its circle; a quarry beyond it
+    // stays full and idle. Without a mason every site counts.
+    Game g;
+    g.buildings = make_buildings(
+        "  @Nummer: 13\n  Id: 22407\n  Kind: 11\n  Gfx: 13\n  Size: 1, 2\n"
+        "  Objekt: HAUS_PRODTYP\n    Kind: 11\n    Ware: 54\n  EndObj\n"
+        "  @Nummer: 14\n  Id: 20901\n  Kind: 14\n  Gfx: 30\n  Size: 2, 2\n"
+        "  Objekt: HAUS_PRODTYP\n    Kind: 2\n    Ware: 9\n    Rohstoff: 54\n    Maxlager: 4\n    Radius: 4\n"
+        "  EndObj\n");
+    sim::Simulation s(g.world, g.buildings, g.figures);
+    found_city(g, s, 5'000);  // the Kontor at 44,16, a road west along row 17
+    const sim::City* city = computer_city(g);
+    REQUIRE(city != nullptr);
+    sim::ai::State state;
+    sim::ai::Engine engine(s, state);
+    sim::ai::AiPlayer p;
+    p.player = kComputer;
+    p.island = city->island;
+    p.city = city->index;
+    const assets::BuildingType& quarry = *g.buildings.by_id(22407);
+    CHECK(engine.mason_circles(p).empty());
+    CHECK(engine.masons_reach({}, quarry, 25, 30));
+    sim::BuildOrder order;
+    order.player = kComputer;
+    order.island = city->island;
+    order.items = {{20901, 37, 18, 0, 0}};
+    REQUIRE(sim::execute_build(g.world, g.buildings, order, {}, nullptr).placed == 1);
+    const std::vector<sim::Catchment> circles = engine.mason_circles(p);
+    REQUIRE(circles.size() == 1);
+    // The circle of radius 4 about the mason's 2 x 2 tiles (37..38, 18..19): rows 14..23.
+    CHECK(engine.masons_reach(circles, quarry, 38, 23, 0));   // rows 23 and 24
+    CHECK(!engine.masons_reach(circles, quarry, 38, 24, 0));  // rows 24 and 25
+    CHECK(engine.masons_reach(circles, quarry, 33, 18, 0));   // 4 left of column 37
+    CHECK(!engine.masons_reach(circles, quarry, 32, 18, 0));
+    CHECK(!engine.masons_reach(circles, quarry, 44, 18, 1));  // 1 x 2 turned: 44..45, beyond 42
+    CHECK(engine.masons_reach(circles, quarry, 37, 24));      // slope in row 24: the placement a row up
+    CHECK(!engine.masons_reach(circles, quarry, 25, 30));
+}
+
 TEST_CASE("ai: an improved computer's guard leaves soldiers on their way aboard a ship") {
     // Attack ships board the soldiers at the home Kontor; the guard sent them back to its post every
     // few seconds, so the ships sailed empty. The original's guard takes them as before.

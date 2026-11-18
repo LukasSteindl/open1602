@@ -101,8 +101,11 @@ Windows `%APPDATA%\Open1602\scenarios\`). The game makes the folder when it show
 in the installation's `Szenes` folder keep working as well.
 
 The folder takes scenarios of the original's format (`.szs`) and games saved by Open1602
-(`.o1602`, later also maps of Open1602's own editor). Files whose names differ only in their last
-digits make one entry with a choice per digit, as in `Szenes`. The scenario list of the main menu
+(`.o1602`, and maps of Open1602's own editor). Files whose names differ only in their last
+digits make one entry with a choice per digit, as in `Szenes`: `Frost1.szs` and `Frost2.szs` are the
+entry "Frost" with two parts. Maps of the editor do the same (`Frost1.o1602`, `Frost2.o1602`), and
+each part is labelled with the name of its own description; all of them can be chosen from the
+start. Saved games are never parts. The scenario list of the main menu
 and of the multiplayer menu shows them under the heading `----Own scenarios----` (German
 `----Eigene Szenarien----`), after the game's own and before the packages', in name order with
 their stars.
@@ -137,9 +140,10 @@ part.2 = "south"
 | `name.<language>`, `briefing.<language>` | as a scenario's; a part's own briefing is shown when it has one |
 | `stars` | difficulty 0 to 5 |
 | `carry.money` | `true`: every human starts a part with the money the player had when winning the part before, instead of the part's `money` |
+| `parts.free` | `true`: every part is open from the start, to be played in any order. Without it, part 1 alone is open at first |
 
-The campaign is one entry of the scenario list, its parts the choices of the mission screen. At
-first only part 1 is open; winning a part alone opens the next, as the original's campaigns do. The
+The campaign is one entry of the scenario list, its parts the choices of the mission screen, each called by its scenario's name (or "Part n" without one). At
+first only part 1 is open (unless `parts.free`); winning a part alone opens the next, as the original's campaigns do. The
 progress is kept with the original's (`progress.cfg` in the user data folder, a line
 `package <part> <campaign id>`).
 

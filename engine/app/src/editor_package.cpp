@@ -164,7 +164,7 @@ void MapViewer::editor_packages_model(EditorModel& m) const {
         const std::string prefix = m_editor->package + ":";
         for (const assets::PackageCampaign& c : m_package_campaigns) {
             if (c.package == m_editor->package) {
-                m.campaigns.push_back(EditorModel::Campaign{c.id.substr(prefix.size()), c.parts});
+                m.campaigns.push_back(EditorModel::Campaign{c.id.substr(prefix.size()), c.parts, c.parts_free});
             }
         }
     }
@@ -312,6 +312,53 @@ void MapViewer::editor_campaign(const std::string& campaign, bool add) {
     const std::string name = annokit::core::utf8_to_cp1252(package + ":" + campaign);
     editor_notice(ui::tr(add ? "editor.campaign.added" : "editor.campaign.removed", {name, std::to_string(part)}),
                   false, std::string(add ? "added to" : "taken out of") + " campaign " + package + ":" + campaign);
+}
+
+void MapViewer::editor_campaign_order(const std::string& campaign, bool free) {
+    if (!m_editor || m_editor->package.empty()) {
+        return;
+    }
+    const std::string& package = m_editor->package;
+    const auto failed = [&](const std::string& why) {
+        editor_notice(ui::tr("editor.campaign.failed", {annokit::core::utf8_to_cp1252(why)}), true,
+                      "campaign " + package + ":" + campaign + " not changed: " + why);
+    };
+    const auto it = std::find_if(m_packages.begin(), m_packages.end(),
+                                 [&](const assets::ModPackage& p) { return p.id == package && p.archive.empty(); });
+    const bool known = std::any_of(m_package_campaigns.begin(), m_package_campaigns.end(),
+                                   [&](const assets::PackageCampaign& c) { return c.id == package + ":" + campaign; });
+    if (it == m_packages.end() || !known) {
+        failed("no campaign of a package installed as a folder");
+        return;
+    }
+    const std::filesystem::path toml = it->folder / std::string(assets::kCampaignsFile);
+    auto bytes = annokit::core::read_file(toml);
+    if (!bytes) {
+        failed(bytes.error().message);
+        return;
+    }
+    const std::string text(bytes->begin(), bytes->end());
+    // One after the other is the default: the key goes away then.
+    std::vector<annokit::core::DataLine> lines;
+    std::vector<std::string> removed;
+    if (free) {
+        lines.push_back({"parts.free", "true"});
+    } else {
+        removed.emplace_back("parts.free");
+    }
+    auto updated = annokit::core::set_data_table(text, campaign, lines, removed);
+    if (!updated) {
+        failed(std::string(assets::kCampaignsFile) + ": " + updated.error().message);
+        return;
+    }
+    const std::vector<std::uint8_t> out(updated->begin(), updated->end());
+    if (auto written = annokit::core::write_file_atomic(toml, out); !written) {
+        failed(std::string(assets::kCampaignsFile) + ": " + written.error().message);
+        return;
+    }
+    package_written(*it);
+    editor_notice(ui::tr(free ? "editor.campaign.order_free" : "editor.campaign.order_in_turn"), false,
+                  "campaign " + package + ":" + campaign + (free ? ": all parts open" : ": parts in turn"));
 }
 
 }  // namespace o1602::app

@@ -318,6 +318,13 @@ struct EditorPlayer {
     std::string colour;        ///< the banner's colour, Windows-1252
     std::uint8_t faction = 0;  ///< sim::FactionId
     std::string faction_name;  ///< as the page shows it, Windows-1252
+    /// A computer's attitude the scenario sets (editor::kAttitudeFlags of sim::ScenarioSwitches):
+    /// which thresholds are on, and the thresholds.
+    std::uint32_t attitude_flags = 0;
+    std::uint8_t own_development = 0;
+    std::uint8_t rival_development = 0;
+    std::uint16_t own_inhabitants = 0;
+    std::uint16_t rival_inhabitants = 0;
     /// How it stands at the start with each slot of EditorModel::player_slots, in that order
     /// (its own entry unused).
     struct Standing {
@@ -360,13 +367,14 @@ enum class EditorScenarioRow : std::uint8_t {
     Version,
     OriginalLimits,
     NeutralPeace,  ///< the neutral buildings hostile or peaceful (editor::set_neutral_peace)
+    ChooseBanner,  ///< the human chooses the banner at the start (sim::ScenarioInfo::choose_banner)
     Count
 };
 inline constexpr std::size_t kEditorScenarioRows = static_cast<std::size_t>(EditorScenarioRow::Count);
 /// Whether a row of the page "Scenario" is a text to type.
 [[nodiscard]] constexpr bool scenario_row_is_text(EditorScenarioRow row) noexcept {
     return row != EditorScenarioRow::Stars && row != EditorScenarioRow::OriginalLimits &&
-           row != EditorScenarioRow::NeutralPeace;
+           row != EditorScenarioRow::NeutralPeace && row != EditorScenarioRow::ChooseBanner;
 }
 /// The longest text a row takes, in characters.
 [[nodiscard]] constexpr std::size_t scenario_row_length(EditorScenarioRow row) noexcept {
@@ -428,6 +436,7 @@ struct EditorModel {
     struct Campaign {
         std::string name;  ///< the name in campaigns.toml
         std::vector<std::string> parts;
+        bool parts_free = false;  ///< every part open from the start (assets::PackageCampaign::parts_free)
     };
     std::vector<Campaign> campaigns;
     /// The document is a savegame opened as such: Save writes it back, marked as changed.
@@ -617,7 +626,8 @@ struct EditorRequest {
         UnitPatrolOff,  ///< the selected unit patrols no more
         /// The slot `player.slot` with the values of `player`; `index` 1 or 2: its colour the next
         /// or the one before instead; 3: the slot the page shows (EditorPanel::chosen_player) named
-        /// `name`, the rest as it is.
+        /// `name`, the rest as it is; 4: its faction; 5: its attitude (the thresholds of
+        /// `player`); 6: the slot the page shows with the starting money typed in `name`.
         SetPlayer,
         AddPlayer,     ///< a computer player in the next slot
         RemovePlayer,  ///< the last slot taken away
@@ -667,6 +677,8 @@ struct EditorRequest {
         SavePackage,     ///< saved as the scenario `name` of package `index` (EditorModel::package_folders)
         CampaignAdd,     ///< the scenario as the next part of campaign `name` (a new one if it has none)
         CampaignRemove,  ///< the scenario, the last part of campaign `name`, taken out of it
+        /// Campaign `name`'s parts all open from the start (`index` 1) or one after the other (0).
+        CampaignOrder,
         /// The music (`index` 0) or the effects (1) switched on (`amount` 1) or off (0).
         SoundSwitch,
         /// The volume of the music (`index` 0) or the effects (1) to `amount` (EditorModel's unit);
@@ -744,6 +756,7 @@ public:
         ShipRoute,  ///< the selected ship's or trade cart's route
         Players,
         PlayerName,
+        PlayerMoney,  ///< a player's starting money typed
         Relations,
         Rules,
         Random,
@@ -760,6 +773,7 @@ public:
         PackageSave,
         Campaign,
         Neutrals,  ///< the players towards the natives, the pirates and the trader
+        Attitude,  ///< when the computers grow cross with the others (the scenario's thresholds)
         Sound,     ///< music and effects: on or off, their volumes
         TestAs     ///< the player the test game is played as
     };
@@ -802,9 +816,9 @@ public:
     /// A name is being typed: the keys go here.
     [[nodiscard]] bool typing() const noexcept {
         return m_page == Page::SaveAs || m_page == Page::CityName || m_page == Page::ShipName ||
-               m_page == Page::PlayerName || m_page == Page::GoalText || m_page == Page::ScenarioText ||
-               m_page == Page::Find || m_page == Page::MarkerName || m_page == Page::PackageSave ||
-               (m_page == Page::Campaign && m_new_campaign);
+               m_page == Page::PlayerName || m_page == Page::PlayerMoney || m_page == Page::GoalText ||
+               m_page == Page::ScenarioText || m_page == Page::Find || m_page == Page::MarkerName ||
+               m_page == Page::PackageSave || (m_page == Page::Campaign && m_new_campaign);
     }
     /// The text typed on the page "Find" (Windows-1252); empty on another page.
     [[nodiscard]] const std::string& find_text() const noexcept {
@@ -887,6 +901,15 @@ private:
     /// a table in a wide dialog, the slot the page "Players" shows in the column.
     void layout_neutrals(const EditorModel& model);
     void layout_neutrals_table(const EditorModel& model);
+    /// The page "Attitude": when each computer grows cross with the others; a table in a wide
+    /// dialog, the slot the page "Players" shows in the column.
+    void layout_attitude(const EditorModel& model);
+    void layout_attitude_table(const EditorModel& model);
+    /// The request for a click on the value `column` of the page "Attitude" of the slot `slot`.
+    [[nodiscard]] std::optional<EditorRequest> press_attitude(const EditorModel& model, std::size_t slot,
+                                                              std::size_t column, bool forward) const;
+    /// The page that types a player's starting money.
+    void layout_player_money(const EditorModel& model);
     /// The request for a click on the value `column` (NeutralColumn) of the slot `slot` (index
     /// into EditorModel::player_slots).
     [[nodiscard]] std::optional<EditorRequest> press_neutral(const EditorModel& model, std::size_t slot,

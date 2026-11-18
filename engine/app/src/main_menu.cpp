@@ -297,6 +297,7 @@ std::vector<MenuScenario> package_scenario_list(std::span<const assets::PackageS
         s.base = base_of(c.id);
         s.header.ranking = ranking_of_stars(c.stars);
         s.package_campaign = c.id;
+        s.parts_free = c.parts_free;
         s.briefing = c.briefing(language);
         for (std::size_t i = 0; i < c.parts.size(); ++i) {
             const assets::PackageScenario* part = assets::find_scenario(scenarios, c.parts[i]);
@@ -305,6 +306,9 @@ std::vector<MenuScenario> package_scenario_list(std::span<const assets::PackageS
             }
             s.files.emplace_back(static_cast<std::uint8_t>(i), part->file);
             s.package_parts.push_back(MenuScenario::Part{part->id, part->briefing(language)});
+            // The part's choice says the scenario's name, where it has one.
+            s.part_names.emplace_back(static_cast<std::uint8_t>(i),
+                                      part->names.empty() ? std::string() : part->name(language));
         }
         out.push_back(std::move(s));
     }
@@ -320,6 +324,98 @@ std::vector<MenuScenario> package_scenario_list(std::span<const assets::PackageS
     }
     return out;
 }
+
+namespace {
+
+/// The description of an own scenario of the editor, from the head of its file; nothing for a
+/// savegame or another kind of file.
+std::optional<sim::ScenarioInfo> own_scenario_info(const std::filesystem::path& file) {
+    const auto head = annokit::core::read_file_head(file, sim::kSaveInfoHead);
+    const auto info =
+        head ? sim::save_info(head->bytes, head->size) : annokit::core::Result<sim::SaveInfo>(head.error());
+    if (!info || !info->meta || !info->meta->scenario) {
+        return std::nullopt;
+    }
+    return info->meta->scenario;
+}
+
+/// Scenarios of the editor whose files differ only in the digits at the end of their names
+/// (Name1.o1602, Name2.o1602, ...) become one entry with parts, as the original groups its .szs:
+/// the mission screen offers them by the first of those digits, all of them open. The entry is
+/// called by the files' common name; each part's choice by the name of its description. A file
+/// with digits that has no other part stays an entry of its own, under its whole name.
+void group_own_parts(std::vector<MenuScenario>& own) {
+    struct Part {
+        std::size_t entry = 0;
+        std::uint8_t digit = 0;
+    };
+    std::map<std::string, std::vector<Part>> by_name;
+    std::map<std::string, std::string> shown_name;
+    for (std::size_t i = 0; i < own.size(); ++i) {
+        const MenuScenario& s = own[i];
+        if (s.files.size() != 1 || lower(annokit::core::path_to_utf8(s.files.front().second.extension())) != ".o1602") {
+            continue;
+        }
+        const std::string& stem = s.name;  // the file's name, Windows-1252
+        std::size_t cut = stem.size();
+        while (cut > 0 && std::isdigit(static_cast<unsigned char>(stem[cut - 1])) != 0) {
+            --cut;
+        }
+        if (cut == 0 || cut == stem.size() || !own_scenario_info(s.files.front().second)) {
+            continue;  // no digits, only digits, or a savegame
+        }
+        const std::string name = stem.substr(0, cut);
+        by_name[lower(name)].push_back(Part{i, static_cast<std::uint8_t>(stem[cut] - '0')});
+        shown_name.emplace(lower(name), name);
+    }
+    std::vector<bool> gone(own.size(), false);
+    std::vector<MenuScenario> merged;
+    for (auto& [key, parts] : by_name) {
+        std::sort(parts.begin(), parts.end(), [](const Part& a, const Part& b) { return a.digit < b.digit; });
+        const bool distinct = std::adjacent_find(parts.begin(), parts.end(), [](const Part& a, const Part& b) {
+                                  return a.digit == b.digit;
+                              }) == parts.end();
+        if (parts.size() < 2 || !distinct) {
+            continue;
+        }
+        MenuScenario entry;
+        entry.name = shown_name[key];
+        const std::filesystem::path first = own[parts.front().entry].files.front().second;
+        const std::u8string u8 = first.stem().u8string();
+        std::size_t cut = u8.size();
+        while (cut > 0 && u8[cut - 1] >= u8'0' && u8[cut - 1] <= u8'9') {
+            --cut;
+        }
+        entry.base = std::filesystem::path(u8.substr(0, cut));
+        const std::string_view language = ui::current_language();
+        for (const Part& part : parts) {
+            const std::filesystem::path& file = own[part.entry].files.front().second;
+            entry.files.emplace_back(part.digit, file);
+            std::string label;
+            if (const auto info = own_scenario_info(file)) {
+                label = utf8_to_cp1252(sim::scenario_text(info->names, language));
+                if (part.entry == parts.front().entry) {
+                    entry.header.ranking = ranking_of_stars(info->stars);
+                }
+            }
+            entry.part_names.emplace_back(part.digit, std::move(label));
+            gone[part.entry] = true;
+        }
+        merged.push_back(std::move(entry));
+    }
+    std::vector<MenuScenario> kept;
+    for (std::size_t i = 0; i < own.size(); ++i) {
+        if (!gone[i]) {
+            kept.push_back(std::move(own[i]));
+        }
+    }
+    for (MenuScenario& m : merged) {
+        kept.push_back(std::move(m));
+    }
+    own = std::move(kept);
+}
+
+}  // namespace
 
 std::vector<MenuScenario> own_scenario_list(const std::filesystem::path& folder, std::string heading,
                                             std::span<const MenuScenario> taken, std::vector<std::string>* skipped) {
@@ -349,6 +445,7 @@ std::vector<MenuScenario> own_scenario_list(const std::filesystem::path& folder,
         s.files.emplace_back(std::uint8_t{0xFF}, entry.path());
         own.push_back(std::move(s));
     }
+    group_own_parts(own);
     // A name the list has already would make two entries of one name, which share their high score
     // list and of which opening by name finds only the first: the game folder's (or the .szs) wins.
     std::vector<std::string> names;
@@ -416,20 +513,51 @@ std::optional<CampaignPart> campaign_part_of(const std::filesystem::path& file) 
     return std::nullopt;
 }
 
-std::optional<sim::Rules> scenario_rules_of(const std::filesystem::path& file) {
+namespace {
+
+/// The head of a scenario of the editor: its META with the description (SCNI); nothing for
+/// another kind of file or a savegame.
+std::optional<sim::SaveMeta> scenario_meta_of(const std::filesystem::path& file) {
     if (lower(annokit::core::path_to_utf8(file.extension())) != ".o1602") {
         return std::nullopt;
     }
-    // Only the head of the file: the settings come right after its first section.
+    // Only the head of the file: the settings and the description come right after its first section.
     const auto head = annokit::core::read_file_head(file, sim::kSaveInfoHead);
     if (!head) {
         return std::nullopt;
     }
-    const auto info = sim::save_info(head->bytes, head->size);
+    auto info = sim::save_info(head->bytes, head->size);
     if (!info || !info->meta || !info->meta->scenario) {
         return std::nullopt;
     }
-    return info->meta->scenario->rules;
+    return std::move(info->meta);
+}
+
+/// The description of a scenario of the editor, from the head of its file; nothing for another
+/// kind of file.
+std::optional<sim::ScenarioInfo> scenario_info_of(const std::filesystem::path& file) {
+    auto meta = scenario_meta_of(file);
+    if (!meta) {
+        return std::nullopt;
+    }
+    return std::move(meta->scenario);
+}
+
+}  // namespace
+
+std::optional<sim::Rules> scenario_rules_of(const std::filesystem::path& file) {
+    const std::optional<sim::ScenarioInfo> info = scenario_info_of(file);
+    return info ? info->rules : std::nullopt;
+}
+
+bool scenario_chooses_banner(const std::filesystem::path& file) {
+    const std::optional<sim::ScenarioInfo> info = scenario_info_of(file);
+    return info && info->choose_banner;
+}
+
+std::string scenario_player_name(const std::filesystem::path& file) {
+    const std::optional<sim::SaveMeta> meta = scenario_meta_of(file);
+    return meta ? meta->player : std::string();
 }
 
 const std::string& MainMenu::default_name() {
@@ -619,7 +747,7 @@ std::size_t MainMenu::campaign_parts_open(const MenuScenario& s) const {
     // MISSION.GAD: a part above the campaign's progress is disabled; other scenarios have all.
     constexpr std::size_t kAll = 4;
     if (!s.package_campaign.empty()) {
-        return m_progress.package_parts_open(s.package_campaign);
+        return s.parts_free ? kAll : m_progress.package_parts_open(s.package_campaign);
     }
     if (s.header.campaign == assets::ScenarioHeader::kNone) {
         return kAll;
@@ -797,6 +925,14 @@ void MainMenu::refresh_mission() {
         } else if (s.header.campaign != assets::ScenarioHeader::kNone) {
             label = text("KAMPAGNE", std::size_t{5} * s.header.campaign + digits[i]);  // "Der Retter"
         }
+        if (label.empty() && !s.part_names.empty()) {
+            // Own parts and a package's campaign: the part's name, else its place among the parts.
+            const auto named = std::find_if(s.part_names.begin(), s.part_names.end(),
+                                            [&](const auto& n) { return n.first == digits[i]; });
+            label = named != s.part_names.end() && !named->second.empty()
+                        ? named->second
+                        : ui::tr("menu.part", {std::to_string(i + 1)});
+        }
         if (label.empty()) {
             label = ui::tr("menu.part", {std::to_string(digits[i] + 1)});
         }
@@ -965,6 +1101,9 @@ std::vector<MenuEvent> MainMenu::mouse(std::int32_t x, std::int32_t y, bool down
                     ev.name = m_name;
                     ev.setup = m_settings.setup();
                     ev.scenario_rules = m_scenario_own_rules;
+                    if (m_colour_for_scenario) {
+                        ev.scenario_banner = m_banner;
+                    }
                     const MenuScenario& chosen = m_scenarios[m_chosen];
                     ev.package_scenario = chosen.package_scenario;
                     if (!chosen.package_campaign.empty()) {
@@ -1122,28 +1261,22 @@ std::vector<MenuEvent> MainMenu::mouse(std::int32_t x, std::int32_t y, bool down
                     }
                 } else if (e.id == kStart) {
                     const MenuScenario& s = m_scenarios[m_chosen];
+                    m_colour_for_scenario = false;
                     if (s.header.mission_number == kEndless && m_colour) {
-                        m_screen = Screen::Colour;  // name and banner first
-                        // Each visit shows the further colours in other patterns (two runs of four).
-                        m_banners.shuffle_art_patterns(sim::kFirstExtraBanner, kMoreBanners, std::random_device{}());
-                        // The name can be typed at once (as the original, mode 5);
-                        // the last one, or "Namenlos", stands there until the first key.
-                        if (m_name.empty()) {
-                            m_name = default_name();
-                        }
-                        m_typing = true;
-                        m_name_fresh = true;
+                        open_colour_screen();  // name and banner first
                     } else if (s.header.mission_number != kTutorial) {
-                        // The rules first (Open1602's own dialog; the original starts here).
-                        // A scenario of the editor made for settings of its own begins from them.
-                        EndlessSetup setup = m_scenario;
-                        const std::optional<sim::Rules> own = scenario_rules_of(chosen_file());
-                        m_scenario_own_rules = own.has_value();
-                        if (own) {
-                            setup.rules = *own;
+                        // A scenario of the editor may let the human choose the banner first.
+                        m_colour_for_scenario = m_colour && scenario_chooses_banner(chosen_file());
+                        if (m_colour_for_scenario) {
+                            // The name the scenario gives its human is offered, where it has one.
+                            if (std::string name = scenario_player_name(chosen_file());
+                                !name.empty() && name != default_name()) {
+                                m_name = std::move(name);
+                            }
+                            open_colour_screen();
+                        } else {
+                            open_scenario_settings();
                         }
-                        m_settings.open(setup, SetupScope::Scenario);
-                        m_screen = Screen::Settings;
                     } else {
                         // The tutorial teaches the game as it is: no settings.
                         MenuEvent ev{MenuEvent::Kind::Scenario};
@@ -1174,6 +1307,10 @@ std::vector<MenuEvent> MainMenu::mouse(std::int32_t x, std::int32_t y, bool down
                     m_banner = e.id < kMoreArms
                                    ? static_cast<sim::BannerId>(e.id - kBanner)
                                    : static_cast<sim::BannerId>(sim::kFirstExtraBanner + (e.id - kMoreArms));
+                    if (m_colour_for_scenario) {
+                        open_scenario_settings();
+                        break;
+                    }
                     m_settings.open(m_endless, SetupScope::Endless);
                     m_settings.set_level(m_variant == 0xFF ? 0 : m_variant);
                     m_screen = Screen::Settings;
@@ -1186,6 +1323,32 @@ std::vector<MenuEvent> MainMenu::mouse(std::int32_t x, std::int32_t y, bool down
         }
     }
     return out;
+}
+
+void MainMenu::open_colour_screen() {
+    m_screen = Screen::Colour;
+    // Each visit shows the further colours in other patterns (two runs of four).
+    m_banners.shuffle_art_patterns(sim::kFirstExtraBanner, kMoreBanners, std::random_device{}());
+    // The name can be typed at once (as the original, mode 5);
+    // the last one, or "Namenlos", stands there until the first key.
+    if (m_name.empty()) {
+        m_name = default_name();
+    }
+    m_typing = true;
+    m_name_fresh = true;
+}
+
+void MainMenu::open_scenario_settings() {
+    // The rules first (Open1602's own dialog; the original starts here).
+    // A scenario of the editor made for settings of its own begins from them.
+    EndlessSetup setup = m_scenario;
+    const std::optional<sim::Rules> own = scenario_rules_of(chosen_file());
+    m_scenario_own_rules = own.has_value();
+    if (own) {
+        setup.rules = *own;
+    }
+    m_settings.open(setup, SetupScope::Scenario);
+    m_screen = Screen::Settings;
 }
 
 bool MainMenu::wheel(std::int32_t notches) {
@@ -1238,7 +1401,7 @@ bool MainMenu::back() {
                 if (!m_scenario_own_rules) {
                     m_scenario = m_settings.setup();
                 }
-                m_screen = Screen::Mission;
+                m_screen = m_colour_for_scenario ? Screen::Colour : Screen::Mission;
             } else {
                 m_endless = m_settings.setup();
                 m_screen = Screen::Colour;

@@ -1072,6 +1072,9 @@ void MapViewer::editor_request(const EditorRequest& request, bool confirmed) {
             }
             break;
         }
+        case Kind::CampaignOrder:
+            editor_campaign_order(request.name, request.index != 0);
+            break;
         case Kind::CampaignAdd:
         case Kind::CampaignRemove:
             editor_campaign(request.name, request.kind == Kind::CampaignAdd);

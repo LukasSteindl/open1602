@@ -3396,7 +3396,24 @@ void MapViewer::apply_options() {
     }
 }
 
-annokit::core::Status MapViewer::load_game(const std::filesystem::path& path, const sim::Rules* rules) {
+namespace {
+
+/// The banner the human chose for a scenario: the first human takes it, the player who had it the
+/// human's old one.
+void give_chosen_banner(sim::World& world, std::optional<sim::BannerId> banner) {
+    if (!banner) {
+        return;
+    }
+    const sim::PlayerId human = sim::first_human_player(world);
+    if (world.player(human) != nullptr) {
+        (void)sim::take_banner(world, human, *banner);
+    }
+}
+
+}  // namespace
+
+annokit::core::Status MapViewer::load_game(const std::filesystem::path& path, const sim::Rules* rules,
+                                           std::optional<sim::BannerId> banner) {
     finish_autosave();  // "continue" right after an autosave loads the file it wrote
     if (m_session && m_session->ended()) {
         end_session();  // one that ended in its game stood only to show the game
@@ -3413,6 +3430,7 @@ annokit::core::Status MapViewer::load_game(const std::filesystem::path& path, co
     if (!world) {
         return world.error();
     }
+    give_chosen_banner(*world, banner);
     m_pending_load.reset();
     if (std::vector<sim::PlayerId> players = player_choice(*world); !players.empty()) {
         // The game does not know this person: they choose their player first. The game behind the
@@ -3492,7 +3510,8 @@ void MapViewer::load_package_scenarios() {
 }
 
 annokit::core::Status MapViewer::start_package_scenario(const std::string& id, const sim::Rules* rules,
-                                                        const std::string& campaign, std::uint8_t part) {
+                                                        const std::string& campaign, std::uint8_t part,
+                                                        std::optional<sim::BannerId> banner) {
     const assets::PackageScenario* scenario = assets::find_scenario(m_package_scenarios, id);
     if (scenario == nullptr) {
         return annokit::core::make_error(annokit::core::ErrorCode::NotFound, "no scenario " + id);
@@ -3549,6 +3568,7 @@ annokit::core::Status MapViewer::start_package_scenario(const std::string& id, c
         }
         world->set_campaign_part(std::move(state));
     }
+    give_chosen_banner(*world, banner);
     // A game saved as the map: its scripts start anew, as in any new game.
     world->set_script_states({});
     for (const std::string& w : warnings) {
@@ -4197,9 +4217,9 @@ void MapViewer::apply_menu() {
                     menu->set_tutorial_chapter(*e.tutorial_chapter);
                 }
                 started = e.package_scenario.empty()
-                              ? load_game(e.path, e.setup ? &e.setup->rules : nullptr)
+                              ? load_game(e.path, e.setup ? &e.setup->rules : nullptr, e.scenario_banner)
                               : start_package_scenario(e.package_scenario, e.setup ? &e.setup->rules : nullptr,
-                                                       e.package_campaign, e.level);
+                                                       e.package_campaign, e.level, e.scenario_banner);
                 if (started && e.setup && !e.scenario_rules && !(e.setup->rules == m_app_settings.scenario.rules)) {
                     m_app_settings.scenario = *e.setup;
                     save_settings();
