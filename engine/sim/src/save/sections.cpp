@@ -443,7 +443,7 @@ void write_scenario_info(Writer& o, const ScenarioInfo& info) {
         });
     };
     o.u8(info.stars);
-    o.u8(info.original_limits ? std::uint8_t{1} : std::uint8_t{0});
+    o.u8(static_cast<std::uint8_t>((info.original_limits ? 1U : 0U) | (info.choose_banner ? 2U : 0U)));
     texts(info.names);
     o.string(info.author);
     o.string(info.version);
@@ -465,7 +465,8 @@ void read_scenario_info(Reader& in, ScenarioInfo& info) {
     in.string(info.version);
     texts(info.briefings);
     info.original_limits = (flags & 1U) != 0;
-    if ((flags & ~1U) != 0 || !check_scenario_info(info).empty()) {
+    info.choose_banner = (flags & 2U) != 0;
+    if ((flags & ~3U) != 0 || !check_scenario_info(info).empty()) {
         in.fail();
     }
 }
@@ -1240,6 +1241,7 @@ std::optional<SaveMeta> read_meta(std::span<const std::uint8_t> sections) {
             }
         }
         summary.original_limits = (flags & 1U) != 0;
+        summary.choose_banner = (flags & 2U) != 0;
         summary.stars = std::min(summary.stars, ScenarioInfo::kMaxStars);
         summary.rules = rules;
         meta.scenario = std::move(summary);

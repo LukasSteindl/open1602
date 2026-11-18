@@ -256,6 +256,7 @@ TEST_CASE("editor document: a scenario is saved, opened and keeps its own parts"
     info.stars = 3;
     info.author = "Merlin";
     info.version = "1.0";
+    info.choose_banner = true;
     document.perform(std::make_unique<editor::ScenarioInfoEdit>(std::nullopt, info));
     const std::vector<sim::ScenarioMarker> markers = {
         {"harbour", sim::ScenarioMarker::Shape::Point, 41, 32, 1, 1},
@@ -303,6 +304,7 @@ TEST_CASE("editor document: a scenario is saved, opened and keeps its own parts"
     CHECK(head->meta->scenario->stars == 3);
     CHECK(head->meta->scenario->names == info.names);
     CHECK(!head->meta->scenario->original_limits);
+    CHECK(head->meta->scenario->choose_banner);
     CHECK(head->meta->scenario->briefings == info.briefings);
     CHECK(head->meta->scenario->author == "Merlin");
 

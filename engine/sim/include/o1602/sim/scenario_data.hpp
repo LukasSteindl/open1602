@@ -47,6 +47,9 @@ struct ScenarioInfo {
     /// The editor keeps the scenario within the original's limits (ADR 0013): its size, islands,
     /// players, the original's buildings and goods only, no packages and no script.
     bool original_limits = false;
+    /// The human chooses the banner when the game starts, as in the endless game; the player who
+    /// had it takes the human's. False: the colours stay as the map sets them.
+    bool choose_banner = false;
     /// The game settings the author made the scenario for (section SRUL): the start dialog begins
     /// from them, the player can still change them. Nothing: the player's own, as for any scenario.
     std::optional<Rules> rules;

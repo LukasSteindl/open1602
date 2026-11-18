@@ -236,6 +236,7 @@ TEST_CASE("package campaigns: parts name scenarios of the package, in order, wit
                                 "briefing.de = \"Zwei Winter.\"\n"
                                 "stars = 2\n"
                                 "carry.money = true\n"
+                                "parts.free = true\n"
                                 "part.2 = \"south\"\n"
                                 "part.1 = \"north\"\n"
                                 "[gap]\npart.1 = \"north\"\npart.3 = \"south\"\n"
@@ -251,6 +252,7 @@ TEST_CASE("package campaigns: parts name scenarios of the package, in order, wit
     CHECK(c.briefing("de") == "Zwei Winter.");
     CHECK(c.stars == 2);
     CHECK(c.carry_money);
+    CHECK(c.parts_free);
     REQUIRE(c.parts.size() == 2);
     CHECK(c.parts[0] == "isles:north");
     CHECK(c.parts[1] == "isles:south");

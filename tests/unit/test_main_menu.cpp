@@ -591,6 +591,57 @@ TEST_CASE("main menu: a scenario of the editor shows the name and stars of its d
     std::filesystem::remove_all(folder);
 }
 
+TEST_CASE("main menu: the editor's scenarios of one name and a digit make one entry with parts") {
+    const std::filesystem::path folder = test::temp_path("o1602-test-menu-own-parts");
+    std::filesystem::remove_all(folder);
+    std::filesystem::create_directories(folder);
+    const assets::BuildingTable buildings;
+    const auto scenario = [&](const std::string& file, const std::string& name, std::uint8_t stars, bool choose) {
+        sim::World world(40, 40);
+        sim::ScenarioInfo info;
+        info.names = {{"en", name}};
+        info.stars = stars;
+        info.choose_banner = choose;
+        world.set_scenario_info(info);
+        std::vector<sim::Player> players(1);
+        players[0].role = sim::PlayerRole::Human;
+        players[0].name = choose ? "Wilfried" : "";
+        world.set_players(players);
+        auto bytes = sim::write_game(world, buildings);
+        REQUIRE(bytes.ok());
+        write(folder / file, std::string(bytes->begin(), bytes->end()));
+    };
+    scenario("Frost2.o1602", "Frost: the thaw", 2, false);
+    scenario("Frost1.o1602", "Frost: the first winter", 4, true);
+    scenario("Alone1.o1602", "Alone", 1, false);  // one part alone stays an entry of its own
+    write(folder / "Saved3.o1602", "O1602");      // a savegame, no description: never a part
+    write(folder / "Saved4.o1602", "O1602");
+    const auto list = app::own_scenario_list(folder, "Own", {});
+    std::vector<std::string> names;
+    for (const app::MenuScenario& s : list) {
+        names.push_back(s.name);
+    }
+    CHECK((names == std::vector<std::string>{"Own", "Alone", "Frost", "Saved3", "Saved4"}));
+    REQUIRE(list.size() == 5);
+    const app::MenuScenario& frost = list[2];
+    REQUIRE(frost.files.size() == 2);
+    CHECK(frost.files[0].first == 1);
+    CHECK(frost.files[0].second.filename() == "Frost1.o1602");
+    CHECK(frost.files[1].first == 2);
+    CHECK(frost.base == std::filesystem::path("Frost"));
+    CHECK(frost.header.ranking == 3);  // the first part's stars
+    REQUIRE(frost.part_names.size() == 2);
+    CHECK(frost.part_names[0].second == "Frost: the first winter");
+    CHECK(frost.part_names[1].second == "Frost: the thaw");
+    CHECK(app::scenario_chooses_banner(folder / "Frost1.o1602"));
+    CHECK(!app::scenario_chooses_banner(folder / "Frost2.o1602"));
+    CHECK(!app::scenario_chooses_banner(folder / "Saved3.o1602"));
+    CHECK(app::scenario_player_name(folder / "Frost1.o1602") == "Wilfried");  // offered on the colour screen
+    CHECK(app::scenario_player_name(folder / "Frost2.o1602").empty());
+    CHECK(app::scenario_player_name(folder / "Saved3.o1602").empty());
+    std::filesystem::remove_all(folder);
+}
+
 TEST_CASE("main menu: the packages' scenarios under their own heading, with stars and briefing") {
     CHECK(app::package_scenario_list({}, {}, "en", "----Mods----").empty());
     std::vector<assets::PackageScenario> scenarios(1);
@@ -622,6 +673,7 @@ TEST_CASE("main menu: a package's campaign is one entry with a part per scenario
     scenarios[0].id = "isles:north";
     scenarios[0].file = std::filesystem::path("north.szs");
     scenarios[0].briefings.emplace_back("en", "Go north.");
+    scenarios[0].names.emplace_back("en", "The North");
     scenarios[1].id = "isles:south";
     scenarios[1].file = std::filesystem::path("south.szs");
     std::vector<assets::PackageCampaign> campaigns(1);
@@ -638,6 +690,9 @@ TEST_CASE("main menu: a package's campaign is one entry with a part per scenario
     CHECK(c.package_scenario.empty());
     CHECK(c.briefing == "Two winters.");
     CHECK(c.header.ranking == 2);
+    REQUIRE(c.part_names.size() == 2);  // the mission screen's choices: the name, else "Part 2"
+    CHECK(c.part_names[0].second == "The North");
+    CHECK(c.part_names[1].second.empty());
     CHECK(c.base == std::filesystem::path("isles_frost"));
     REQUIRE(c.files.size() == 2);
     CHECK(c.files[0].first == 0);

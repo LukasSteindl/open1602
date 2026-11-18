@@ -116,6 +116,8 @@ PlayerValues player_values(const sim::Player& player) {
     v.monuments_allowed = player.monuments_allowed;
     v.arches_allowed = player.arches_allowed;
     v.faction = player.faction;
+    v.attitude = player.scenario;
+    v.attitude.flags &= kAttitudeFlags;
     return v;
 }
 
@@ -144,6 +146,10 @@ annokit::core::Result<std::unique_ptr<Operation>> set_player(const sim::World& w
         return make_error(ErrorCode::InvalidFormat,
                           "no faction of the settlers' behaviour " + std::to_string(values.faction));
     }
+    if ((values.attitude.flags & ~kAttitudeFlags) != 0 || values.attitude.own_development > kMaxDevelopment ||
+        values.attitude.rival_development > kMaxDevelopment) {
+        return make_error(ErrorCode::InvalidFormat, "an attitude out of range");
+    }
     sim::World after = world;
     (void)sim::take_banner(after, player, values.banner);
     sim::Player* changed = after.player(player);
@@ -157,6 +163,11 @@ annokit::core::Result<std::unique_ptr<Operation>> set_player(const sim::World& w
     q.monuments_allowed = values.monuments_allowed;
     q.arches_allowed = values.arches_allowed;
     q.faction = values.faction;
+    q.scenario.flags = (q.scenario.flags & ~kAttitudeFlags) | values.attitude.flags;
+    q.scenario.own_development = values.attitude.own_development;
+    q.scenario.rival_development = values.attitude.rival_development;
+    q.scenario.own_inhabitants = values.attitude.own_inhabitants;
+    q.scenario.rival_inhabitants = values.attitude.rival_inhabitants;
     return std::unique_ptr<Operation>(std::make_unique<WorldEdit>(std::move(after), "player_change"));
 }
 

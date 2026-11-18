@@ -56,6 +56,12 @@ struct MenuScenario {
         std::string briefing;
     };
     std::vector<Part> package_parts;
+    /// A package's campaign whose parts are all open from the start (PackageCampaign::parts_free).
+    bool parts_free = false;
+    /// Own scenarios of the editor made into parts by the digits at the end of their files' names
+    /// (Name1, Name2, ...): per part (the key of `files`) the name of its description in the
+    /// player's language, which labels its choice; empty: "Part n".
+    std::vector<std::pair<std::uint8_t, std::string>> part_names;
 };
 
 /// The entries of the packages' campaigns and then their scenarios under their heading (`heading`,
@@ -100,6 +106,14 @@ struct CampaignPart {
 /// its file; nothing for one without them or another kind of file.
 [[nodiscard]] std::optional<sim::Rules> scenario_rules_of(const std::filesystem::path& file);
 
+/// Whether the human chooses the banner when a scenario of the editor starts
+/// (sim::ScenarioInfo::choose_banner), from the head of its file; false for another kind of file.
+[[nodiscard]] bool scenario_chooses_banner(const std::filesystem::path& file);
+
+/// The name of the first human of a scenario of the editor (sim::SaveMeta::player, Windows-1252),
+/// from the head of its file; empty for another kind of file or a human without a name.
+[[nodiscard]] std::string scenario_player_name(const std::filesystem::path& file);
+
 struct MenuEvent {
     enum class Kind : std::uint8_t {
         Quit,          ///< leave the program (after a question)
@@ -133,6 +147,9 @@ struct MenuEvent {
     bool scenario_rules = false;
     /// Scenario: the chapter of the tutorial, nothing for another scenario.
     std::optional<std::uint8_t> tutorial_chapter{};
+    /// Scenario: the banner the human chose on the colour screen (sim::ScenarioInfo::choose_banner);
+    /// nothing: the colours as the map sets them.
+    std::optional<sim::BannerId> scenario_banner{};
     /// Scenario: the id of a package's scenario (`path` is its map), empty for another.
     std::string package_scenario{};
     /// Scenario: the package's campaign it is a part of (part `level`, from 0), empty for none.
@@ -254,6 +271,11 @@ private:
     void load_details();
     /// The endless game: the lines on the chosen level below the briefing.
     void append_level_notes();
+    /// The colour screen (name and banner), before the settings of the endless game or of a
+    /// scenario that lets the human choose the banner.
+    void open_colour_screen();
+    /// The start dialog of the chosen scenario, from its own settings where the editor gave it any.
+    void open_scenario_settings();
     [[nodiscard]] std::filesystem::path chosen_file() const;
 
     const assets::GameDirectory* m_game;
@@ -312,6 +334,8 @@ private:
     std::array<std::optional<HallBanner>, sim::kOriginalPlayers> m_hall{};
     render::BannerTable m_banners;  ///< the colours on offer: the original's and the further ones
     sim::BannerId m_banner = 0;     ///< chosen on the colour screen, for the start dialog
+    /// The colour screen leads to a scenario's start dialog, not to the endless game's.
+    bool m_colour_for_scenario = false;
     std::uint8_t m_tutorial_chapter = 0;
     bool m_name_fresh = false;  ///< the name was put in, not typed: the first key replaces it
     bool m_typing = false;
