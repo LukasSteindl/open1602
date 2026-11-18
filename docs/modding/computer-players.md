@@ -609,7 +609,9 @@ Every minute on the easiest level, ten seconds sooner per level (`[computer_stra
 - **Stance.** Hostile when its mood towards the rival is below -60; a partner when it is above 20
   (a trader: from 0 on with a trade treaty); pressed when the rival is near (a city on its home
   island or within four minutes at sea), not liked (mood 0 or below) and so much weaker (`pressure_percent`); else neutral. A
-  computer offers no peace to one it presses or is hostile to. On the harder levels a human
+  rival it presses it keeps pressing while the mood stays up to a partner's, and while the rival is near and weaker: a
+  sale at the rival's Kontor lifts the mood a little above 0 for a while, and the pressure, with the war plan, came and
+  went with the trade. A computer offers no peace to one it presses or is hostile to. On the harder levels a human
   counts as stronger than its army (`human_threat_percent`).
 - **Goal.** The economy in debt or with a falling income; military against a stronger rival
   nearby that is hostile or at war with it, or as a conqueror that presses someone (a larger army,
