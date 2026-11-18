@@ -1176,6 +1176,16 @@ void Engine::plan_landing(AiPlayer& p, Ship& s, ShipNote& n) {
         mission_end(p, s, n);
         return;
     }
+    const auto beach = landing_beach(p, *t);
+    if (!beach) {
+        mission_end(p, s, n);
+        return;
+    }
+    ship_send(p, s, water_near(t->island, beach->first, beach->second), 7, t->owner);
+}
+
+std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const AiPlayer& p, const City& c) const {
+    const City* t = &c;
     const std::uint16_t island = t->island;
     const WorldIsland& isl = island_of(island);
     // Targets: the markets, or the Kontor of a small city.
@@ -1194,8 +1204,7 @@ void Engine::plan_landing(AiPlayer& p, Ship& s, ShipNote& n) {
         targets.emplace_back(*t->warehouse_x, *t->warehouse_y);
     }
     if (targets.empty()) {
-        mission_end(p, s, n);
-        return;
+        return std::nullopt;
     }
     // The danger, gathered once (TB-10): hostile soldiers on the island and hostile towers on it
     // (tile positions), hostile ships near it (world positions); a ship farther than 16 tiles
@@ -1262,10 +1271,9 @@ void Engine::plan_landing(AiPlayer& p, Ship& s, ShipNote& n) {
         }
     }
     if (best >= 10000) {
-        mission_end(p, s, n);
-        return;
+        return std::nullopt;
     }
-    ship_send(p, s, water_near(island, bx, by), 7, t->owner);
+    return std::pair{bx, by};
 }
 
 Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_same) {

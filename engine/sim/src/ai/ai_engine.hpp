@@ -265,6 +265,10 @@ public:
     /// off from the city's buildings, the water nearest to the ship from which they would land on
     /// land walkable to the city; nothing when they land there now or no such water is found.
     [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
+    /// The beach tile (island coordinates) a landing against city `c` makes for: near its markets
+    /// (or its Kontor), away from hostile towers, soldiers and ships; none when no beach is free.
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_beach(const AiPlayer& p,
+                                                                                     const City& c) const;
     /// Whether ship `s` sent on `mission` fights on its way (an attack move): raids, attacks and
     /// landings of improved computers, not while soldiers are aboard (TM).
     [[nodiscard]] bool attack_move_for(const Ship& s, std::uint8_t mission) const;
