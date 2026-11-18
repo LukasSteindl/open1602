@@ -297,8 +297,10 @@ void Engine::guard_idle_ship(AiPlayer& p, bool healthy) {
     }
     for (Ship* s : own_ships(p)) {
         const ShipNote& n = note(p, s->id);
+        // Open1602: only a warship guards; an idle trade ship waits for the next supply run, as a
+        // guard on the home patrol it lay on the Kontor's berth and kept the trade ships out of reach.
         if (ship_idle(p, *s) && n.cooldown == 0 && !s->for_sale && !carries_goods(*s) &&
-            (!healthy || health128(*s) > kHealthy)) {
+            (!healthy || health128(*s) > kHealthy) && warship(s->figure)) {
             log(p, "ship %u has no job: guards island %u", s->id, home->island);
             patrol_route(p, *s, home->island);
             return;
@@ -462,8 +464,20 @@ bool Engine::yard_service(AiPlayer& p) {
 Ship* Engine::pick_logistics_ship(AiPlayer& p, bool healthy) {
     // An idle ship with the fewest cannons, else the patrol with the fewest stops left
     // that lies at the end of a leg; a ship under way is never taken.
+    // Open1602: an improved computer tells a trade ship from a warship by its type, as a player
+    // does, not by the cannons on board: once trade ships were armed, the fewest-cannons pick passed
+    // them over for an unarmed one that could not reach the Kontor, and the supply stopped.
     Ship* best = nullptr;
     std::uint32_t best_cannons = 50;
+    const auto fewer = [&](const Ship& s) {
+        if (best == nullptr) {
+            return true;
+        }
+        if (rivals() && warship(s.figure) != warship(best->figure)) {
+            return !warship(s.figure);
+        }
+        return s.cannons < best_cannons;
+    };
     for (Ship* s : own_ships(p)) {
         ShipNote& n = note(p, s->id);
         if (!ship_idle(p, *s)) {
@@ -476,7 +490,7 @@ Ship* Engine::pick_logistics_ship(AiPlayer& p, bool healthy) {
         if (healthy && health128(*s) <= kHealthy) {
             continue;
         }
-        if (s->cannons < best_cannons) {
+        if (fewer(*s)) {
             best = s;
             best_cannons = s->cannons;
         }
@@ -509,7 +523,7 @@ Ship* Engine::pick_logistics_ship(AiPlayer& p, bool healthy) {
         if (!n.patrol || !s->route.active || (healthy && health128(*s) <= kHealthy)) {
             continue;
         }
-        if (s->cannons < best_cannons) {
+        if (fewer(*s)) {
             best = s;
             best_cannons = s->cannons;
         }
@@ -550,7 +564,9 @@ Ship* Engine::pick_patrol_ship(AiPlayer& p, bool healthy) {
         if (ships.size() == 1 && (home == nullptr ? carries_goods(*s) : carries_goods_for(*s, *home))) {
             continue;
         }
-        if (static_cast<std::int32_t>(s->cannons) > best_cannons) {
+        // Open1602: an improved computer sends its warships on patrol first, by type.
+        const bool by_type = rivals() && best != nullptr && warship(s->figure) != warship(best->figure);
+        if (by_type ? warship(s->figure) : static_cast<std::int32_t>(s->cannons) > best_cannons) {
             best = s;
             best_cannons = s->cannons;
         }

@@ -3228,3 +3228,55 @@ TEST_CASE("ai: an improved computer keeps units in a castle whose way out is cut
         CHECK(engine.way_out(p, city->island, e) == (i == 0));
     }
 }
+
+TEST_CASE("ai: an improved computer tells its warships from its trade ships by type, not by cannons") {
+    // An armed trade ship and an unarmed warship lie idle at sea. The improved computer sends the
+    // warship on patrol and keeps the trade ship for the supply; the original's sends the ship with
+    // the most cannons, here the trade ship.
+    for (const bool original : {true, false}) {
+        Game g;
+        const assets::CodPredefinedSymbol types[] = {{"FIGUR", 1}};
+        auto figures = assets::FigureTable::from_cod(assets::cod::parse(
+            "Objekt: FIGUR\n"
+            "  Nummer: 21\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 4\n  Maxkanon: 6\n  Speed: 500\n"
+            "  Drehtime: 0.13\n  Maxenergy: 50\n  Hitpoint: 2.0\n  Preis: 1000\n  Rohstoff: 23\n  Rohmenge: 25\n"
+            "  Nummer: 25\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 3\n  Maxkanon: 8\n  Speed: 550\n"
+            "  Drehtime: 0.13\n  Maxenergy: 65\n  Hitpoint: 2.0\n  Shotradius: 7\n  Shottime: 1.0\n  Worktime: 5.0\n"
+            "  Stirbtime: 4.0\n"
+            "EndObj\n",
+            types));
+        REQUIRE(figures.ok());
+        g.figures = std::move(figures).value();
+        sim::Rules rules;
+        rules.bugs.classic_ai = original;
+        rules.reveal_resources = true;
+        sim::Simulation s(g.world, g.buildings, g.figures, rules);
+        found_city(g, s);
+        g.world.erase_ships([](const sim::Ship& ship) { return ship.owner == kComputer; });
+        sim::Ship& trader = g.add_ship(kComputer, 70, 80);
+        trader.cannons = 6;
+        const std::uint32_t merchant = trader.id;
+        sim::Ship& war = g.add_ship(kComputer, 76, 80);
+        war.figure = assets::figure::ship_figure(assets::figure::kFirstWarship);
+        war.cannons = 0;
+        const std::uint32_t warship = war.id;
+        std::uint32_t first = 0;
+        REQUIRE(run_until(s, 120'000, [&] {
+            for (const std::uint32_t id : {merchant, warship}) {
+                const sim::Ship* ship = g.world.ship(id);
+                if (first == 0 && ship != nullptr && ship->route.active) {
+                    first = id;
+                }
+            }
+            return first != 0;
+        }));
+        CHECK(first == (original ? merchant : warship));
+        if (!original) {
+            // The trade ship is not made a guard of the home island while it waits for a supply run.
+            run(s, 120'000);
+            const sim::Ship* ship = g.world.ship(merchant);
+            REQUIRE(ship != nullptr);
+            CHECK(!ship->route.active);
+        }
+    }
+}
