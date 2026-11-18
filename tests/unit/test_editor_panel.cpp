@@ -1711,7 +1711,7 @@ TEST_CASE("editor panel: the players dialog shows every player in a row and the 
     (void)panel.command(app::EditorCommand::Players, m);
     (void)panel.draw(m, kNoFonts);
     // Every slot at once, each value on its own button.
-    for (const char* text : {"Merlin", "Computer 1", "Computer 2", "Computer 3", "Colour 2", "20003 gold"}) {
+    for (const char* text : {"Merlin", "Computer 1", "Computer 2", "Computer 3", "Colour 2", "20003"}) {
         CHECK(find(panel, text).has_value());
     }
     // The third row's kind: its slot changes, not the one chosen before.
@@ -1721,7 +1721,7 @@ TEST_CASE("editor panel: the players dialog shows every player in a row and the 
     CHECK(r->player.slot == 2);
     CHECK(r->player.human);
     CHECK(panel.chosen_player() == 2);
-    r = click(panel, m, "20001 gold");
+    r = click(panel, m, "20001");
     REQUIRE(r.has_value());
     CHECK(r->player.slot == 1);
     CHECK(r->player.money == 21001);
@@ -1905,7 +1905,7 @@ TEST_CASE("editor panel: the page Attitude steps when a computer grows cross, of
     (void)panel.draw(m, kNoFonts);
     for (const ui::Form::Widget& w : panel.form().widgets()) {
         CHECK(w.rect.y + w.rect.h <= 760);
-        if (w.text == "-") {
+        if (w.text == "Human") {
             CHECK(!w.enabled);  // a human's attitude: nothing reads it
         }
     }

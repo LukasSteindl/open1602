@@ -461,7 +461,7 @@ std::string development_text(std::uint32_t development) {
 std::string attitude_text(const EditorPlayer& p, std::size_t column, bool& enabled) {
     enabled = !p.human;
     if (!enabled) {
-        return "-";
+        return ui::tr("editor.players.human");
     }
     if ((p.attitude_flags & kAttitudeFlag[column]) == 0) {
         return ui::tr("editor.attitude.off");
@@ -793,7 +793,7 @@ ui::Rect EditorPanel::dialog_rect() const noexcept {
     const std::int32_t room_h = m_screen_h - kBars - 16;
     const std::int32_t want = m_page == P::PlayerName || m_page == P::PlayerMoney  ? 230
                               : m_page == P::GoalText || m_page == P::ScenarioText ? 330
-                              : m_page == P::Scenario                              ? 510
+                              : m_page == P::Scenario                              ? 580
                               : m_page == P::Script                                ? 400
                               : m_page == P::ScriptFiles                           ? m_files_h
                               : m_page == P::Packages                              ? m_packages_h
@@ -1574,15 +1574,15 @@ void EditorPanel::layout_attitude_table(const EditorModel& model) {
     std::int32_t y = m_top + 6;
     dialog_tabs(model, "editor.attitude.title", Page::Attitude);
     y += kButtonH + kGap + 4;
-    // The players down the left; a column for each threshold, as the table "Others".
-    constexpr std::int32_t kNames = 220;
+    // The players down the left; a column for each threshold, its head on two lines.
+    constexpr std::int32_t kNames = 180;
     const auto shown = static_cast<std::int32_t>(kAttitudeColumns);
-    const std::int32_t cell = std::min<std::int32_t>(170, (m_w - kNames) / shown - kGap);
+    const std::int32_t cell = std::min<std::int32_t>(200, (m_w - kNames) / shown - kGap);
     const auto column_x = [&](std::size_t i) { return m_x + kNames + static_cast<std::int32_t>(i) * (cell + kGap); };
     for (std::size_t i = 0; i < kAttitudeColumns; ++i) {
-        f.label(Rect{column_x(i), y, cell, 18}, ui::tr(kAttitudeHeads[i]), Align::Centre, Tone::Dim);
+        f.paragraph(Rect{column_x(i), y, cell, 2 * 18}, ui::tr(kAttitudeHeads[i]), Tone::Dim, 18);
     }
-    y += 20;
+    y += 2 * 18 + 2;
     constexpr std::int32_t kRow = kButtonH + 2;
     const std::int32_t foot = m_top + m_height - kButtonH - 4;
     const std::int32_t bottom = foot - 2 * 20 - kGap;
@@ -2422,8 +2422,8 @@ void EditorPanel::layout_players_table(const EditorModel& model) {
     constexpr std::int32_t kNumber = 40;
     // With packages' factions to choose, a column of them takes room from the name and the colour.
     const bool factions = model.slot_factions.size() > 1;
-    const std::array<std::int32_t, 7> shares = factions ? std::array<std::int32_t, 7>{28, 13, 11, 15, 13, 9, 11}
-                                                        : std::array<std::int32_t, 7>{30, 12, 16, 16, 13, 13, 0};
+    const std::array<std::int32_t, 7> shares = factions ? std::array<std::int32_t, 7>{24, 12, 11, 20, 11, 10, 12}
+                                                        : std::array<std::int32_t, 7>{27, 12, 15, 22, 12, 12, 0};
     constexpr std::array<const char*, 7> kHeads = {
         "editor.players.name",      "editor.players.role",   "editor.players.colour", "editor.players.money",
         "editor.players.monuments", "editor.players.arches", "editor.players.faction"};
@@ -2458,8 +2458,7 @@ void EditorPanel::layout_players_table(const EditorModel& model) {
         // The money: a click steps it, the button beside it types it.
         const Rect money = cell(3);
         constexpr std::int32_t kType = 28;
-        f.cycle_button(base + 3, Rect{money.x, money.y, money.w - kType - 2, money.h},
-                       ui::tr("editor.players.money_value", {std::to_string(p.money)}));
+        f.cycle_button(base + 3, Rect{money.x, money.y, money.w - kType - 2, money.h}, std::to_string(p.money));
         f.button(base + 7, Rect{money.x + money.w - kType, money.y, kType, money.h}, "...");
         f.cycle_button(base + 4, cell(4), count(p.monuments_allowed));
         f.cycle_button(base + 5, cell(5), count(p.arches_allowed));
@@ -2886,7 +2885,7 @@ void EditorPanel::layout_scenario(const EditorModel& model) {
     f.label(Rect{m_x, y, m_w, 28}, ui::tr("editor.scenario.title"), Align::Left, Tone::Heading);
     y += 32;
     constexpr std::int32_t kRow = kButtonH + 4;
-    const std::int32_t label = m_w * 45 / 100;
+    const std::int32_t label = m_w / 2;
     for (std::size_t i = 0; i < model.scenario_rows.size() && i < kEditorScenarioRows; ++i) {
         const EditorRule& r = model.scenario_rows[i];
         f.label(Rect{m_x, y, label - kGap, kButtonH}, r.label, Align::Left, Tone::Normal);
@@ -2901,7 +2900,7 @@ void EditorPanel::layout_scenario(const EditorModel& model) {
     const std::int32_t foot = m_top + m_height - kButtonH - 4;
     const std::int32_t room = foot - kGap - y - 4;
     if (room >= 2 * 20) {
-        f.paragraph(Rect{m_x, y + 4, m_w, std::min(room, 3 * 20)}, ui::tr("editor.scenario.note"), Tone::Dim, 20);
+        f.paragraph(Rect{m_x, y + 4, m_w, std::min(room, 5 * 20)}, ui::tr("editor.scenario.note"), Tone::Dim, 20);
     }
     const std::int32_t quarter = (m_w - 3 * kGap) / 4;
     f.button(kPackagesPage, Rect{m_x, foot, quarter, kButtonH},
