@@ -110,6 +110,10 @@ struct CampaignPart {
 /// (sim::ScenarioInfo::choose_banner), from the head of its file; false for another kind of file.
 [[nodiscard]] bool scenario_chooses_banner(const std::filesystem::path& file);
 
+/// The name of the first human of a scenario of the editor (sim::SaveMeta::player, Windows-1252),
+/// from the head of its file; empty for another kind of file or a human without a name.
+[[nodiscard]] std::string scenario_player_name(const std::filesystem::path& file);
+
 struct MenuEvent {
     enum class Kind : std::uint8_t {
         Quit,          ///< leave the program (after a question)

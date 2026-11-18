@@ -512,9 +512,9 @@ std::optional<CampaignPart> campaign_part_of(const std::filesystem::path& file) 
 
 namespace {
 
-/// The description of a scenario of the editor, from the head of its file; nothing for another
-/// kind of file.
-std::optional<sim::ScenarioInfo> scenario_info_of(const std::filesystem::path& file) {
+/// The head of a scenario of the editor: its META with the description (SCNI); nothing for
+/// another kind of file or a savegame.
+std::optional<sim::SaveMeta> scenario_meta_of(const std::filesystem::path& file) {
     if (lower(annokit::core::path_to_utf8(file.extension())) != ".o1602") {
         return std::nullopt;
     }
@@ -527,7 +527,17 @@ std::optional<sim::ScenarioInfo> scenario_info_of(const std::filesystem::path& f
     if (!info || !info->meta || !info->meta->scenario) {
         return std::nullopt;
     }
-    return std::move(*info->meta->scenario);
+    return std::move(*info->meta);
+}
+
+/// The description of a scenario of the editor, from the head of its file; nothing for another
+/// kind of file.
+std::optional<sim::ScenarioInfo> scenario_info_of(const std::filesystem::path& file) {
+    auto meta = scenario_meta_of(file);
+    if (!meta) {
+        return std::nullopt;
+    }
+    return std::move(*meta->scenario);
 }
 
 }  // namespace
@@ -540,6 +550,11 @@ std::optional<sim::Rules> scenario_rules_of(const std::filesystem::path& file) {
 bool scenario_chooses_banner(const std::filesystem::path& file) {
     const std::optional<sim::ScenarioInfo> info = scenario_info_of(file);
     return info && info->choose_banner;
+}
+
+std::string scenario_player_name(const std::filesystem::path& file) {
+    const std::optional<sim::SaveMeta> meta = scenario_meta_of(file);
+    return meta ? meta->player : std::string();
 }
 
 const std::string& MainMenu::default_name() {
@@ -1250,6 +1265,11 @@ std::vector<MenuEvent> MainMenu::mouse(std::int32_t x, std::int32_t y, bool down
                         // A scenario of the editor may let the human choose the banner first.
                         m_colour_for_scenario = m_colour && scenario_chooses_banner(chosen_file());
                         if (m_colour_for_scenario) {
+                            // The name the scenario gives its human is offered, where it has one.
+                            if (std::string name = scenario_player_name(chosen_file());
+                                !name.empty() && name != default_name()) {
+                                m_name = std::move(name);
+                            }
                             open_colour_screen();
                         } else {
                             open_scenario_settings();

@@ -304,7 +304,7 @@ size, islands, players and buildings on or off. **Neutral buildings**, on a map 
 them hostile (the default: at war with every player, taken only by soldiers) or peaceful (at peace,
 and taken without a fight by a city whose land comes to cover them; see
 [the neutral buildings](modding/factions.md#the-neutral-buildings)). **Player picks the flag**
-(off by default) shows the player the colour screen of the endless game before the
+(off by default) shows the player the colour screen of the endless game, with the name the scenario gives its human offered, before the
 scenario starts; the human takes the colour chosen, and the player who had it gets the human's.
 
 The introduction is the page shown before the scenario starts; the missions' own texts are set

@@ -603,6 +603,10 @@ TEST_CASE("main menu: the editor's scenarios of one name and a digit make one en
         info.stars = stars;
         info.choose_banner = choose;
         world.set_scenario_info(info);
+        std::vector<sim::Player> players(1);
+        players[0].role = sim::PlayerRole::Human;
+        players[0].name = choose ? "Wilfried" : "";
+        world.set_players(players);
         auto bytes = sim::write_game(world, buildings);
         REQUIRE(bytes.ok());
         write(folder / file, std::string(bytes->begin(), bytes->end()));
@@ -632,6 +636,9 @@ TEST_CASE("main menu: the editor's scenarios of one name and a digit make one en
     CHECK(app::scenario_chooses_banner(folder / "Frost1.o1602"));
     CHECK(!app::scenario_chooses_banner(folder / "Frost2.o1602"));
     CHECK(!app::scenario_chooses_banner(folder / "Saved3.o1602"));
+    CHECK(app::scenario_player_name(folder / "Frost1.o1602") == "Wilfried");  // offered on the colour screen
+    CHECK(app::scenario_player_name(folder / "Frost2.o1602").empty());
+    CHECK(app::scenario_player_name(folder / "Saved3.o1602").empty());
     std::filesystem::remove_all(folder);
 }
 
