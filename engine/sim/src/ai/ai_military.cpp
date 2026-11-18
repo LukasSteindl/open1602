@@ -1288,8 +1288,14 @@ void Engine::breach(AiPlayer& p, Ship& s, ShipNote& n, const City& t) {
     }
     Ship* best = nullptr;
     std::uint32_t best_score = 0;
+    // Only ships the computer has a note of: called inside the missions' loop over the notes, a new
+    // note (note()) would move the list under that loop.
     for (Ship* o : own_ships(p)) {
-        const ShipNote& on = note(p, o->id);
+        const auto on_it = std::ranges::find(p.ships, o->id, &ShipNote::id);
+        if (on_it == p.ships.end()) {
+            continue;
+        }
+        const ShipNote& on = *on_it;
         if (o->id == p.settle.ship || o->held || on.mission != 0 || on.supply || o->cannons == 0 ||
             soldiers_aboard(*o) != 0 || !healthy(*o)) {
             continue;
