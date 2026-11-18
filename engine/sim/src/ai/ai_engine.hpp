@@ -769,7 +769,12 @@ private:
     void send_to_city(AiPlayer& p, Ship& s, const City& c);
     /// Stops the ship where it is, its route and job ended.
     void stop_ship(AiPlayer& p, Ship& s);
-    void arm_one(City& c, Ship& s);
+    void arm_one(AiPlayer& p, City& c, Ship& s);
+    /// Open1602: the cannons a city keeps for a stone tower or castle it may still build.
+    [[nodiscard]] std::uint32_t cannons_kept(AiPlayer& p, const City& c);
+    /// Open1602: cannons onto every warship that lies at one of the computer's Kontors.
+    void arm_at_kontors(AiPlayer& p);
+    mutable std::vector<std::pair<std::uint32_t, bool>> m_cannon_holds;  ///< arm_one's log only
     bool yard_service(AiPlayer& p);
     Ship* pick_logistics_ship(AiPlayer& p, bool healthy);
     Ship* pick_patrol_ship(AiPlayer& p, bool healthy);

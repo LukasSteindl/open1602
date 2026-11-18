@@ -11,6 +11,7 @@
 #include <span>
 #include <string>
 #include <tuple>
+#include <utility>
 #include <vector>
 
 #include "../../engine/sim/src/ai/ai_archive.hpp"
@@ -1680,6 +1681,66 @@ TEST_CASE("ai: a computer a human has hurt guesses the human's merchant ships ar
         // takes them for armed as well, is the weaker and pays the pirates.
         CHECK((d.relation(kComputer, kHuman).peace == sim::Treaty::None) == !armed);
         CHECK(remembers(g.world, kPirates, sim::DiplomacyEventType::BribedBy, kComputer) == armed);
+    }
+}
+
+TEST_CASE("ai: an improved computer arms a warship at its Kontor with all the cannons it has, the original's one") {
+    for (const auto& [classic, tower] : {std::pair{false, false}, std::pair{true, false}, std::pair{false, true}}) {
+        Game g;
+        if (tower) {
+            // A stone tower the city may still build: its 2 t of cannons stay in store.
+            g.buildings = make_buildings(
+                "  @Nummer: 13\n  Id: 20305\n  Kind: 4\n  Gfx: 30\n  Size: 1, 1\n"
+                "  Objekt: HAUS_BAUKOST\n    Kanon: 2\n    Money: 100\n  EndObj\n");
+        }
+        const assets::CodPredefinedSymbol types[] = {{"FIGUR", 1}};
+        auto figures = assets::FigureTable::from_cod(assets::cod::parse(
+            "Objekt: FIGUR\n"
+            "  Nummer: 21\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 4\n  Maxkanon: 6\n  Speed: 500\n"
+            "  Drehtime: 0.13\n  Maxenergy: 50\n  Hitpoint: 2.0\n  Preis: 1000\n  Rohstoff: 23\n  Rohmenge: 25\n"
+            "  Nummer: 25\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 3\n  Maxkanon: 8\n  Speed: 550\n"
+            "  Drehtime: 0.13\n  Maxenergy: 65\n  Hitpoint: 2.0\n  Preis: 1500\n  Rohstoff: 23\n  Rohmenge: 32\n"
+            "EndObj\n",
+            types));
+        REQUIRE(figures.ok());
+        g.figures = std::move(figures).value();
+        sim::Rules rules;
+        rules.bugs.classic_ai = classic;
+        sim::Simulation s(g.world, g.buildings, g.figures, rules);
+        found_city(g, s, 30'000);
+        sim::City* home = nullptr;
+        for (const sim::City& c : g.world.cities()) {
+            if (c.owner == kComputer) {
+                home = g.world.city(c.island, c.index);
+            }
+        }
+        REQUIRE(home != nullptr);
+        // An unarmed warship at the Kontor, and 10 t of cannons in store.
+        const sim::WorldIsland& isl = g.world.islands()[home->island];
+        sim::Ship warship = sim::make_ship("Ship", isl.x + 48, isl.y + *home->warehouse_y,
+                                           assets::figure::ship_figure(assets::figure::kFirstWarship), kComputer, 2);
+        warship.cargo.resize(3);
+        g.world.add_ship(warship);
+        const std::uint32_t id = g.world.ships().back().id;
+        const sim::Ship& ship = g.world.ships().back();
+        REQUIRE(sim::building_in_reach(g.world, g.buildings, home->island, *home->warehouse_x, *home->warehouse_y,
+                                       ship.x, ship.y));
+        const std::uint8_t cannons = g.buildings.materials().cannons;
+        home->ensure_ware(cannons);
+        home->goods[cannons] = 10 * 32;
+        // The computer looks at its ships every 10 s.
+        run(s, 11'000);
+        const sim::Ship* armed = g.world.ship(id);
+        REQUIRE(armed != nullptr);
+        if (tower) {
+            CHECK(armed->cannons == 7);  // down to the tower's 2 t and the ton the original keeps
+            CHECK(home->stock(cannons) == 3 * 32);
+        } else if (!classic) {
+            CHECK(armed->cannons == 8);  // the type's most, from 10 t
+            CHECK(home->stock(cannons) == 2 * 32);
+        } else {
+            CHECK(armed->cannons <= 1);
+        }
     }
 }
 
