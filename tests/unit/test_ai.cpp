@@ -3341,3 +3341,45 @@ TEST_CASE("ai: an improved computer tells its warships from its trade ships by t
         }
     }
 }
+
+TEST_CASE("ai: an improved computer keeps pressing a rival until it likes it, the original's presses only at mood 0") {
+    // A sale at the rival's Kontor lifts the mood a little above 0; the original's pressure ended
+    // with it and came back as the mood fell, so a war plan rarely saw it.
+    namespace stance = sim::ai::stance;
+    sim::ai::StanceInput in;
+    in.near = true;
+    in.own = 50;
+    in.theirs = 20;
+    in.press = 150;
+    for (const bool improved : {false, true}) {
+        in.latch = improved;
+        // Enter: only at mood 0 or below, from any stance.
+        in.previous = stance::kNeutral;
+        in.mood = 0;
+        CHECK(sim::ai::stance_step(in).stance == stance::kPressure);
+        CHECK(!sim::ai::stance_step(in).held);
+        in.mood = 1;
+        CHECK(sim::ai::stance_step(in).stance == stance::kNeutral);
+        // Hold: from pressure, while the mood stays up to a partner's.
+        in.previous = stance::kPressure;
+        for (const std::int32_t mood : {1, 10, 20}) {
+            in.mood = mood;
+            const sim::ai::StanceStep step = sim::ai::stance_step(in);
+            CHECK(step.stance == (improved ? stance::kPressure : stance::kNeutral));
+            CHECK(step.held == improved);
+        }
+        // Leave: a partner's mood, an alliance, a rival no longer near or no longer weaker.
+        in.mood = 21;
+        CHECK(sim::ai::stance_step(in).stance == stance::kPartner);
+        in.mood = 5;
+        in.allied = true;
+        CHECK(sim::ai::stance_step(in).stance == stance::kPartner);
+        in.allied = false;
+        in.near = false;
+        CHECK(sim::ai::stance_step(in).stance == stance::kNeutral);
+        in.near = true;
+        in.theirs = 40;
+        CHECK(sim::ai::stance_step(in).stance == stance::kNeutral);
+        in.theirs = 20;
+    }
+}

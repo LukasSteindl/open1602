@@ -54,6 +54,28 @@ namespace o1602::sim::ai {
     return !s.target.empty() || s.motion.phase == ShipMotion::Phase::Run || s.motion.phase == ShipMotion::Phase::Turn;
 }
 
+/// What a computer's stance towards one rival is made from, at one look.
+struct StanceInput {
+    bool allied = false;
+    bool trade_partner = false;  ///< a trader with a signed trade treaty
+    std::int32_t mood = 0;
+    bool near = false;
+    std::uint32_t own = 0;     ///< its own strength
+    std::uint32_t theirs = 0;  ///< the rival's threat
+    std::uint32_t press = 0;   ///< percent of the rival's threat its own strength must reach
+    std::uint8_t previous = 0;
+    bool latch = false;  ///< Open1602: improved computers keep pressing a rival they do not like
+};
+
+struct StanceStep {
+    std::uint8_t stance = 0;
+    const char* why = "";  ///< the branch that set it
+    bool held = false;     ///< kept in pressure by the latch only
+};
+
+/// The stance towards a rival (ai_strategy.cpp).
+[[nodiscard]] StanceStep stance_step(const StanceInput& in);
+
 /// What the survey of a city (task 8) found to clear away: exhausted mines, and sheep farms and
 /// small weavers for when cotton grows on the island.
 struct Cheats;  // ai_tables.hpp

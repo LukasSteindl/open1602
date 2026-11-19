@@ -68,6 +68,41 @@ const char* goal_name(std::uint8_t g) {
 
 }  // namespace
 
+namespace {
+
+/// Whether a computer of strength `own` presses a near rival of threat `theirs` at `mood`, up to `most`.
+bool presses_at(const StanceInput& in, std::uint32_t theirs, std::int32_t most) {
+    return in.near && in.mood <= most && theirs != 0 &&
+           std::uint64_t{in.own} * 100U >= std::uint64_t{theirs} * in.press;
+}
+
+}  // namespace
+
+StanceStep stance_step(const StanceInput& in) {
+    const auto presses = [&](std::int32_t most) { return presses_at(in, in.theirs, most); };
+    if (in.allied) {
+        return {stance::kPartner, "allied"};  // an ally is neither pressed nor fought
+    }
+    if (in.mood < kHostileMood) {
+        return {stance::kHostile, "hostile"};
+    }
+    if (in.mood > kPartnerMood || (in.trade_partner && in.mood >= 0)) {
+        return {stance::kPartner, "partner"};
+    }
+    if (presses(0)) {
+        // Only a rival it does not like: a friendly neighbour is left in peace.
+        return {stance::kPressure, "pressure"};
+    }
+    if (in.latch && in.previous == stance::kPressure && presses(kPartnerMood)) {
+        // Open1602: an improved computer keeps pressing a rival it does not like until it likes it
+        // (a partner's mood) or the rival is no longer near and weaker, as a player keeps his intent.
+        // Each sale at the other's Kontor lifts the mood a little above 0 for a while, so the
+        // pressure, and with it the war plan, came and went with the rhythm of the trade.
+        return {stance::kPressure, "pressure", true};
+    }
+    return {stance::kNeutral, in.near ? "not weaker" : "not near"};
+}
+
 std::uint32_t Engine::strength(PlayerId viewer, PlayerId owner) const {
     // The armies and the fleets' cannons, as stronger() compares them.
     return seen_army(viewer, owner) + seen_cannons(viewer, owner) * unit_weights()[3];
@@ -222,20 +257,23 @@ void Engine::plan_strategy(AiPlayer& p) {
         if (unseen && !near) {
             log(p, "player %u is near only by cities on islands it has not discovered", b);
         }
-        const auto presses = [&](std::uint32_t t) {
-            return near && mood <= 0 && t != 0 && std::uint64_t{own} * 100U >= std::uint64_t{t} * press;
-        };
-        std::uint8_t s = stance::kNeutral;
-        if (d.allied(p.player, b)) {
-            s = stance::kPartner;  // an ally is neither pressed nor fought
-        } else if (mood < kHostileMood) {
-            s = stance::kHostile;
-        } else if (mood > kPartnerMood ||
-                   (rel.trade == Treaty::Signed && mood >= 0 && st.character == character::kTrader)) {
-            s = stance::kPartner;
-        } else if (presses(theirs)) {
-            // Only a rival it does not like: a friendly neighbour is left in peace.
-            s = stance::kPressure;
+        StanceInput in;
+        in.allied = d.allied(p.player, b);
+        in.trade_partner = rel.trade == Treaty::Signed && st.character == character::kTrader;
+        in.mood = mood;
+        in.near = near;
+        in.own = own;
+        in.theirs = theirs;
+        in.press = press;
+        in.previous = st.stances[bi];
+        in.latch = rivals();
+        const StanceStep step = stance_step(in);
+        const std::uint8_t s = step.stance;
+        if (step.held) {
+            log(p, "keeps pressing player %u (mood %d, strength %u against %u)", b, mood, own, theirs);
+        } else if (in.latch && in.previous == stance::kPressure && s != stance::kPressure) {
+            log(p, "stops pressing player %u: %s (mood %d, near %d, strength %u against %u)", b, step.why, mood,
+                near ? 1 : 0, own, theirs);
         }
         if (s != st.stances[bi]) {
             log(p, "stance towards player %u: %u (mood %d, strength %u against %u)", b, s, mood, own, theirs);
@@ -245,7 +283,7 @@ void Engine::plan_strategy(AiPlayer& p) {
             // census would give (b's own view of itself is the whole).
             const std::uint32_t all = threat_of(b, b);
             const bool press_seen = s == stance::kPressure;
-            const bool press_all = (s == stance::kNeutral || s == stance::kPressure) && presses(all);
+            const bool press_all = (s == stance::kNeutral || s == stance::kPressure) && presses_at(in, all, 0);
             const bool threat_seen = (s == stance::kHostile || rel.peace == Treaty::None) && near && theirs > own;
             const bool threat_all = (s == stance::kHostile || rel.peace == Treaty::None) && near && all > own;
             if (all != theirs && (press_seen != press_all || threat_seen != threat_all)) {
