@@ -816,6 +816,38 @@ private:
                                     std::uint8_t rotation) const;
     /// Logs what each improved rival's ships brought its cities (only the log).
     void log_supply();
+    /// Buildings of one id: how many, and what one is worth in gold (only the log).
+    struct BuildingCount {
+        std::uint32_t id = 0;
+        std::uint32_t count = 0;
+        std::uint64_t value = 0;
+    };
+    /// A landing party the log follows, from its landing to its end (only the log).
+    struct LandingWatch {
+        PlayerId player = kNoPlayer;
+        PlayerId owner = kNoPlayer;  ///< the target city's owner at the landing
+        std::uint16_t island = 0;
+        std::uint32_t city = 0;  ///< index into World::cities()
+        std::uint32_t ship = 0;
+        std::uint64_t landed_ms = 0;
+        std::uint64_t next_ms = 0;
+        std::uint32_t first_id = 0;  ///< the party: soldiers with an id from first_id to last_id
+        std::uint32_t last_id = 0;
+        std::uint32_t towers = 0;  ///< hostile towers on the island at the landing
+        /// The attacker's ships off the island at the landing: the carrier and its escort.
+        std::vector<std::uint32_t> ships;
+        /// The defender's buildings on the island at the landing.
+        std::vector<BuildingCount> buildings;
+    };
+    /// The buildings of `owner` on `island` by building id, with their count and build value in
+    /// gold (build_value; only the log).
+    [[nodiscard]] std::vector<BuildingCount> buildings_of(std::uint16_t island, PlayerId owner) const;
+    /// The attacker's ships within reach of `island` (as landing_beach counts the hostile ones).
+    [[nodiscard]] std::vector<std::uint32_t> ships_off(std::uint16_t island, PlayerId player) const;
+    /// Logs what a landing meets: the party by type, the towers and soldiers of the defence.
+    void log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_id, PlayerId owner);
+    /// Each minute, how the landing parties fare; once the party is gone, its end.
+    void watch_landings();
     /// RC1: whether a cart of the city's markets or Kontor would fetch from a building at (x0, y0,
     /// x1, y1) with `road` (new road tiles from the city's roads to it) built: the market's circle
     /// holds the new road and a tile of the building, and its carts reach them on roads.
@@ -1232,6 +1264,8 @@ private:
     /// The castles way_out() keeps units in, as player, island, x, y (only the log: a castle is
     /// logged when its way out closes, not at every recruit pass).
     mutable std::vector<std::tuple<PlayerId, std::uint16_t, std::uint16_t, std::uint16_t>> m_castles_kept;
+    /// The landing parties log_landing() follows (only the log).
+    std::vector<LandingWatch> m_landings;
     /// Per city, the minutes of statistics log_supply() last wrote at (only the log).
     std::vector<std::uint32_t> m_supply_logged;
     /// Free land from which `grown` grows a stage's orders, during the grow pass of `run_stage`.

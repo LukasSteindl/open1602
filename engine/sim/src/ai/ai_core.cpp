@@ -188,6 +188,7 @@ void Engine::tick(std::uint32_t dt_ms) {
     }
     if (logging() && rivals()) {
         log_supply();
+        watch_landings();
     }
     const bool computers_play =
         m_sim.rules().computers_play((m_world.game_settings().flags & World::GameSettings::kNoComputers) != 0);
