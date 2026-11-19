@@ -894,6 +894,52 @@ TEST_CASE("editor panel: the objects placed lately are offered again, for the ow
     CHECK(panel.page() == EditorPanel::Page::Objects);
 }
 
+TEST_CASE("editor panel: Paint territory chooses the brush, the owner and which way the left button paints") {
+    ui::set_language("en");
+    EditorPanel panel;
+    panel.set_room(200, 560);
+    EditorModel m = document();
+    m.object_owner = "Merchant";
+    m.object_owners = 4;
+    m.objects.tool = app::EditorObjects::Tool::Territory;
+    m.object_pieces = 5;
+    m.object_name = "5 x 5";
+    (void)panel.choose_tool(app::EditorTool::Territory, m);
+    REQUIRE(panel.page() == EditorPanel::Page::Objects);
+    (void)panel.draw(m, kNoFonts);
+    CHECK(says(panel, "Left button"));
+    CHECK(says(panel, "Paints land"));
+    CHECK(says(panel, "the right button paints the other way"));
+    for (const ui::Form::Widget& w : panel.form().widgets()) {
+        CHECK(w.rect.y + w.rect.h <= 760);
+    }
+    // The left button takes land back, and gives it again.
+    auto r = click(panel, m, "Paints land");
+    REQUIRE(r.has_value());
+    CHECK(r->kind == EditorRequest::Kind::Objects);
+    CHECK(r->objects.take_land);
+    CHECK(r->objects.tool == app::EditorObjects::Tool::Territory);
+    m.objects = r->objects;
+    (void)panel.draw(m, kNoFonts);
+    CHECK(says(panel, "Takes land back"));
+    r = click(panel, m, "Takes land back", ui::MouseButton::Right);
+    REQUIRE(r.has_value());
+    CHECK(!r->objects.take_land);
+    // Without players there is no city to paint for.
+    m.object_owners = 0;
+    panel.layout(m);
+    for (const ui::Form::Widget& w : panel.form().widgets()) {
+        if (w.text == "Takes land back") {
+            CHECK(!w.enabled);
+        }
+    }
+    // The other tools have no such setting.
+    m.object_owners = 4;
+    m.objects.tool = app::EditorObjects::Tool::Build;
+    (void)panel.draw(m, kNoFonts);
+    CHECK(!says(panel, "Left button"));
+}
+
 TEST_CASE("editor panel: the tools Ship and Unit choose their type, the way they face and the owner") {
     ui::set_language("en");
     EditorPanel panel;

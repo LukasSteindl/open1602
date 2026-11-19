@@ -398,10 +398,16 @@ struct AttackPlan {
 
 /// What a computer player has its ship doing: mission, parameter or cooldown, counter (saved in
 /// SHIP4 +0x24, +0x3E, +0x40).
+/// Open1602: ship missions by name where improved computers' code needs them (ShipNote::mission).
+inline constexpr std::uint8_t kMissionLanding = 7;  ///< troops aboard, sailing to the beach
+inline constexpr std::uint8_t kMissionBreach = 11;  ///< shooting a gap into a walled coast
+/// An attack sails with more soldiers aboard than this, else it is called off.
+inline constexpr std::uint32_t kFewSoldiers = 3;
+
 struct ShipNote {
     std::uint32_t id = 0;       ///< Ship::id
     std::uint8_t mission = 0;   ///< 0 idle, 1 fetch troops, 2 go home, 3 shell an outpost, 5..9 attack,
-                                ///< 10 explore an island (improved computers)
+                                ///< 10 explore an island, 11 breach a walled coast (improved computers)
     std::uint32_t param = 0;    ///< mission parameter (target city, owner)
     std::uint8_t counter = 0;   ///< tries left, or patrol stops left
     std::uint8_t cooldown = 0;  ///< logistics passes before the next job

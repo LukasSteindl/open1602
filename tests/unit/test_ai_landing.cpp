@@ -4,6 +4,7 @@
 // a beach near the target's market and puts the troops ashore there.
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "../test_framework.hpp"
@@ -23,6 +24,7 @@ constexpr std::uint32_t kBeach = 20501;
 constexpr std::uint32_t kKontor = 22101;
 constexpr std::uint32_t kMarket = 20809;
 constexpr std::uint32_t kHouse = 20605;
+constexpr std::uint32_t kWall = 22501;
 constexpr std::uint16_t kSword = 1;
 constexpr std::uint16_t kShipFigure = 21;
 
@@ -46,6 +48,8 @@ assets::BuildingTable make_buildings() {
         "  @Nummer: +1\n  Id: 20605\n  Kind: 14\n  Gfx: 50\n  Size: 2, 2\n  Maxenergy: 20\n  NoShotFlg: 1\n"
         "  Ruinenr: 255\n"
         "  Objekt: HAUS_PRODTYP\n    Kind: 13\n    BGruppe: 0\n    Radius: 6\n  EndObj\n"
+        "  @Nummer: +1\n  Id: 22501\n  Kind: 4\n  Gfx: 60\n  Size: 1, 1\n  Maxenergy: 6\n  NoShotFlg: 1\n"
+        "  Ruinenr: 255\n"
         "EndObj\n",
         types);
     auto table = assets::BuildingTable::from_cod(doc);
@@ -53,15 +57,18 @@ assets::BuildingTable make_buildings() {
     return std::move(table).value();
 }
 
-assets::FigureTable make_figures() {
+/// With `guns` the ship fires (a range and a reload time), as a warship in the game data.
+assets::FigureTable make_figures(bool guns = false) {
     const assets::CodPredefinedSymbol types[] = {{"FIGUR", 1}};
     const auto doc = assets::cod::parse(
-        "Objekt: FIGUR\n"
-        "  Nummer: 1\n  Kind: 1\n  Gfx: 0\n  Blocknr: 1\n  Speed: 260\n  Shotradius: 0.75\n  Maxstepcnt: 1\n"
-        "  Rohstoff: 11\n  Rohmenge: 3\n  Worktime: 0.8\n  Shottime: 0.6\n  Maxenergy: 20\n  Hitpoint: 1.0\n"
-        "  Nummer: 21\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 4\n  Maxkanon: 6\n  Speed: 500\n"
-        "  Drehtime: 0.13\n  Maxenergy: 50\n  Hitpoint: 2.0\n  Preis: 1000\n  Rohstoff: 23\n  Rohmenge: 25\n"
-        "EndObj\n",
+        std::string("Objekt: FIGUR\n"
+                    "  Nummer: 1\n  Kind: 1\n  Gfx: 0\n  Blocknr: 1\n  Speed: 260\n  Shotradius: 0.75\n"
+                    "  Maxstepcnt: 1\n  Rohstoff: 11\n  Rohmenge: 3\n  Worktime: 0.8\n  Shottime: 0.6\n"
+                    "  Maxenergy: 20\n  Hitpoint: 1.0\n"
+                    "  Nummer: 21\n  Gfx: 0\n  Blocknr: 2\n  Rotate: 1\n  Maxware: 4\n  Maxkanon: 6\n  Speed: 500\n"
+                    "  Drehtime: 0.13\n  Maxenergy: 50\n  Hitpoint: 2.0\n  Preis: 1000\n  Rohstoff: 23\n"
+                    "  Rohmenge: 25\n") +
+            (guns ? "  Shotradius: 7\n  Shottime: 1.0\n  Worktime: 5.0\n" : "") + "EndObj\n",
         types);
     auto table = assets::FigureTable::from_cod(doc);
     REQUIRE(table.ok());
@@ -225,4 +232,57 @@ TEST_CASE("ai landing: an improved computer lands nobody on an island it has not
     };
     CHECK(landed(true) > 0);
     CHECK(landed(false) == 0);
+}
+
+TEST_CASE("ai landing: an improved computer shoots a gap into a coast walled all along and lands through it") {
+    Coast a;
+    a.figures = make_figures(true);
+    a.build(kKontor, 28, 14, kComputer, 0);
+    a.build(kMarket, 18, 14, kComputer, 0);
+    a.build(kKontor, 0, 14, kHuman, 1);
+    a.build(kMarket, 6, 6, kHuman, 1);
+    for (std::int32_t k = 0; k < 4; ++k) {
+        a.build(kHouse, 12 + 3 * k, 20, kHuman, 1);
+    }
+    // The human's whole beach (column 0) is walled, but for the Kontor's.
+    sim::IslandMap& map = a.world.island(1).map;
+    for (std::int32_t y = 0; y < 30; ++y) {
+        if (y < 14 || y > 16) {
+            REQUIRE(map.place(*a.buildings.by_id(kWall), 0, y, 0, 0, kHuman, 1).ok());
+        }
+    }
+    const auto walls = [&] {
+        std::uint32_t n = 0;
+        for (std::uint32_t y = 0; y < 30; ++y) {
+            const sim::MapCell& c = a.world.islands()[1].map.top(0, y);
+            n +=
+                !c.empty() && a.buildings.by_sprite(c.sprite) != nullptr && a.buildings.by_sprite(c.sprite)->id == kWall
+                    ? 1U
+                    : 0U;
+        }
+        return n;
+    };
+    REQUIRE(walls() == 27);
+    for (std::int32_t k = 0; k < 6; ++k) {
+        a.add(kComputer, 2 * (10 + 23) + k, 2 * (10 + 18), 0);
+    }
+    // The troop ship, and a warship lying idle.
+    for (const auto& [x, y] : {std::pair{41, 15}, std::pair{42, 20}}) {
+        sim::Ship ship = sim::make_ship("Ship", static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y),
+                                        kShipFigure, kComputer, 2);
+        ship.cargo.resize(4);
+        ship.cannons = 4;
+        a.world.add_ship(ship);
+    }
+    REQUIRE(a.world.diplomacy().set_peace(a.world, kHuman, kComputer, sim::Treaty::None, a.world.time_ms()));
+    a.world.island(1).discover(kComputer);
+    sim::Simulation s(a.world, a.buildings, a.figures);
+    run(s, 1'000);
+    const std::uint32_t standing = walls();  // those outside the city's land have fallen to ruins
+    REQUIRE(standing > 20);
+    for (std::uint32_t t = 0; t < 8 * 60 && a.soldiers_on(kComputer, 1) == 0; ++t) {
+        run(s, 1'000);
+    }
+    CHECK(walls() < standing);  // a gap
+    CHECK(a.soldiers_on(kComputer, 1) > 0);
 }

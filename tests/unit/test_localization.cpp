@@ -87,6 +87,25 @@ TEST_CASE("localization: English and German are built in, and German has no key 
     CHECK(ui::builtin_catalogue("xx").size() == 0);
 }
 
+TEST_CASE("localization: a built-in catalogue names each key once") {
+    // A key written twice keeps only its last text: the first one's place shows the wrong words.
+    for (const std::string& code : ui::builtin_languages()) {
+        std::ifstream in(std::filesystem::path(O1602_LOCALES) / (code + ".lang"), std::ios::binary);
+        REQUIRE(in.good());
+        std::vector<std::string> keys;
+        for (std::string line; std::getline(in, line);) {
+            const std::size_t eq = line.find('=');
+            if (!line.empty() && line.front() != '#' && eq != std::string::npos) {
+                const std::size_t end = line.find_last_not_of(" \t", eq == 0 ? 0 : eq - 1);
+                keys.push_back(line.substr(0, end == std::string::npos ? 0 : end + 1));
+            }
+        }
+        std::sort(keys.begin(), keys.end());
+        const auto twice = std::adjacent_find(keys.begin(), keys.end());
+        CHECK((twice == keys.end() ? std::string() : *twice) == "");
+    }
+}
+
 TEST_CASE("localization: German translates every English key but the language-neutral ones") {
     // Key names and digits read the same in both languages, so German leaves them to English.
     constexpr std::string_view kNeutral[] = {

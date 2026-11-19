@@ -105,7 +105,8 @@ constexpr Id kObjectsGroup = 81;
 constexpr Id kObjectsPiece = 82;
 constexpr Id kObjectsRotation = 83;
 constexpr Id kObjectsOwner = 84;
-constexpr Id kFirstOverlay = 30;  ///< + EditorOverlay
+constexpr Id kObjectsTakeLand = 1121;  ///< Territory: which way the left button paints
+constexpr Id kFirstOverlay = 30;       ///< + EditorOverlay
 constexpr Id kLandscape = 85;
 constexpr Id kCityNamePage = 86;
 constexpr Id kCityGoodsPage = 87;
@@ -2314,6 +2315,11 @@ void EditorPanel::layout_objects(const EditorModel& model) {
           : model.object_owners > 0 ? model.object_owner
                                     : ui::tr("editor.objects.no_owner"),
           (owned || territory) && model.object_owners > 0 && !model.object_ownerless);
+    if (territory) {
+        value(kObjectsTakeLand, ui::tr("editor.objects.left_button"),
+              ui::tr(o.take_land ? "editor.objects.left_button.take" : "editor.objects.left_button.give"),
+              model.object_owners > 0);
+    }
     std::string note = ui::tr(kObjectToolNotes[static_cast<std::size_t>(o.tool)]);
     if (model.object_ownerless) {
         note = ui::tr("editor.objects.note.special");
@@ -3636,7 +3642,8 @@ std::optional<EditorRequest> EditorPanel::press(Id pressed, const EditorModel& m
         case kObjectsGroup:
         case kObjectsPiece:
         case kObjectsRotation:
-        case kObjectsOwner: {
+        case kObjectsOwner:
+        case kObjectsTakeLand: {
             EditorRequest r{EditorRequest::Kind::Objects};
             EditorObjects& o = r.objects;
             o = model.objects;
@@ -3661,6 +3668,8 @@ std::optional<EditorRequest> EditorPanel::press(Id pressed, const EditorModel& m
                 }
             } else if (*id == kObjectsRotation) {
                 o.rotation = static_cast<std::uint8_t>(step(o.rotation, 4, forward));
+            } else if (*id == kObjectsTakeLand) {
+                o.take_land = !o.take_land;
             } else {
                 o.owner = model.object_owners > 0 ? step(o.owner, model.object_owners, forward) : 0;
             }
