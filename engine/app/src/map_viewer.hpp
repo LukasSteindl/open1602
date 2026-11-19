@@ -217,6 +217,7 @@ private:
                                                      bool to_market, bool only_test);
     std::string control_alerts(std::optional<std::uint16_t> only) const;
     std::string control_economy(std::uint16_t island, std::uint8_t city) const;
+    std::string control_forecast(const std::vector<std::string>& args);
     // Where the control port last turned the camera, and when (a far jump waits 1.5 s).
     std::uint64_t m_control_look_ms = 0;
     std::int64_t m_control_look_x = 0;

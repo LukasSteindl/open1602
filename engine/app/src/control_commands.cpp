@@ -260,6 +260,20 @@ bool is_road_tile(const sim::IslandMap& map, const assets::BuildingTable& buildi
     return b != nullptr && (b->kind == kind::kRoad || b->kind == kind::kBridge || b->kind == kind::kSquare);
 }
 
+/// The people in a player's houses, all classes of all cities: the game's inhabitants without the workers of
+/// the producers.
+std::uint32_t residents_of(const sim::World& world, sim::PlayerId player) {
+    std::uint32_t n = 0;
+    for (const sim::City& c : world.cities()) {
+        if (c.owner == player) {
+            for (std::size_t k = 0; k < c.inhabitants.size() && k < 5; ++k) {
+                n += c.inhabitants[k];
+            }
+        }
+    }
+    return n;
+}
+
 }  // namespace
 
 void MapViewer::control_pause(bool paused) {
@@ -536,7 +550,7 @@ bool control_reads_only(const std::vector<std::string>& args) {
         "goods",  "find-site", "kontor-sites", "threats", "units", "screenshot", "houses", "house-sites",
         "sites",  "alerts", "unconnected", "camera", "coverage", "production", "plan",     "say",
         "save",   "advance", "pause",     "resume",  "speed",      "autoplay", "chat",
-        "events", "economy"};
+        "events", "economy", "forecast"};
     const std::string& cmd = args[0];
     return kReading.contains(cmd) || (cmd == "diplomacy" && args.size() == 1);
 }
@@ -699,6 +713,9 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
     if (cmd == "events") {
         const std::string messages = control_events();
         return messages.empty() ? "no new events\n" : messages;
+    }
+    if (cmd == "forecast") {
+        return control_forecast(args);
     }
     if (cmd == "route") {
         return control_route(args);
@@ -1498,7 +1515,9 @@ std::string MapViewer::control_help() const {
     return "Open1602 control commands (coordinates: X Y are tiles of the island, from its top left;\n"
            "ship positions are world tiles; amounts of goods in tons). A failed command answers 'error: ...':\n"
            "  state                         time, money, balance (taxes, costs, trade), your cities and ships; inhabitants\n"
-           "                                count the workers of your producers too, as the game's own figure\n"
+           "                                count the producers' workers too, residents only the people in houses\n"
+           "  forecast SECONDS              the game run ahead on a copy, nothing else ordered: money, balance and\n"
+           "                                residents then, and which goods run out when (no fire or plague foreseen)\n"
            "  islands [mine]                every island (mine: where you have a city): position, size, crops, owners\n"
            "  map ISLAND [X Y W H]          the island as text (legend below), default the whole island\n"
            "  cities|city [ISLAND CITY]     your cities; with ISLAND CITY: stock, inhabitants, needs\n"
@@ -1593,11 +1612,11 @@ std::string MapViewer::control_state() const {
                           static_cast<unsigned long long>(t / 60 % 60), static_cast<unsigned long long>(t % 60),
                           m_state->simulation.paused() ? "paused" : "running", m_state->simulation.speed());
     out += fmt("you: player %u \"%s\", money %d, per minute: taxes %lld, running costs %lld, military %lld, "
-               "sales %lld, purchases %lld, balance %lld; inhabitants %u\n",
+               "sales %lld, purchases %lld, balance %lld; inhabitants %u, residents %u\n",
                static_cast<unsigned>(m_local_player), me.name.c_str(), me.money, static_cast<long long>(figures.taxes),
                static_cast<long long>(figures.running_costs), static_cast<long long>(figures.military),
                static_cast<long long>(figures.sales), static_cast<long long>(figures.purchases),
-               static_cast<long long>(figures.balance), figures.inhabitants);
+               static_cast<long long>(figures.balance), figures.inhabitants, residents_of(world, m_local_player));
     // The next unlock level not reached yet.
     const auto& levels = m_buildings.infra_levels();
     for (std::size_t n = 1; n < levels.size(); ++n) {
@@ -2730,6 +2749,98 @@ std::string MapViewer::control_economy(std::uint16_t island, std::uint8_t city) 
         out += r.text + "\n";
     }
     return out + (full.empty() ? "none at the room limit\n" : "at the room limit (producers stop):" + full + "\n");
+}
+
+std::string MapViewer::control_forecast(const std::vector<std::string>& args) {
+    // forecast SECONDS: the game run ahead on a copy with nothing else ordered, and the player's own figures
+    // then. The copy draws other random numbers than the game will, so the answer foresees no fire or plague:
+    // it says where the economy is heading. A multiplayer game waits while it is worked out, hence the limit.
+    const std::int64_t limit = m_session ? 180 : 600;
+    std::int64_t seconds = 0;
+    if (args.size() != 2 || !number(args, 1, seconds) || seconds < 10 || seconds > limit) {
+        return fmt("error: forecast SECONDS (10 to %lld seconds of game time)\n", static_cast<long long>(limit));
+    }
+    struct Figures {
+        std::int64_t money = 0;
+        std::int64_t balance = 0;
+        std::uint32_t residents = 0;
+    };
+    const auto figures = [&]() {
+        const sim::World& w = m_state->world;
+        const sim::Player* me = w.player(m_local_player);
+        return Figures{me != nullptr ? me->money : 0,
+                       sim::player_figures(w, m_buildings, m_figures, m_local_player).balance,
+                       residents_of(w, m_local_player)};
+    };
+    const Figures before = figures();
+    std::unique_ptr<GameState> real = std::move(m_state);
+    std::string out;
+    try {
+        m_state = std::make_unique<GameState>(sim::World(real->world), m_buildings, m_figures,
+                                              real->simulation.rules());
+        m_state->world.reseed(real->world.time_ms() ^ 0x9E3779B97F4A7C15ULL);
+        // When a good the city had runs out, per city: looked at every 10 s.
+        std::map<std::pair<std::uint16_t, std::uint8_t>, std::map<std::uint8_t, std::int64_t>> empty_at;
+        const std::int64_t ticks = seconds * 1000 / sim::Simulation::kTickMs;
+        for (std::int64_t t = 1; t <= ticks; ++t) {
+            m_state->simulation.tick();
+            if (t % 200 != 0 && t != ticks) {
+                continue;
+            }
+            for (const sim::City& c : m_state->world.cities()) {
+                const sim::City* was = c.owner == m_local_player ? real->world.city(c.island, c.index) : nullptr;
+                if (was == nullptr) {
+                    continue;
+                }
+                for (const std::uint8_t w : m_state->world.goods().trade_wares()) {
+                    if (was->stock(w) > 0 && c.stock(w) == 0) {
+                        empty_at[{c.island, c.index}].try_emplace(w, t * sim::Simulation::kTickMs / 1000);
+                    }
+                }
+            }
+        }
+        const Figures after = figures();
+        out = fmt("forecast for %lld s of game time with nothing else ordered (its random events are not the "
+                  "game's):\n",
+                  static_cast<long long>(seconds));
+        out += fmt("money %lld -> %lld, balance %lld -> %lld per minute, residents %u -> %u\n",
+                   static_cast<long long>(before.money), static_cast<long long>(after.money),
+                   static_cast<long long>(before.balance), static_cast<long long>(after.balance), before.residents,
+                   after.residents);
+        for (const sim::City& c : m_state->world.cities()) {
+            const sim::City* was = c.owner == m_local_player ? real->world.city(c.island, c.index) : nullptr;
+            if (was == nullptr) {
+                continue;
+            }
+            std::string people;
+            for (std::size_t k = 0; k < c.inhabitants.size() && k < 5; ++k) {
+                if (c.inhabitants[k] != 0 || was->inhabitants[k] != 0) {
+                    people += fmt("%s%s %u -> %u", people.empty() ? "" : ", ",
+                                  class_key(static_cast<std::uint32_t>(k)).c_str(), was->inhabitants[k],
+                                  c.inhabitants[k]);
+                }
+            }
+            const auto it = empty_at.find({c.island, c.index});
+            if (people.empty() && it == empty_at.end()) {
+                continue;  // a supply island where nothing runs out: nothing to say
+            }
+            out += fmt("city island %u city %u: %s\n", c.island, c.index,
+                       people.empty() ? "no residents" : people.c_str());
+            if (it != empty_at.end()) {
+                std::string gone;
+                for (const auto& [ware, at] : it->second) {
+                    gone += fmt("%s%s after %lld s", gone.empty() ? "" : ", ", ware_key(ware).c_str(),
+                                static_cast<long long>(at));
+                }
+                out += "  runs out: " + gone + "\n";
+            }
+        }
+    } catch (...) {
+        m_state = std::move(real);
+        throw;
+    }
+    m_state = std::move(real);
+    return out;
 }
 
 std::string MapViewer::control_demolish(const std::vector<std::string>& args) {
