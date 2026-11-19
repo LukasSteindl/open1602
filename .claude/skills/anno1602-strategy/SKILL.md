@@ -18,6 +18,41 @@ theirs. We win by playing better.
 
 Where these disagree, **the game data, the engine source and `o1602-ctl cities` win**.
 
+## 0a. The first half hour: wood
+
+In the first 30 minutes wood is the bottleneck, before food and tools. Every house costs 3 t, every
+rise to settlers another 3 t, and one forester gives about 1 t a minute.
+
+- Build six or more foresters right after the market, spread out in untouched forest (section 6).
+  A forester costs 50 gold and 2 t tools, no wood.
+- A house holds more people in every higher class (about 2 pioneers, 6 settlers), so a rise is the
+  cheapest way to grow: cloth and a chapel in reach come before more houses.
+- Stop buying wood and tools once your own production carries the town; the purchases alone can
+  turn the balance negative.
+
+## 0. What sank every agent so far
+
+In the four-agent tournament (2026-11-09) all four agents fell into the same holes, in this order.
+Check these three before anything else in every round.
+
+1. **Food before houses.** Every agent starved somewhere between 275 and 400 inhabitants: wood and
+   tools went into houses, and the fisher that would have fed them was never built.
+   - 80 inhabitants eat about 0.95 t a minute. `economy I C` shows the need, the trend and the
+     minutes until the food is gone.
+   - No new houses while food is supplied below 95 % and less than 5 t lie in stock.
+   - Fishing grounds differ a lot between islands (`sites fishers_hut I`); a neighbour island may
+     score twice as high as home.
+2. **Tools decide everything after about 100 settlers.** Every rise to citizens takes 2 t, every
+   producer 2 to 3 t, and nobody had a tool chain of their own within two hours.
+   - Rises take their tools from the Kontor by themselves and leave none for the fisher or the
+     fire station you need next. Keep a reserve: tools you loaded onto a ship at your Kontor are
+     out of the houses' reach until you unload them.
+   - Start ore mine, smelter and toolmaker as soon as they unlock (section 2). The ore mountain
+     must lie inside your territory: a market beside it first.
+3. **Purchases drain money silently.** Buying wood, tools and food cost 100 to 180 gold a minute
+   and took one agent from 7,500 to 500 gold in half an hour. `state` shows sales and purchases per
+   minute beside the balance. Keep at least 3,000 gold and buy only what blocks growth.
+
 ## 1. Plan before you build: run the planner
 
 ```powershell
@@ -72,6 +107,12 @@ A house moves up one class only when **all** of these hold:
 
 Missing tools or bricks stop every rise silently.
 
+**What the first rise of a class really needs** (seen by several agents):
+- The first settlers rise with cloth alone; alcohol at 0 % does not stop them. Alcohol matters for
+  their tax (section 4).
+- The first citizens need tobacco goods, spices and alcohol near 100 % at normal tax; cloth may be
+  lower.
+
 **Public buildings per class (every one, not a choice):**
 
 | Class | Needs |
@@ -102,6 +143,12 @@ class. Lasting shortage costs whole classes within minutes: Drisden fell from 89
 - The game allows taxes from 64 to 192. A class short of goods needs a tax **below** normal
   (down to 64) to stay above 88 and not fall.
 - Supply first, then raise the tax.
+- **Where the edge lay in the tournament** (start there, then step):
+  - Pioneers with food at 100 %: content up to 192.
+  - Settlers without alcohol: 128. At 144 they fell to satisfaction 111.
+  - Settlers with cloth and alcohol near 100 %: 160 to 176. At 192 they fell to 99 and left; at 176
+    they fell as soon as alcohol dropped to two thirds.
+  - Citizens with cloth at 50 to 60 %: 144 held, 160 did not.
 - **The balance is per game minute.** At x8 a game minute lasts about 7.5 s, so -900/min drains
   60k in about 9 real minutes.
 - A castle or cathedral gives a satisfaction bonus that lowers the tax the classes feel. It fades
@@ -163,7 +210,19 @@ class. Lasting shortage costs whole classes within minutes: Drisden fell from 89
   - Never place a plantation among houses.
 - **Workshops fetch only within their own radius.** A market or Kontor inside that radius must be
   linked to the workshop by road; a road to some market far away is not enough.
-- **Sheep farms** need 24 or more meadow tiles in radius 3.
+- **Sheep farms** need 24 or more meadow tiles in radius 3. Keep houses and quarters out of a
+  pasture's window: one farm fell from 70 % to 4 % when a quarter grew into it.
+- **Foresters** need about 40 grown trees in radius 3, and foresters whose windows overlap share
+  the same trees. Spread them six or more tiles apart in untouched forest and never build houses
+  into their window: four in a row fell from 90 % to under 25 % within five minutes, and trees
+  grow back slowly. `alerts` says how many trees a forester has in reach.
+- **A market for every production cluster.** Goods waiting in a producer ("idle", stock 2 to 3 t)
+  mean nobody collects them. A market close by collects into the same city-wide stock, with no
+  road to the Kontor needed. Build the second market after about four foresters and another among
+  the pastures.
+- **Fire and plague.** A fire station must reach every quarter early; fire spread to six houses
+  outside the first station's reach. Plague comes once a city has more than about 200 settlers and
+  kills houses without a doctor; rebuild them at once.
 - **Roads:**
   - Every house needs a road at its side, or doctor and fire brigade cannot reach it. Lay streets
     between rows of houses: blocks two houses wide at most.
@@ -179,8 +238,10 @@ class. Lasting shortage costs whole classes within minutes: Drisden fell from 89
 ## 7. Logistics and routes
 
 - **Plan the second island from the start** and link it with a `route`, not by hand.
-- **A route ship waits at a load stop until the full amount is aboard.** Set load amounts to what
-  the source produces, or the whole route stalls there.
+- **A route ship does not wait for goods.** At a load stop it takes what lies there, up to the
+  amount set, and sails on. A source that produces less than the ship fetches makes it shuttle
+  empty ("Verify your trading routes!"): set the amounts to what the source really makes, and give
+  the source island a market so that the goods reach the Kontor at all.
 - **A small Kontor holds 30 t per good.** When it is full, the producers stop ("nobody collects").
   Add a second ship, or load more per trip.
 - **A standing material route** keeps every supply island at a minimum of tools, wood and bricks,
@@ -195,6 +256,14 @@ class. Lasting shortage costs whole classes within minutes: Drisden fell from 89
 - The Kontor trades through limited slots (Kontor I: 4 buy and 3 sell). Use them for what you
   cannot make, set prices below the AI's (tools 75, not 105), and never sell what a class consumes.
 - Ships cost no upkeep. Running costs come from buildings, military costs from units.
+- **The free trader** sells only what he bought at other Kontors, so "buy wood" does nothing
+  while nobody sells wood. He sails to the Kontor that promises him the most profit: keep surplus
+  on sale cheaply (bricks 15, wood 8) and offer a good price for what you need, and he comes
+  within a minute or two. Without that he stayed away for ten minutes and a city starved.
+- The game clamps a Kontor's prices to a range per good (wood up to 30, tools up to 140); `trade`
+  answers with the values in force.
+- Other players sell surplus cheaply (wood at 10 in the tournament): read `chat` and their Kontor
+  (`cities I C`) right before sailing, because offers change within minutes.
 
 ## 8. Aristocrats (goal 1000, game 4)
 
@@ -299,13 +368,21 @@ no minimax. It does not plan ahead.
 - **North islands for alcohol and tobacco** (wine, sugar, tobacco); **south islands for spices,
   cotton, cocoa**. You need one of each at full fertility.
 
-## 13. A healthy turn / review
+## 13. A healthy round
 
-1. `state`: money and balance. If the balance is negative twice in a row, act (section 9).
-2. `alerts I` per capital: fires, plague, full storage, houses that cannot rise.
-3. `cities I C` per capital: what each class lacks, below 90%? Then find the chain's weak link with
-   `production`: raw producer, fields, road, carrier reach, Kontor full, ship gone.
-4. Taxes at the edge (section 4).
-5. Every few reviews: routes (section 7) and the colonies' production.
-6. Fix the worst bottleneck first; rerun the planner for the current stage.
-7. Update `plan` and `say` for the viewers; keep the game running at x8.
+Look with one batch (`state`, `alerts I`, `economy I C` per capital), then go down this list and
+stop at the first thing that is wrong. Fix that, and only that, this round.
+
+1. **Money:** balance negative twice in a row, or under 3,000 gold with purchases running
+   (section 9).
+2. **Fire, plague, attack:** `alerts` puts them first; `advance` stops for them.
+3. **Food:** supplied below 95 %, or `economy` shows it empty within minutes (section 0).
+4. **Tools, wood, bricks:** a stock near zero stops every rise and every new producer.
+5. **A good a class lacks** (`cities I C`, below 90 %): find the chain's weak link with
+   `production I idle`: raw producer, fields, road, a market in reach, Kontor full, ship gone.
+6. **Houses that cannot rise** (`houses I problems 10`): the public building the next class needs.
+7. **Taxes at the edge** (section 4), when everything above is fine.
+8. **Growth:** more houses, the next stage of the plan (rerun the planner for it).
+
+Every few rounds: the routes (section 7) and the colonies' production. Tell the viewers with `plan`
+and `say`.

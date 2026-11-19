@@ -1,290 +1,210 @@
 ---
 name: play-open1602
-description: Play a running Open1602 (Anno 1602) game as the human player through the o1602-ctl control port - look at islands, found a city, build, trade, advance time turn by turn. Use when asked to play Open1602/Anno, build up a settlement, or reach a population goal.
+description: Play a running Open1602 (Anno 1602) game through the o1602-ctl control port as the human player would, alone or in a multiplayer game against other agents - found a city, build, supply, trade, let game time pass - with as few commands and as short answers as possible. Use whenever asked to play Open1602 or Anno, build up or rescue a settlement, reach a population or money goal, or join a duel or tournament. Read anno1602-strategy with it.
 ---
 
 # Playing Open1602 through the control port
 
 The game listens for text commands when started with `--control PORT`, in a game alone and in a
 multiplayer game. You play the local player's slot with the same rules, costs and refusals a
-person has. A game alone starts **paused**; time only runs when you `advance` or `resume` it. A
-multiplayer game runs on while you think.
+person has. Every command is one call: `bin\o1602-ctl.exe [--port N] COMMAND [ARGS]`.
+`o1602-ctl help` lists every command; read it once at the start, it is the reference.
 
-## Few turns, short answers (read this first)
+**No cheating (user rule).** Use only what a person playing could click or see. No `autoplay`
+(the built-in computer would play your slot), no editor, no savegame edits, no engine changes that
+bend the rules, and no information a player would not have (in a game alone the port answers about
+islands you have not discovered: do not ask it about them). When in doubt, ask the user.
 
-Every answer stays in your context for the rest of the session, and every command is a turn.
+## What costs you: turns and answer size
+
+Every command is a turn, and every answer stays in your context for the rest of the session. A game
+is won by the agent that looks little, decides once and acts in bulk.
 
 - **A failed command answers `error: ...`** (exit code 1). A refused build names the reason and the
-  tiles. Nothing else counts as failure.
+  tiles. Anything else worked.
 - **Send the commands of one step together.** Pipe them to `o1602-ctl -`, one per line (`#` lines
-  are comments); each answer comes under `### CMD`, and a failed part puts
-  `error: N of M commands failed` first. In a multiplayer game the whole batch waits once instead
-  of 2.5 s per order. `advance` cannot be part of a batch.
-- **Look with the short forms:** `alerts [I]` (most urgent first) and `economy I C` (per good:
-  stock, need, trend, minutes until empty) before anything else; `houses I problems`,
-  `production I idle`, `islands mine`; a part of the `map` (`map I X Y W H`), never the whole island.
-- **Let the game find the place:** `build NAME I auto` builds at the best place you can pay for
-  and lays the road; `build NAME I auto X Y` takes the nearest place to X Y.
-- **Ships:** `ship-move SHIP city I C` sails into reach of that Kontor, `advance N until ship SHIP`
-  waits until it has arrived, `unload SHIP all` empties it.
-- **Waiting:** `advance N` ends early at a fire, plague or attack and says why, so long advances
-  are safe. It leaves the game as it was, paused or running. `events` gives the messages since
-  the last one; `state` says when new ones wait.
-- `demolish I X1 Y1 X2 Y2` clears a rectangle (roads, fields, trees; houses and workshops stay
-  unless nothing else is in it).
+  are comments). Each answer comes under `### CMD`; a failed part puts
+  `error: N of M commands failed` first. `advance` cannot be part of a batch.
+- **Look with the short forms.** `alerts [I]` (most urgent first) and `economy I C` (per good:
+  stock, need, trend, minutes until empty) answer "what next". Then `production I idle`,
+  `houses I problems 10`, `islands mine`. Ask for a part of the map (`map I X Y W H`), never the
+  whole island, and only when you must see the ground.
+- **Let the game find the place.** `build NAME I auto` builds at the best place you can pay for and
+  lays the road; this replaces reading the map, `sites`, `build` and `road`.
+  - Without X Y the place has the best catchment of the island (trees, meadow, fish), which may lie
+    far from town. `build NAME I auto X Y` takes the place nearest to X Y: use it to put houses and
+    public buildings where you want them and to spread producers.
+  - It builds nothing when no road can reach a place, and says so.
+- **Do not check what an answer already told you.** `built 1 of 1` means it stands.
 
-**No cheating (user rule).** Use only what a person playing could click or see. Never use:
-- `autoplay`, the editor, free builds or savegame edits;
-- engine changes that bend the rules for us;
-- information a player would not have, such as undiscovered islands or other players' hidden
-  stock.
+PowerShell example of one step:
 
-A new control command must stay fair the same way. When in doubt, ask the user.
+```powershell
+@"
+say "Wood and fish first"
+build forester 12 auto
+build fishers_hut 12 auto
+build-many house 12 7 20 10 23
+"@ | bin\o1602-ctl.exe --port 7602 -
+```
 
 ## Start a game
 
-Windows (PowerShell), from the repository root. The original game data must be installed
-(`ANNO1602_DIR` points at it).
+Windows (PowerShell), from the repository root; `ANNO1602_DIR` points at the installed game.
 
 ```powershell
-Start-Process bin\open1602.exe -WorkingDirectory bin -ArgumentList '--new-game','1','--name','Claude','--seed','42','--control','7602'
+Start-Process bin\open1602.exe -WorkingDirectory bin -ArgumentList '--new-game','1','--name','Claude','--seed','42','--control','7602','--no-videos'
 ```
 
-- `--new-game D`: difficulty 0 (easy) to 3 (hard). `--seed N` makes the world repeatable.
-- Load a save instead: `--load <file.o1602> --control 7602`.
-- Wait a few seconds, then `bin\o1602-ctl.exe state` must answer.
-
-Every command is one call: `bin\o1602-ctl.exe <command> [args]`. It exits with 1 on an `error:`
-answer and 2 when no game listens. `bin\o1602-ctl.exe help` lists all commands and the map legend.
+- `--new-game D`: difficulty 0 (easy) to 3 (hard). `--seed N` repeats a world. `--load FILE.o1602`
+  goes on with a save.
+- `state` answers once the game is ready (before that: `error: the game is not running`).
+- A game alone starts **paused**; time runs only while you `advance` or after `resume`.
+- A multiplayer game (README: "Two agents against each other", `tools/agent/turnier/`) runs on
+  while you think.
 
 ## Coordinates
 
-- **World tiles** are used for ship positions and `ship-move`.
-- **Island tiles** (X Y from the island's top left corner) are used for everything you build:
-  `map`, `build`, `road`, `found`, `demolish`, `find-site`.
-- `islands` gives each island's world position of its tile 0,0. World = island position + island tile.
-- In `map` output, read the column from the two header lines (tens, then ones) and the row from
-  the number at the left. Off-by-one reading is the most common mistake; verify with `find-site`
-  before building.
+- **Island tiles** (X Y from the island's top left corner) for everything on land: `build`, `road`,
+  `demolish`, `map`, `find-site`.
+- **World tiles** for ship positions and `ship-move SHIP X Y`. World = the island's position
+  (`islands`) + island tile. You rarely need this: `ship-move SHIP city I C` sails to a Kontor.
+- In `map` output read the column from the two header lines (tens, then ones) and the row from the
+  number at the left. Off-by-one reading was the most common mistake; `auto` and `find-site`
+  avoid it.
 
-## Show the person watching what you do
+## One round
 
-The person usually watches the game window. Keep two things up to date over the map:
+1. **Look**, as one batch: `state`, `alerts I`, `economy I C` for each city that has inhabitants.
+   Every few rounds also `production I idle` and the routes (`route SHIP show`).
+2. **Decide** the worst bottleneck (anno1602-strategy, "A healthy round"). One or two things, not ten.
+3. **Act**, as one batch. Start it with `say "..."` so the person watching reads what you do, and
+   update `plan "A | B | C"` when the plan changes (ASCII only: ae, oe, ue).
+4. **Wait**: `advance N`. It ends early at a fire, plague or attack and says why, so long waits are
+   safe: 60 to 120 s while the town is small, 300 to 600 s later. `advance N until ship ID` ends
+   when that ship has arrived. It leaves the game as it was, paused or running. The game's messages
+   come with the answer (`events` reads them without waiting).
 
-- **The plan:** `plan "Wood and food | More houses | Chapel and cloth for settlers | ..."`.
-  Items are separated by `|`. Update it whenever the plan changes; `plan clear` removes it.
-- **The current step:** `say "Building a second forester at 17,22: wood is short"`. Do this
-  before each batch of actions. The last six steps stay visible.
+`speed 8` once makes time pass faster in real time. When a person watches, `resume` once and keep
+the game running at x8.
 
-Write ASCII only (ae/oe/ue instead of umlauts): the game's font has no UTF-8.
+## Opening
 
-## The turn loop
+1. `islands` and `ships`: pick a big free island near your ship whose crops fit your plan (north:
+   tobacco, wine, sugar; south: spices, cotton, cocoa). An island counts as discovered when your
+   ship has been inside its bounding box; `explore SHIP` (a still ship beside it) shows crops and
+   ore. In a game alone `islands` prints crops even for islands marked `not discovered`: leave
+   those lines unread until your ship has been there (the no-cheating rule).
+2. `kontor-sites SHIP I`: an `ok` place with free land and forest behind it. `ship_too_far`: sail
+   closer (within 16 tiles).
+3. `found SHIP I X Y`. The answer names the city (island and city number) and says whether the
+   ship lies in reach.
+4. One batch: `ship-move SHIP city I C`, then `advance 120 until ship SHIP`, then `unload SHIP all`.
+   Building materials must lie in the Kontor, not on the ship. The city's room per good is
+   limited (30 t at first; every market adds room) and the answer says what stayed on board.
+   Unload the rest when room is free.
+5. One batch: `build marketplace I auto X Y` beside the Kontor, `build fishers_hut I auto`, and
+   foresters: wood is what the first half hour runs on. `sites forester I 12` lists places with
+   their tree score; build six or more over the first rounds, spread out, each with
+   `build forester I auto X Y` at one of those places. Then houses near the market:
+   `build house I auto` or a block with `build-many house I X1 Y1 X2 Y2`.
+6. `advance 120`, then a normal round. Houses fill with pioneers and taxes start.
 
-1. Look: `state`, `cities ISLAND CITY` (stock, needs, satisfaction), `map ISLAND X Y W H` around
-   your town.
-2. Act: build, road, trade.
-3. Run time: `advance 60` (game seconds, up to 3600). `speed 8` first makes it pass faster in
-   real time. `advance` answers with `state` once the time has passed.
-4. Repeat. Save now and then: `save NAME`.
+## Facts that cost agents whole rounds
 
-## Opening, step by step (what worked)
+**Roads and reach**
+- A building is connected when a road tile, a market or the Kontor touches its edge (not
+  diagonally). Carriers walk on roads. `alerts` lists `[ROAD]` for unconnected producers;
+  `fix-roads I` mends houses.
+- Roads cannot cross slopes `/`, beach `b` or rock; a river needs a bridge. `road` answers
+  "no road path" when there is none. Place a coastal building only where a road can reach it.
+- Land belongs to your city only within the circles of its markets, Kontors and towers. "outside
+  the city" means: build a `marketplace` at the edge first (it reaches 16 tiles). `warehouse_1`
+  stands on the coast only.
+- A producer that shows "idle" with stock waiting has nobody collecting: put a market within reach
+  of every production cluster (the second market after about four foresters, another by the
+  pastures).
 
-1. `islands`: pick a big island near the ship (`state` shows the ship's world position) whose
-   crops fit your plans. North islands grow tobacco and wine; south islands grow spices, cotton
-   and cocoa.
-2. `ship-move SHIP X Y` to a sea tile next to the island, `advance 30` to `60`.
-3. `kontor-sites SHIP ISLAND`: pick an `ok` site that has plenty of free land (`.`) and forest
-   behind it. `ship_too_far` means sail closer (within 16 tiles).
-4. `found SHIP ISLAND X Y`. The Kontor (warehouse) is paid from the ship's cargo.
-5. **Unload the ship at once.** Building materials must be in the Kontor, not on the ship:
-   `unload SHIP tools 40`, `unload SHIP wood 30`, `unload SHIP food 10`.
-   - The Kontor's room per good is limited ("room ... t per good" in `cities`). The answer
-     says how much really moved, and the rest stays on board.
-   - Check the stock with `cities ISLAND CITY`, and unload the rest later.
-6. Marketplace (4x3) next to the Kontor, then roads.
-   - Connect the Kontor, the market and all production buildings with roads. Carriers walk on
-     roads.
-   - Roads need land at both ends: not beach `b`, rock or buildings.
-7. Production for the first class (pioneers):
-   - `forester` (the woodcutter, 2x2) in the forest `t/T`.
-   - `fishers_hut` (1x1) on the beach. `find-site fishers_hut ISLAND X Y` finds the spots.
-8. Houses (2x2) within the market's reach: `build-many house ISLAND X1 Y1 X2 Y2`. Each costs 3 t
-   of wood, so wood is the first bottleneck.
-9. `advance 60` to `120`, then check `cities`. Houses fill with pioneers, taxes start.
+**Producers**
+- A quarry is a mine (`E` on the map) and missing from `production`. The stonemason's worker walks
+  to it: it needs free land beside the quarry and no river between. The score of `sites` counts
+  the quarry in reach, not the way to it.
+- A plantation or winery needs free land for its fields around it (`sites` scores that); on the
+  beach it stays at 0 %. Plant with `build-many <crop>_field I X1 Y1 X2 Y2`; "does not grow here"
+  on many tiles means the island grows that crop only in patches.
+- `build-many forest ...` answers `built 4 of 64, refused: terrain`: trees fit only on free land
+  of yours, not on tiles that hold stumps or young trees. That is no failure, and it means you
+  cannot replant beside a forester that has cut its window bare: build the next one elsewhere.
+- A Kontor alone collects slowly. A second island that produces needs a market of its own beside
+  the producers, or the goods wait in them.
+- Clearing a field window with `demolish` also takes your own road through it; lay it again.
+- Fishers' huts stand on the beach and need a land tile beside them that can take a road.
+- A building can be switched off and on (`off I X Y`, `on I X Y`): no running cost for work it does
+  not do. Check `production I idle` for "switched off" you forgot.
 
-## Growing to the higher classes
+**Building and demolishing**
+- Buildings take rotations 0 to 3; try them before you demolish for room. A listed size 4x3 stands
+  as 3x4 when rotated.
+- Demolishing gives nothing back. `demolish I X1 Y1 X2 Y2` clears a rectangle of roads, fields
+  and trees; houses and workshops in it stay unless nothing else is in it.
+- Never demolish houses for a building before its materials lie on that island.
 
-- `cities ISLAND CITY` lists for each class its inhabitants, satisfaction (128 = content) and how
-  well each good it needs is supplied (100% = fully).
-- Houses rise to the next class only when all of these hold:
-  - the house is full;
-  - food is supplied 100%;
-  - the next class's satisfaction is 128;
-  - the public buildings the **next** class needs are in reach of that house. For settlers this
-    is a chapel: build one near every market quarter.
-  - building materials for the new house are in stock.
-- "lacking public buildings" in `cities` counts only the needs of the current class, not the
-  next one.
-- `production` shows each production building's utilisation. A forester (woodcutter) below 30%
-  has too few trees around it: plant `forest` tiles nearby (`build-many forest ...`). Goods that
-  wait in a building ("stock") with nobody fetching them mean it has no road to a market or the
-  Kontor.
-- Unlocks: `state` names the next one (for example "100 settlers or higher in one city").
-  `buildings` lists what you may build now, with size and costs (`buildings all`: also the locked
-  ones).
-- Typical chain in Anno 1602:
-  - Pioneers need food (fish, hunters, later cattle and bakery).
-  - Settlers also need cloth (sheep_farm, then weaving_hut) and a chapel.
-  - Citizens also want alcohol, tobacco goods and spices; tobacco and wine need fertile islands.
-  - Merchants also want cocoa and clothes.
-  - Bricks (stone quarry) and tools (ore mine, iron smelter, toolmaker) become necessary for
-    bigger buildings.
-  - Look at `cities` for what is short. Never build blind.
-- Money: keep the balance (`state`, per minute) positive. Every production building has a
-  running cost.
-- Goods you lack can be bought from the free trader or other Kontors by ship:
-  - `ship-move` to their Kontor, then `load SHIP WARE TONS`, which buys at their prices.
-  - This needs a trade treaty with computer players.
+**Cities and islands**
+- On an island where natives or another player live, your city has a number other than 0 (island 14
+  city 2). Use it in `cities I C`, `economy I C`, `route ... stop N I C`.
+- `threats` lists foreign soldiers on your islands, natives' guards included. Only soldiers of a
+  player at war (`diplomacy`) are a danger.
+- `inhabitants` in `state` is the game's own figure: the people in your houses plus the workers of
+  your producers. It is a little higher than the classes of `cities` added up.
 
-## Checks after each action
+## Ships and trade
 
-- Every answer that starts with `error:` failed. Read the reason:
-  - `terrain`: wrong ground; check the map.
-  - `not enough wood` or `not enough tools`: unload the ship or wait for production.
-  - `the ship is too far away`.
-  - `locked`: not unlocked yet.
-- `build-many` reports `built N of M` and why the rest failed.
-- After building, look at the `map` again to see where things really stand.
+- `load` and `unload` work within 5 tiles of a Kontor: `ship-move SHIP city I C` first. At another
+  player's Kontor they buy and sell at its prices and need a trade treaty
+  (`diplomacy PLAYER trade offer`).
+- `trade I C WARE buy|sell|none [TONS] [PRICE]` sets what your Kontor buys from and sells to ships
+  that call. The slots are few: set another good to `none` first. The game clamps prices to a
+  range per good; the answer says the values in force.
+- **The free trader** is the only early source of goods you lack: set `trade I C wood buy 40` (and
+  cloth, tools) in the first minutes. He sells only what he bought at other Kontors, and he sails
+  to the Kontor that promises him the most profit. Cheap surplus on sale (bricks 15, wood 8) and a good buy price for
+  what you need bring him within a minute or two; without that he may stay away for ten.
+- Other players' offers change within minutes: check `cities I C` right before a long trip. In the
+  first half hour the computer players' Kontors sell nothing; only the free trader brings goods.
+- **Routes:** `route SHIP clear`, one `route SHIP stop N I C load|unload WARE TONS ...` per stop,
+  then `route SHIP start`; `route SHIP show` checks it. At a load stop the ship takes what lies
+  there (until TONS are on board) and sails on; it does not wait for more. "Verify your trading
+  routes!" in the messages means a ship found nothing to load or no room to unload. A load at your
+  home stop takes those goods out of the home Kontor on every trip: remove one-off loads.
 
-## Switching buildings off and on
+## Multiplayer
 
-- `off ISLAND X Y`: stops a production building (its running cost stops being charged for work it
-  does not do). `on ISLAND X Y` starts it again. X Y is the building's origin, as `production`
-  lists it.
-- Use it in a money emergency, not as a permanent fix. Switch on again when the balance is positive.
-- Needs the new build of the game (this command was added in game 2).
+- The game does not wait for you. `advance N` only waits; pause and speed belong to the host (in
+  a tournament to the referee, and your port refuses them).
+- An order answers after about 2.5 s of game time, so that the next command sees its result. A
+  batch waits once for all its orders: batching is how you keep up.
+- The answer comes from a copy of the game. When another player changed the same place in between,
+  the real game may differ: read again rather than trust an old answer.
+- You see what the game shows your player: islands you have not discovered come without crops and
+  cities, and `map` and the site searches refuse them.
+- `chat TEXT` writes to every player, `chat` reads what the others wrote; `state` says when new
+  lines wait. Players sell surplus cheaply there.
 
-## Strategy
+## When a command fails
 
-- Read the `anno1602-strategy` skill before founding a city.
-- Run `python -I tools\planner\plan.py` to size every stage.
+- `terrain`, `overlaps`, `outside the city`: wrong place; the answer names the tiles. Use `auto` or
+  `find-site`.
+- `not enough wood|tools|bricks`, `(short: wood)` in a list of places: unload the ship, wait for
+  production or buy. `economy I C` shows the stock.
+- `locked`: not unlocked yet; `state` names the next unlock, `buildings` what you may build.
+- `error: nothing moved`: the ship is not within 5 tiles, the Kontor is full, or the good is missing.
+- `error: the game is not running`: a menu is open or the game still loads.
 
-## Overview commands (one call instead of dozens)
+## Other
 
-All of them show only what a human player also sees (map, catchment previews, question marks,
-the house panel), so they are fair.
-
-- **`alerts [I]`**: everything wrong at once: question marks with their likely cause, fires, full
-  buildings, missing roads, houses without market or the next class's public buildings, short
-  supply, full storage, low materials, money. Read it first every turn.
-- **`houses I`**: every own house: road, market, public buildings in reach, what the next class
-  lacks.
-- **`house-sites I [MAX]`**: every free house place with a road at its side and a market in reach,
-  nearest to a market first.
-- **`sites NAME I [MAX]`**: the best places on the whole island, scored by the catchment: trees
-  (forester, hunter), meadow minus forest (sheep, cattle), open water (fisher), free field land
-  (plantations, winery, farms), quarry tiles (stonemason).
-- **`batch CMD ; CMD ; ...`**: several commands in one connection (`o1602-ctl batch state ";"
-  alerts 17`), each answer under `### CMD`.
-
-Traps the agent fell into: a quarry is a mine (`E` on the map) and missing from `production`; a
-stonemason's worker walks to the quarry, so no river between them; a plantation or winery needs
-free land for its fields (`sites` scores it), on the beach it stays at 0%.
-
-## Commands added after the first game
-
-- **`production`**: each building's state and utilisation. Find bottlenecks here.
-- **`find-site NAME I X Y [R]`**:
-  - It lists places with a road next to them first (`road`).
-  - For houses it says which markets and public buildings reach the place.
-  - Build production buildings only at `road` places.
-- **`coverage I X Y`**: what reaches a house at X Y (market, chapel, tavern, school, church,
-  bathhouse).
-- **`trade I C WARE buy|sell|none [TONS] [PRICE]`**: Kontor trading with ships that call (the
-  free trader).
-  - The slots are limited: set another ware to `none` first.
-  - Give a price (tools: 75) or you pay the AI price.
-- **`route SHIP stop N I C load|unload WARE TONS ...`**, then `route SHIP start`: automatic
-  shuttles between your islands. Check with `route SHIP show`.
-- **`tax I C CLASS RATE`**: 128 is normal. Only raise it for a class with satisfaction to spare.
-- **`advance` answers list the game's messages**: fires, plagues, attacks, new classes. Such
-  events set the speed back to x1.
-- **Fishers' huts** stand on the beach: they need a land tile beside them that can take a road.
-
-## Camera and streaming
-
-**Stream only Anno (user rule, top priority):** the stream may show only the Open1602 game windows
-and the tournament statistics panel. Never anything else: no other app, no taskbar, no desktop.
-- Never use a monitor or display capture in OBS.
-- Use one `window_capture` per game window (`open1602.exe`, the player name in the title), plus a
-  browser or text source for the panel.
-- Before every stream start, take `obsctl.py shot` and check it. When in doubt, do not stream.
-
-Game 4 broke this once: a monitor capture showed the taskbar, and the VOD had to be deleted.
-
-- By default the camera jumps to every successful build, Kontor, road, demolition and ship order,
-  so people watching (a stream) see each action.
-- `camera ISLAND X Y` looks somewhere on purpose.
-- `camera follow off` stops the jumping.
-- Stream setup (outside the repo):
-  - `D:\anno\stream`: OBS scene generator, `status.ps1` for the status bar, and `obsctl.py`.
-  - Run the scripts with `D:\anno\stream\.venv\Scripts\python.exe`.
-  - When restarting the game for a stream, first set `$env:O1602_AUDIO_DEVICE='Realtek Digital'`
-    (the sound goes to an unused output: the stream hears it, the person at the computer does
-    not), then start with `--load <save> --control 7602 --size 1600x900 --zoom 1 --no-videos`.
-  - Keep the music on: no `--no-music`.
-  - settings.cfg is set for the stream; leave it so:
-    - `effects = off`: background music only, no effects.
-    - `speech = 0 ...`: no voice warnings.
-    - `video = 0 ...`: no message videos.
-    - `display.event_speed = keep`: events do not slow the game.
-  - Keep the game running at x8 while streaming. Do not pause between turns.
-
-## Other commands
-
-- **`advance` keeps the run state.** A game that was paused stays paused after it, a running game keeps
-  running: `resume` (or `speed 8`) once and no `resume` is needed after each `advance`. Check `state`
-  (`paused` or `running`) if the person watching sees nothing move.
-- **`batch` takes each command as its own argument**, e.g. `batch say "text" ";" build X ISLAND X Y ";"
-  state`. A single quoted string fails with "unknown command". `advance` cannot run inside a batch.
-- **Ship routes that worked (game 4):** `route SHIP clear`, then one `route SHIP stop N ISLAND CITY load|unload WARE TONS` per stop, then `route SHIP start`. Several stops in a row carry several goods (tobacco goods and alcohol on one ship). Load and unload only work within about 5 tiles of the Kontor: the Kontor's world position is the island's world position plus its tile (island 17 at 220,80 with Kontor 14,24 is 234,104), so `ship-move` to the sea tile next to it (e.g. 232,102) before unloading. An ordinary `ship-move` to the island's corner is too far.
-- `autoplay on/off` exists, but it is off limits (no cheating, see the top): the built-in AI would
-  play our slot.
-- `pause` and `resume`: stop or run the game. `resume` runs it without a limit, until `pause`.
-- To check a save outside the game: `bin\o1602-tool.exe state <save> --towns` shows
-  inhabitants per class.
-
-## Shared islands and city numbers (game 4)
-
-- A Kontor can be founded on an island where natives or a computer already live, if `kontor-sites`
-  lists `ok` places. Our city then has a number other than 0: island 0 city 1, island 14 city 2,
-  island 3 city 1. Use that number in `cities I C` and in `route ... stop N I C`.
-- `tools/agent/jev_driver.py`'s `read_state(island)` assumes city 0. On such islands it reads the
-  natives' city. Check shared islands by hand.
-- After `found`, the rest of the cargo stays on the ship. `unload` fails while the ship lies
-  further than 5 tiles from the new Kontor: move it closer first, then `unload`.
-- The natives' Kontor (`cities I 0`) shows what they sell and buy. A route stop there with `load`
-  buys from them.
-- `threats` lists foreign soldiers on islands where we live, natives' guards included. Only
-  soldiers of a player at war (`diplomacy`: "peace none") are a danger.
-
-## Fields and roads
-
-- Clearing a plantation's 6x6 window with `demolish` also removes our own road through it. After
-  `build-many <crop>_field`, run `connect` (driver) or lay the road again, then check `production`.
-- `[FULL] ... nobody collects` on a farm means: no road, a workshop or market out of reach, or the
-  Kontor's room for that good is full (`room N t per good` in `cities`). A full Kontor needs
-  a ship that loads more often.
-
-## Ending a session (stream)
-
-1. Stop the driver: Ctrl-C in its terminal tab.
-2. `pause`, then `save NAME`. The file goes to `%APPDATA%\Open1602\saves\NAME.o1602`.
-3. Stop the stream and the recording through obs-websocket: `StopStream`, `StopRecord`.
-   - Port 4455, password in `%APPDATA%\obs-studio\plugin_config\obs-websocket\config.json`.
-   - A small Python client with `websockets` does it (protocol v5: Hello, Identify with the
-     SHA-256 auth, Request).
-   - Recordings land in the folder `RecFilePath` of the OBS profile (`basic.ini`); in game 4 that
-     was `D:\Users\LukasSteindl\Videos`.
-4. Close the game window (`CloseMainWindow` on `open1602`).
-5. Cancel the periodic review job (`CronList`, `CronDelete`).
+- `save NAME` writes `%APPDATA%\Open1602\saves\NAME.o1602`. Use a new name; never overwrite a
+  save you did not make.
+- `bin\o1602-tool.exe state SAVE --towns` shows a save's inhabitants per class without the game.
+- `tools/agent/jev_driver.py` reads city 0 of its island; on a shared island it reads the wrong
+  city. Check shared islands by hand.
+- Streaming a game: the `stream-open1602` skill (its rule on what the stream may show comes first).

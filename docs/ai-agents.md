@@ -124,15 +124,24 @@ README has the walk-through ("Two agents against each other"). What differs from
 
 ## Agent skills (Claude Code)
 
-`.claude/skills/` holds two skills that Claude Code loads when asked to play:
+`.claude/skills/` holds the skills that Claude Code loads when asked to play:
 
-- **`play-open1602`** covers how to play through the port: starting the game, the order of first
-  moves, how to read `map` and `alerts`, and the usual mistakes.
-- **`anno1602-strategy`** covers the economics: island roles, build order and sizing per class up to
-  aristocrats, how houses really rise, taxes, trade routes, money emergencies, defence and
-  diplomacy, and how the computer opponents think. `reference.md` has the numbers.
+- **`play-open1602`** covers how to play through the port with few commands and short answers:
+  one round as look, decide, act and wait, the opening, the facts that cost agents whole rounds,
+  ships and trade, and what differs in a multiplayer game.
+- **`anno1602-strategy`** covers the economics: the first half hour, the mistakes every agent made
+  in the tournament, island roles, build order and sizing per class up to aristocrats, how houses
+  really rise, taxes, trade routes, money emergencies, defence and diplomacy, and how the computer
+  opponents think. `reference.md` has the numbers.
+- **`stream-open1602`** is for the operator of a stream: what it may show, OBS, sound, ending a
+  session.
 
-The rule both skills share: play only with what a human player can do and see.
+The rule the playing skills share: play only with what a human player can do and see.
+
+A first measurement (2026-11-19, one run each, the same world, 30 minutes of game time, the same
+build of the game): an agent with the reworked skills reached 240 inhabitants with 60 calls of
+`o1602-ctl`; one with the skills as they were before reached 139 with 119 calls. What both runs
+reported as missing went into the skills afterwards.
 
 ## Planner
 
