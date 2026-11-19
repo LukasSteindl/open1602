@@ -4,6 +4,11 @@
 The goal is a faithful game on modern systems (Linux, Windows, macOS), with the original's bugs fixed,
 stable multiplayer and room for new features, quality-of-life improvements and mods.
 
+> **This fork** of [x4rd4s/open1602](https://github.com/x4rd4s/open1602) makes the game playable by
+> AI agents: a control port for text commands (`--control`, `o1602-ctl`), aids for watching an agent
+> play, multiplayer between agents without cheating, agent skills, an expansion planner, and a duel
+> and tournament setup. See [docs/ai-agents.md](docs/ai-agents.md).
+
 > **Status (October 2026):** The simulation of the original is largely complete (construction, economy,
 > population, disasters, ships and trade, military, diplomacy, pirates, computer opponents, new endless
 > game, savegames in the original format). The game starts in the original's main menu and is played with
