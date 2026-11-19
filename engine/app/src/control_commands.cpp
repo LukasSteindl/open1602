@@ -1364,7 +1364,8 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
                             in_force, range.min, range.max);
             }
             return fmt("%s: %s%s, buy price %u, sell price %u, buy up to %.0f t, sell above %.0f t%s\n",
-                       ware_key(*ware).c_str(), t.buy ? "buying " : "", t.sell ? "selling" : "", t.buy_price,
+                       ware_key(*ware).c_str(), t.buy ? "buying " : (t.sell ? "" : "not traded"), t.sell ? "selling" : "",
+                       t.buy_price,
                        t.sell_price, tons(t.limit), tons(t.keep), note.c_str());
         }
         return "set" + note + "\n";
@@ -1491,7 +1492,8 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
 std::string MapViewer::control_help() const {
     return "Open1602 control commands (coordinates: X Y are tiles of the island, from its top left;\n"
            "ship positions are world tiles; amounts of goods in tons). A failed command answers 'error: ...':\n"
-           "  state                         time, money, balance (taxes, costs, trade), your cities and ships\n"
+           "  state                         time, money, balance (taxes, costs, trade), your cities and ships; inhabitants\n"
+           "                                count the workers of your producers too, as the game's own figure\n"
            "  islands [mine]                every island (mine: where you have a city): position, size, crops, owners\n"
            "  map ISLAND [X Y W H]          the island as text (legend below), default the whole island\n"
            "  cities|city [ISLAND CITY]     your cities; with ISLAND CITY: stock, inhabitants, needs\n"
@@ -2047,12 +2049,16 @@ std::string MapViewer::control_build(const std::vector<std::string>& args, std::
                               building_key(*id).c_str(), type.size_x, type.size_y, sites.size(),
                               static_cast<long long>(x), static_cast<long long>(y),
                               house ? ", what reaches it" : "");
-        for (std::size_t i = 0; i < ranked.size() && i < 12; ++i) {
-            const Site& s = ranked[i].second;
-            if (found != nullptr) {
+        if (found != nullptr) {
+            // For build ... auto: every place, the nearest first (it lays the road itself).
+            std::stable_sort(sites.begin(), sites.end(), [](const Site& a, const Site& b) { return a.d2 < b.d2; });
+            for (const Site& s : sites) {
                 found->push_back(ControlSite{static_cast<std::int32_t>(s.x), static_cast<std::int32_t>(s.y),
                                              static_cast<std::uint8_t>(s.rotation), s.refusal});
             }
+        }
+        for (std::size_t i = 0; i < ranked.size() && i < 12; ++i) {
+            const Site& s = ranked[i].second;
             out += fmt("  %lld %lld %d %s", static_cast<long long>(s.x), static_cast<long long>(s.y), s.rotation,
                        ranked[i].first ? "road" : "no-road");
             if (house) {
@@ -2305,7 +2311,7 @@ std::string MapViewer::control_unconnected(std::uint16_t island, bool fix) {
             break;
         }
         // The nearest road within 7 tiles.
-        const auto link = control_link_road(island, s.x, s.y, s.w, s.h, 7, false);
+        const auto link = control_link_road(island, s.x, s.y, s.w, s.h, 7, false, false);
         if (link) {
             control_look_at(island, s.x, s.y);
             out += fmt("  house at %d,%d: road of %zu tiles\n", s.x, s.y, link->placed);
@@ -2319,7 +2325,8 @@ std::string MapViewer::control_unconnected(std::uint16_t island, bool fix) {
 
 std::optional<MapViewer::ControlRoadLink> MapViewer::control_link_road(std::uint16_t island, std::int32_t x,
                                                                       std::int32_t y, std::uint32_t w, std::uint32_t h,
-                                                                      std::int32_t reach, bool to_market) {
+                                                                      std::int32_t reach, bool to_market,
+                                                                      bool only_test) {
     // A dirt road from a free tile beside the footprint to the nearest road tile within `reach` tiles; with
     // `to_market` a free tile beside one of the player's markets or Kontors counts as the end too (the carriers
     // reach the building from there, and a new colony has no road yet).
@@ -2395,9 +2402,21 @@ std::optional<MapViewer::ControlRoadLink> MapViewer::control_link_road(std::uint
         if (order.items.empty()) {
             return;
         }
+        if (only_test) {
+            link = ControlRoadLink{0, order.items.size(), best, {}};
+            return;
+        }
         const sim::CommandResult r = control_execute(order);
         if (r.build && r.build->placed > 0) {
-            link = ControlRoadLink{r.build->placed, order.items.size(), best};
+            // Why tiles are missing, when some are: the reasons the game gave, each once.
+            std::string refused;
+            for (const sim::PlannedBuild& item : r.build->items) {
+                const std::string why = item.ok() ? std::string() : std::string(sim::refusal_name(item.refusal));
+                if (!why.empty() && refused.find(why) == std::string::npos) {
+                    refused += (refused.empty() ? "" : ", ") + why;
+                }
+            }
+            link = ControlRoadLink{r.build->placed, order.items.size(), best, std::move(refused)};
         }
     });
     return link;
@@ -3260,13 +3279,38 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
     if (sites.empty()) {
         return listing.rfind("error", 0) == 0
                    ? listing
-                   : "error: no place for " + building_key(*id) + " there (locked? see: buildings)\n";
+                   : "error: no free place for " + building_key(*id) +
+                         (near ? " within 8 tiles of that tile" : " on the island") +
+                         ", or it is locked (see: buildings)\n";
     }
-    const auto best = std::find_if(sites.begin(), sites.end(),
-                                   [](const ControlSite& s) { return s.refusal == sim::BuildRefusal::None; });
-    if (best == sites.end()) {
+    // The first place that can be paid and that a road, a market or the Kontor touches or a road can reach:
+    // a building no carrier comes to is money lost. At most 40 places are tried.
+    constexpr std::int32_t kRoadReach = 20;
+    const sim::IslandMap& ground = world.islands()[isl].map;
+    auto best = sites.end();
+    std::size_t payable = 0;
+    for (auto s = sites.begin(); s != sites.end() && payable < 40; ++s) {
+        if (s->refusal != sim::BuildRefusal::None) {
+            continue;
+        }
+        ++payable;
+        std::uint32_t sw = type.size_x;
+        std::uint32_t sh = type.size_y;
+        sim::rotated_size(type, s->rotation, sw, sh);
+        if (road_beside(ground, m_buildings, s->x, s->y, sw, sh) ||
+            control_link_road(isl, s->x, s->y, sw, sh, kRoadReach, true, true)) {
+            best = s;
+            break;
+        }
+    }
+    if (payable == 0) {
         return fmt("error: no place you can pay for now; the best, at %d,%d, is%s\n", sites.front().x, sites.front().y,
                    short_mark(sites.front().refusal).c_str());
+    }
+    if (best == sites.end()) {
+        return fmt("error: none of the %zu best places can be reached by a road within %d tiles; nothing built "
+                   "(choose a place with sites or find-site and build it there)\n",
+                   payable, kRoadReach);
     }
     sim::BuildOrder order;
     order.player = m_local_player;
@@ -3290,14 +3334,14 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
     if (road_beside(world.islands()[isl].map, m_buildings, best->x, best->y, w, h)) {
         return out + "road: already connected\n";
     }
-    const auto link = control_link_road(isl, best->x, best->y, w, h, 20, true);
+    const auto link = control_link_road(isl, best->x, best->y, w, h, kRoadReach, true, false);
     if (!link) {
         return out + "road: no way found\n";
     }
     return out + (link->placed == link->wanted
                       ? fmt("road: %zu tiles to %d,%d\n", link->placed, link->to.x, link->to.y)
-                      : fmt("road: %zu of %zu tiles to %d,%d (short of means: not connected yet)\n", link->placed,
-                            link->wanted, link->to.x, link->to.y));
+                      : fmt("road: %zu of %zu tiles to %d,%d (%s: not connected yet, see fix-roads or road)\n",
+                            link->placed, link->wanted, link->to.x, link->to.y, link->refused.c_str()));
 }
 
 std::string MapViewer::control_route(const std::vector<std::string>& args) {

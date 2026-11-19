@@ -209,10 +209,11 @@ private:
         std::size_t placed = 0;
         std::size_t wanted = 0;
         sim::TilePos to;
+        std::string refused;  ///< why tiles are missing, when some are
     };
     std::optional<ControlRoadLink> control_link_road(std::uint16_t island, std::int32_t x, std::int32_t y,
                                                      std::uint32_t w, std::uint32_t h, std::int32_t reach,
-                                                     bool to_market);
+                                                     bool to_market, bool only_test);
     std::string control_alerts(std::optional<std::uint16_t> only) const;
     std::string control_economy(std::uint16_t island, std::uint8_t city) const;
     // Where the control port last turned the camera, and when (a far jump waits 1.5 s).
