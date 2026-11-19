@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <array>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -28,11 +29,16 @@ constexpr std::uint64_t kCollectMs = 500;  ///< game time between two gatherings
 enum class Order : std::uint8_t { Table, Name, Idle, Damaged, Own, Largest };
 
 /// The order after `order` for a click on the heading: ships by name, idle, damaged; cities by
-/// name, own first, largest first; then back to the table's.
-Order next_order(Order order, bool ships) noexcept {
+/// name, own first, largest first; then back to the table's. A spectator orders the ships by
+/// owner too ("own first" sorts by owner; a spectator owns nothing).
+Order next_order(Order order, bool ships, bool spectating) noexcept {
     static constexpr std::array<Order, 4> kShips = {Order::Table, Order::Name, Order::Idle, Order::Damaged};
+    static constexpr std::array<Order, 5> kWatchedShips = {Order::Table, Order::Name, Order::Own, Order::Idle,
+                                                           Order::Damaged};
     static constexpr std::array<Order, 4> kCities = {Order::Table, Order::Name, Order::Own, Order::Largest};
-    const auto& cycle = ships ? kShips : kCities;
+    const std::span<const Order> cycle = !ships       ? std::span<const Order>(kCities)
+                                         : spectating ? std::span<const Order>(kWatchedShips)
+                                                      : std::span<const Order>(kShips);
     const auto at = std::find(cycle.begin(), cycle.end(), order);
     return at == cycle.end() || at + 1 == cycle.end() ? Order::Table : *(at + 1);
 }
@@ -66,9 +72,11 @@ public:
         // order chosen takes the place of both: the banner holds about 185 px before the arms.
         const std::string heading = panel_detail::help_line(c, m_ships ? 214 : 215);
         const std::string count = std::to_string(m_rows.size());
-        m_panel.set_text(m_base + kHeading, m_order == Order::Table ? heading + " (" + count + ")"
-                                                                    : ui::tr("list.heading.ordered",
-                                                                             {heading, count, order_name(m_order)}));
+        m_panel.set_text(
+            m_base + kHeading,
+            m_order == Order::Table
+                ? heading + " (" + count + ")"
+                : ui::tr("list.heading.ordered", {heading, count, order_name(m_order, panel_detail::spectating(c))}));
         const render::BannerArt arms = render::BannerArt::arms_at(m_arms);
         set_banner_graphic(m_panel, m_base + kArms, arms, c.banner(c.local));
         set_banner_graphic(m_panel, m_base + kArmsShadow, arms, c.banner(c.local));
@@ -86,7 +94,7 @@ public:
             const Row& r = m_rows[m_first + k];
             m_panel.set_text(m_base + kName + row, r.name);
             if (r.owner) {
-                // Cities: the small coat of arms of the owner (icons 4..7).
+                // Cities, and a spectator's ships: the small coat of arms of the owner (icons 4..7).
                 set_banner_graphic(m_panel, m_base + kIcon + row, render::BannerArt::arms_at(m_icons + kCityIcons),
                                    c.banner(*r.owner));
             } else {
@@ -95,7 +103,7 @@ public:
         }
     }
 
-    void clicked(const ui::PanelEvent& e, const Selection& /*selection*/, const PanelContext& /*c*/,
+    void clicked(const ui::PanelEvent& e, const Selection& /*selection*/, const PanelContext& c,
                  std::vector<sim::Command>& /*out*/) override {
         if (e.kind != ui::PanelEvent::Kind::Clicked) {
             return;
@@ -105,7 +113,7 @@ public:
         } else if (e.id == m_base + kPageUp) {
             m_first -= std::min(m_first, kRows);
         } else if (e.id == m_base + kHeading) {
-            m_order = next_order(m_order, m_ships);
+            m_order = next_order(m_order, m_ships, panel_detail::spectating(c));
             m_first = 0;
             m_stale = true;
         } else if (e.id >= m_base + kName && e.id < m_base + kName + static_cast<std::int32_t>(kRows)) {
@@ -126,6 +134,9 @@ public:
                                                   const PanelContext& c) const override {
         const std::int32_t k = id - m_base;
         if (k == kHeading) {
+            if (panel_detail::spectating(c)) {
+                return ui::tr(m_ships ? "list.order.help.ships_watched" : "list.order.help.cities_watched");
+            }
             return ui::tr(m_ships ? "list.order.help.ships" : "list.order.help.cities");
         }
         if (k >= kName && k < kName + static_cast<std::int32_t>(kRows)) {
@@ -139,7 +150,11 @@ public:
             if (i < m_rows.size()) {
                 // 218 on a trade route, 219 under way, 220 at anchor.
                 constexpr std::array<std::size_t, 3> kLines = {218, 220, 219};
-                return panel_detail::help_line(c, kLines[static_cast<std::size_t>(std::clamp(m_rows[i].icon, 0, 2))]);
+                std::string line =
+                    panel_detail::help_line(c, kLines[static_cast<std::size_t>(std::clamp(m_rows[i].icon, 0, 2))]);
+                // A spectator's row shows the owner's arms: the owner's name above the state.
+                const sim::Player* owner = m_rows[i].owner ? c.world().player(*m_rows[i].owner) : nullptr;
+                return owner != nullptr ? player_name(*owner) + "\n" + line : line;
             }
         }
         return std::nullopt;
@@ -179,7 +194,8 @@ private:
         return m_rows.empty() ? 0 : (m_rows.size() - 1) / kRows * kRows;
     }
 
-    [[nodiscard]] static std::string order_name(Order order) {
+    /// The name of an order; "own first" is "by owner" for a spectator, who owns nothing.
+    [[nodiscard]] static std::string order_name(Order order, bool spectating) {
         switch (order) {
             case Order::Name:
                 return ui::tr("list.order.name");
@@ -188,7 +204,7 @@ private:
             case Order::Damaged:
                 return ui::tr("list.order.damaged");
             case Order::Own:
-                return ui::tr("list.order.own");
+                return ui::tr(spectating ? "list.order.owner" : "list.order.own");
             case Order::Largest:
                 return ui::tr("list.order.largest");
             case Order::Table:
@@ -213,9 +229,11 @@ private:
         m_rows.clear();
         const sim::World& w = c.world();
         if (m_ships) {
-            // All own ships that are not sinking, in the order of the ship table.
+            // All own ships that are not sinking, in the order of the ship table. A spectator (no
+            // player of its own) gets every player's ships, each with its owner's coat of arms.
+            const bool all = panel_detail::spectating(c);
             for (const sim::Ship& s : w.ships()) {
-                if (s.owner != c.local || s.sinking) {
+                if ((s.owner != c.local && !all) || s.sinking || (all && w.player(s.owner) == nullptr)) {
                     continue;
                 }
                 const sim::ShipMotion& m = s.motion;
@@ -225,6 +243,9 @@ private:
                 r.name = ship_name(s);
                 r.icon = s.route.active && s.route.has_stops() ? 0 : (moving ? 2 : 1);
                 r.ship = s.id;
+                if (all) {
+                    r.owner = s.owner;
+                }
                 r.x = s.x;
                 r.y = s.y;
                 const assets::FigureType* t = c.figures.get(s.figure);
@@ -239,7 +260,7 @@ private:
         // Cities of humans and computers: the player's own and those of trade partners. Open1602
         // adds the pirates' nests the player has discovered, while their Kontor stands (the
         // original lists no pirates). A spectator (no player of its own) sees every city.
-        const bool watching = c.local == sim::kNoPlayer;
+        const bool watching = panel_detail::spectating(c);
         for (const sim::City& city : w.cities()) {
             const sim::Player* owner = w.player(city.owner);
             if (owner == nullptr || city.island >= w.islands().size()) {

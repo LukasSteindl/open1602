@@ -31,6 +31,12 @@ inline constexpr std::uint8_t kLastTradeWare = sim::ware::kLastTrade;
 /// picture of its own.
 inline constexpr std::int32_t kEmptyHold = 5;
 
+/// A spectator of a multiplayer game: no player of its own. It reads every window as the owner
+/// sees it; the windows give it no orders (Hud drops them) and hide what only orders.
+[[nodiscard]] inline bool spectating(const PanelContext& c) noexcept {
+    return c.local == sim::kNoPlayer;
+}
+
 /// A help line (LEISTE section of Text.cod).
 inline std::string help_line(const PanelContext& c, std::size_t line) {
     return c.text("LEISTE", line);

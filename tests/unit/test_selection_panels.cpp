@@ -399,6 +399,14 @@ void add_ships(sim::World& world) {
     world.add_ship(sim::make_ship("Foreign", 25, 30, 0, kOther, 2));
 }
 
+/// Whether gadget `id` of the window shown answers the mouse (hidden ones do not).
+bool answers(SelectionPanel& p, std::int32_t id) {
+    const auto at = p.panel().position(id);
+    REQUIRE(at.has_value());
+    (void)p.panel().mouse((*at)[0] + 5, (*at)[1] + 5, false);
+    return p.panel().hovered() == std::optional<std::int32_t>(id);
+}
+
 }  // namespace
 
 TEST_CASE("selection panels: the ship list shows the own ships 13 a page, ordered on a click on the heading") {
@@ -1689,4 +1697,155 @@ TEST_CASE("selection panels: the city list shows a pirates' nest once its island
     t.world.island(0).discovered.assign(t.world.players().size(), false);
     t.world.island(0).discover(kOther);
     CHECK(!listed());
+}
+
+TEST_CASE("selection panels: a spectator reads the holds of every ship and cart, its clicks give no orders") {
+    Game g("o1602-test-selection-spectator");
+    Town t;
+    sim::Ship ship = sim::make_ship("Stranger", 35, 30, 0, kOther);
+    ship.cargo = {sim::CargoSlot{sim::ware::kCannons, 32}, sim::CargoSlot{sim::ware::kTools, 5 * 32}};
+    t.world.add_ship(ship);
+    sim::Ship cart = sim::make_ship("Altair", 9, 6, sim::figure::kTradeCart, kOther);
+    cart.cargo = {sim::CargoSlot{sim::ware::kTools, 2 * 32}, sim::CargoSlot{}, sim::CargoSlot{}};
+    t.world.add_ship(cart);
+    sim::Simulation simulation(t.world, t.buildings, t.figures);
+    SelectionPanels panels(*g.dir);
+    const PanelContext player{simulation, t.buildings, t.figures, &g.texts, kLocal};
+    const PanelContext spectator{simulation, t.buildings, t.figures, &g.texts, sim::kNoPlayer};
+    const auto select = [&](std::size_t i) {
+        Selection s;
+        s.kind = Selection::Kind::Ship;
+        s.ship = t.world.ships()[i].id;
+        s.serial = static_cast<std::uint32_t>(i + 1);
+        return s;
+    };
+    const auto click = [](SelectionPanel& p, std::int32_t id, const Selection& s, const PanelContext& c) {
+        std::vector<sim::Command> out;
+        p.clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, id}, s, c, out);
+        return out;
+    };
+
+    // Another player's ship: a player does not see its holds, a spectator sees both.
+    const Selection stranger = select(0);
+    SelectionPanel* p = panels.panel_for(stranger, player);
+    REQUIRE(p != nullptr);
+    p->refresh(stranger, player);
+    CHECK(!answers(*p, 38091));
+    REQUIRE(panels.panel_for(stranger, spectator) == p);
+    p->refresh(stranger, spectator);
+    CHECK(answers(*p, 38091));
+    CHECK(answers(*p, 38092));
+    CHECK(!answers(*p, 38093));  // two holds only
+    const auto line = p->help(38092, stranger, spectator);
+    REQUIRE(line.has_value());
+    CHECK(!line->empty());
+    // Nothing to order: no cannons mounted from the hold, no route, no transfer or trade.
+    CHECK(!answers(*p, 38021));
+    CHECK(click(*p, 38091, stranger, spectator).empty());
+
+    // A trade cart the same.
+    const Selection altair = select(1);
+    SelectionPanel* w = panels.panel_for(altair, player);
+    REQUIRE(w != nullptr);
+    w->refresh(altair, player);
+    CHECK(!answers(*w, 59091));
+    w->refresh(altair, spectator);
+    CHECK(answers(*w, 59091));
+    CHECK(!answers(*w, 59006));  // the route switch
+    CHECK(click(*w, 59091, altair, spectator).empty());
+}
+
+TEST_CASE("selection panels: a spectator's ship list has every player's ships, also ordered by owner") {
+    Game g("o1602-test-selection-shiplist-spectator");
+    Town t;
+    add_ships(t.world);
+    sim::Simulation simulation(t.world, t.buildings, t.figures);
+    SelectionPanels panels(*g.dir);
+    const PanelContext c{simulation, t.buildings, t.figures, &g.texts, sim::kNoPlayer};
+    Selection list;
+    list.kind = Selection::Kind::ShipList;
+    SelectionPanel* p = panels.panel_for(list, c);
+    REQUIRE(p != nullptr);
+    p->opened();
+    p->refresh(list, c);
+    // Fifteen ships of one player and the other's; not the sinking one.
+    auto shown = texts(*p);
+    CHECK(std::any_of(shown.begin(), shown.end(),
+                      [](const std::string& s) { return s.find("(16)") != std::string::npos; }));
+    CHECK(std::find(shown.begin(), shown.end(), "Sinking") == shown.end());
+    // The icon of a row: the owner's name above the ship's state.
+    const auto icon = p->help(kListName + 20, list, c);  // the first row's icon
+    REQUIRE(icon.has_value());
+    CHECK(icon->find('\n') != std::string::npos);
+
+    // By name: "Foreign" first; then by owner: the first player's ships first.
+    std::vector<sim::Command> out;
+    const auto first_row = [&] {
+        p->refresh(list, c);
+        p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, kListName}, list, c, out);
+        const auto request = p->take_request();
+        REQUIRE(request.has_value());
+        const sim::Ship* ship = t.world.ship(request->ship);
+        REQUIRE(ship != nullptr);
+        return ship->name;
+    };
+    p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, kListHeading}, list, c, out);
+    CHECK(first_row() == "Foreign");
+    p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, kListHeading}, list, c, out);
+    CHECK(first_row() == "Ship 14");
+    CHECK(out.empty());
+}
+
+TEST_CASE("selection panels: a spectator sees what a castle trains and a shipyard builds, without its orders") {
+    Game g("o1602-test-selection-spectator-buildings");
+    Town t;
+    add_city(t.world, 3, kLocal, "Haven");
+    sim::CastleSlot slot;
+    slot.figure = sim::figure::unit_figure(0, 0);
+    slot.progress = 320;
+    slot.training = true;
+    t.world.cost_buildings()[1].slots = {slot};
+    t.world.cost_buildings()[0].order = 2;
+    sim::Simulation simulation(t.world, t.buildings, t.figures);
+    SelectionPanels panels(*g.dir);
+    const PanelContext player{simulation, t.buildings, t.figures, &g.texts, kLocal};
+    const PanelContext c{simulation, t.buildings, t.figures, &g.texts, sim::kNoPlayer};
+    std::vector<sim::Command> out;
+
+    // The castle: the training place and its progress; no recruiting, cancelling or sending out.
+    const Selection castle = building(10, 6);
+    SelectionPanel* p = panels.panel_for(castle, c);
+    REQUIRE(p != nullptr);
+    p->refresh(castle, player);
+    CHECK(answers(*p, 40009));
+    p->refresh(castle, c);
+    auto shown = texts(*p);
+    CHECK(std::find(shown.begin(), shown.end(), "Haven") != shown.end());
+    CHECK(std::find(shown.begin(), shown.end(), "10") != shown.end());
+    CHECK(answers(*p, 40091));  // the place can be looked at
+    for (const std::int32_t id : {40009, 40003, 40004}) {
+        CHECK(!answers(*p, id));
+        p->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, id}, castle, c, out);
+    }
+    CHECK(!p->picking());
+    CHECK(out.empty());
+
+    // The shipyard: the ship on the stocks; no order, cancel or switch.
+    const Selection yard = building(1, 5);
+    SelectionPanel* w = panels.panel_for(yard, c);
+    REQUIRE(w != nullptr);
+    w->refresh(yard, player);
+    CHECK(answers(*w, 39017));
+    w->refresh(yard, c);
+    CHECK(answers(*w, 39014));  // the ship being built
+    CHECK(!answers(*w, 39016));
+    CHECK(!answers(*w, 39017));
+    const ui::Panel* page = &w->panel();
+    for (const std::int32_t id : {39016, 39017, 39018}) {
+        w->clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, id}, yard, c, out);
+    }
+    w->refresh(yard, c);
+    CHECK(&w->panel() == page);
+    CHECK(!w->panel().selected(39018));
+    CHECK(out.empty());
 }

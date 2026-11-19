@@ -1208,6 +1208,10 @@ list.order.own = Own first
 list.order.largest = Largest first
 list.order.help.ships = Click: order the ships by name, idle or damaged first, or as the original
 list.order.help.cities = Click: order the cities by name, own first, largest first, or as the original
+# For spectators (no ships or cities of their own): by owner instead of own first
+list.order.owner = By owner
+list.order.help.ships_watched = Click: order the ships by name, owner, idle or damaged first, or as the original
+list.order.help.cities_watched = Click: order the cities by name, owner, largest first, or as the original
 
 # The screen "Mods" of the main menu (mods_menu.cpp)
 menu.mods = Mods

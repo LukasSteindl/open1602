@@ -1142,6 +1142,10 @@ list.order.own = Eigene zuerst
 list.order.largest = Größte zuerst
 list.order.help.ships = Klick: Schiffe nach Name, untätige oder beschädigte zuerst, oder wie im Original ordnen
 list.order.help.cities = Klick: Städte nach Name, eigene zuerst, größte zuerst oder wie im Original ordnen
+# Für Zuschauer (ohne eigene Schiffe und Städte): nach Besitzer statt eigene zuerst
+list.order.owner = Nach Besitzer
+list.order.help.ships_watched = Klick: Schiffe nach Name, Besitzer, untätige oder beschädigte zuerst, oder wie im Original ordnen
+list.order.help.cities_watched = Klick: Städte nach Name, Besitzer, größte zuerst oder wie im Original ordnen
 
 # Der Bildschirm „Mods“ des Hauptmenüs (mods_menu.cpp)
 menu.mods = Mods
