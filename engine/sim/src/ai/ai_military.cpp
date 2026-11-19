@@ -35,6 +35,25 @@ bool near_island(const WorldIsland& isl, const Ship& o) {
     return o.x >= ix0 - 16 && o.x <= ix1 + 16 && o.y >= iy0 - 16 && o.y <= iy1 + 16;
 }
 
+/// Counts one unit of `figure` in a list of figure and count (only the log).
+void tally(std::vector<std::pair<std::uint16_t, std::uint32_t>>& list, std::uint16_t figure) {
+    auto it = std::ranges::find(list, figure, &std::pair<std::uint16_t, std::uint32_t>::first);
+    if (it == list.end()) {
+        list.emplace_back(figure, 1);
+    } else {
+        ++it->second;
+    }
+}
+
+/// A list of figure and count as the log writes it: "figure x count " each.
+std::string tallied(const std::vector<std::pair<std::uint16_t, std::uint32_t>>& list) {
+    std::string out;
+    for (const auto& [figure, count] : list) {
+        out += std::to_string(figure) + "x" + std::to_string(count) + " ";
+    }
+    return out;
+}
+
 /// How often the log follows a landing party: once a minute of game time (only the log).
 constexpr std::uint64_t kLandingLogMs = 60'000;
 
@@ -2656,12 +2675,7 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
         cx = u.cell_x();
         cy = u.cell_y();
         hp += u.health;
-        auto it = std::ranges::find(types, u.figure, &std::pair<std::uint16_t, std::uint32_t>::first);
-        if (it == types.end()) {
-            types.emplace_back(u.figure, 1);
-        } else {
-            ++it->second;
-        }
+        tally(types, u.figure);
     }
     if (last_id == 0) {
         log(p, "landing of ship %u: no soldier got off", s.id);
@@ -2683,19 +2697,31 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
     // counts them), and all of them with the units in the castles, which it cannot see.
     const bool known = island_of(island).discovered_by(p.player);
     std::uint32_t field = 0;
+    std::uint32_t field_hp = 0;
+    std::vector<std::pair<std::uint16_t, std::uint32_t>> field_types;
     for (const Soldier& u : m_world.soldiers()) {
-        field += u.island == island && !u.away() && m_world.diplomacy().hostile(p.player, u.owner) ? 1U : 0U;
+        if (u.island == island && !u.away() && m_world.diplomacy().hostile(p.player, u.owner)) {
+            ++field;
+            field_hp += u.health;
+            tally(field_types, u.figure);
+        }
     }
     std::uint32_t hidden = 0;
+    std::vector<std::pair<std::uint16_t, std::uint32_t>> castle_types;
     for (const CostBuilding& b : m_world.cost_buildings()) {
         if (b.kind != CostBuilding::Kind::Castle || b.island != island ||
             !m_world.diplomacy().hostile(p.player, m_world.islands()[b.island].map.top(b.x, b.y).owner)) {
             continue;
         }
         for (const CastleSlot& slot : b.slots) {
-            hidden += slot.figure != 0 ? 1U : 0U;
+            if (slot.figure != 0) {
+                ++hidden;
+                tally(castle_types, slot.figure);
+            }
         }
     }
+    log(p, "landing of ship %u: defenders in the field %sHP %u/32; in castles %s", s.id, tallied(field_types).c_str(),
+        field_hp, tallied(castle_types).c_str());
     // The target: the city of the defender on the island nearest to the landing.
     const auto& cities = m_world.cities();
     std::uint32_t city = static_cast<std::uint32_t>(cities.size());
@@ -2705,10 +2731,7 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
             break;
         }
     }
-    std::string party;
-    for (const auto& [figure, count] : types) {
-        party += std::to_string(figure) + "x" + std::to_string(count) + " ";
-    }
+    const std::string party = tallied(types);
     std::uint32_t people = 0;
     if (city < cities.size()) {
         for (const std::uint32_t n : cities[city].inhabitants) {
@@ -2817,6 +2840,14 @@ void Engine::watch_landings() {
                 cells.emplace_back(u.cell_x(), u.cell_y());
             }
         }
+        std::vector<std::pair<std::uint16_t, std::uint32_t>> foes;
+        std::uint32_t foes_hp = 0;
+        for (const Soldier& u : m_world.soldiers()) {
+            if (u.island == w.island && !u.away() && m_world.diplomacy().hostile(w.player, u.owner)) {
+                tally(foes, u.figure);
+                foes_hp += u.health;
+            }
+        }
         std::uint32_t reach = 0;
         std::uint32_t towers = 0;
         for (const Tower& tw : m_world.towers()) {
@@ -2863,13 +2894,11 @@ void Engine::watch_landings() {
         const auto minute = static_cast<unsigned>((now_ms() - w.landed_ms) / kLandingLogMs);
         if (p != nullptr) {
             log(*p,
-                "landing of ship %u, minute %u: %u alive (%u ashore), HP %u/32; towers reaching them %u, on the island "
-                "%u "
-                "of %u; city %u owner %u inhabitants %u; ships afloat %u of %u, HP %u/32, soldiers aboard %u; "
-                "buildings destroyed %s(value "
-                "%llu)%s",
-                w.ship, minute, alive, ashore, hp, reach, towers, w.towers, w.city, unsigned{owner}, people, afloat,
-                static_cast<unsigned>(w.ships.size()), ship_hp, aboard, lost.c_str(),
+                "landing of ship %u, minute %u: %u alive (%u ashore), HP %u/32; towers reaching them %u, on the "
+                "island %u of %u; defenders in the field %sHP %u/32; city %u owner %u inhabitants %u; ships afloat "
+                "%u of %u, HP %u/32, soldiers aboard %u; buildings destroyed %s(value %llu)%s",
+                w.ship, minute, alive, ashore, hp, reach, towers, w.towers, tallied(foes).c_str(), foes_hp, w.city,
+                unsigned{owner}, people, afloat, static_cast<unsigned>(w.ships.size()), ship_hp, aboard, lost.c_str(),
                 static_cast<unsigned long long>(value), alive == 0 ? "; the party is gone (fallen or aboard)" : "");
         }
         if (alive == 0) {
