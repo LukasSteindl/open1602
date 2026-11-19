@@ -149,6 +149,24 @@ void GoodsWindow::wheel(std::int32_t notches) noexcept {
 std::vector<ui::DrawItem> GoodsWindow::draw(const sim::World& world, const assets::BuildingTable& buildings,
                                             const assets::FigureTable& figures, sim::PlayerId player,
                                             const std::array<const ui::Font*, ui::kFontSlots>& fonts) {
+    // A spectator reads the figures of the player it chose (the first one at first): the humans
+    // and computers in the game.
+    m_spectating = player == sim::kNoPlayer;
+    if (m_spectating) {
+        m_players.clear();
+        for (std::size_t p = 0; p < world.players().size(); ++p) {
+            const sim::Player& pl = world.players()[p];
+            if ((pl.role == sim::PlayerRole::Human || pl.role == sim::PlayerRole::Computer) &&
+                pl.status != sim::PlayerStatus::Absent) {
+                m_players.push_back(static_cast<sim::PlayerId>(p));
+            }
+        }
+        if (std::ranges::find(m_players, m_watched) == m_players.end()) {
+            m_watched = m_players.empty() ? sim::kNoPlayer : m_players.front();
+            m_island.reset();
+        }
+        player = m_watched;
+    }
     m_islands = sim::goods_islands(world, player);
     if (m_island && std::ranges::find(m_islands, *m_island) == m_islands.end()) {
         m_island.reset();  // the city there was lost
@@ -199,7 +217,11 @@ void GoodsWindow::layout_head(const sim::World& world, sim::PlayerId player, Pai
     below.fill(Rect{2, 3, 1, kHeight - 5}, s.light);
     below.fill(Rect{2, kHeight - 3, kWidth - 4, 1}, s.shade);
     below.fill(Rect{kWidth - 3, 3, 1, kHeight - 5}, s.shade);
-    above.text(Rect{0, 10, kWidth, 30}, ui::tr("stats.title"), Align::Centre, st.text);
+    if (m_spectating) {
+        layout_player(world, above);
+    } else {
+        above.text(Rect{0, 10, kWidth, 30}, ui::tr("stats.title"), Align::Centre, st.text);
+    }
     // The close button: a cross.
     const Rect close{kWidth - 40, 8, 30, 30};
     m_form.row(kClose, close, false);
@@ -621,6 +643,23 @@ void GoodsWindow::layout_detail(const sim::World& world, const assets::BuildingT
     }
 }
 
+void GoodsWindow::layout_player(const sim::World& world, Painter& above) {
+    const GoodsStyle& s = m_style;
+    // The title names the player; a click goes to the next (the right button to the previous), as
+    // the island below. The swatch before the name is the player's banner colour.
+    const Rect title{kWidth / 2 - 190, 8, 380, 30};
+    const sim::Player* p = world.player(m_watched);
+    const std::string name = p != nullptr ? player_name(*p) : std::string();
+    m_form.cycle_button(kPlayer, title, ui::tr("stats.title_player", {std::string(ui::tr("stats.title")), name}),
+                        m_players.size() > 1);
+    if (p != nullptr) {
+        m_form.swatch(Rect{title.x + 22, title.y + 8, 14, title.h - 16},
+                      p->banner < m_banner_colours.size() ? m_banner_colours[p->banner] : m_other_banner_colour);
+    }
+    above.arrow(title.x + 9, title.y + title.h / 2, true, 7, s.dark);
+    above.arrow(title.x + title.w - 9, title.y + title.h / 2, false, 7, s.dark);
+}
+
 GoodsWindow::Result GoodsWindow::mouse(std::int32_t x, std::int32_t y, bool down, ui::MouseButton button) {
     const auto id = m_form.mouse(x, y, down, button);
     if (!id) {
@@ -642,6 +681,20 @@ GoodsWindow::Result GoodsWindow::mouse(std::int32_t x, std::int32_t y, bool down
             }
             at = forward ? (at + 1) % count : (at + count - 1) % count;
             m_island = at == 0 ? std::nullopt : std::optional<std::uint16_t>(m_islands[at - 1]);
+            m_scroll = 0;
+            break;
+        }
+        case kPlayer: {
+            // A spectator's next (or previous) player: its own cities, from all of its islands.
+            if (m_players.empty()) {
+                break;
+            }
+            auto at = static_cast<std::size_t>(std::ranges::find(m_players, m_watched) - m_players.begin());
+            const std::size_t count = m_players.size();
+            at = at >= count ? 0 : forward ? (at + 1) % count : (at + count - 1) % count;
+            m_watched = m_players[at];
+            m_island.reset();
+            m_detail.reset();
             m_scroll = 0;
             break;
         }

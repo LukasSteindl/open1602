@@ -404,3 +404,57 @@ TEST_CASE("goods window: a button still held when it closed does not keep the ot
     click(w, kTab + static_cast<ui::Form::Id>(GoodsWindow::Tab::Trade));
     CHECK(w.tab() == GoodsWindow::Tab::Trade);
 }
+
+TEST_CASE("goods window: a spectator chooses in the title whose figures it reads") {
+    sim::World world = make_world();
+    city(world, 0, 0).goods[kWood] = 10 * kTon;
+    city(world, 1, 0).goods[kWood] = 4 * kTon;
+    city(world, 0, 1).goods[kWood] = 100 * kTon;
+    std::vector<sim::Player> players = world.players();
+    players.resize(4);
+    players[2].role = sim::PlayerRole::Computer;
+    players[2].status = sim::PlayerStatus::Absent;  // nobody plays this slot
+    players[3].role = sim::PlayerRole::Neutral;     // the pirates
+    world.set_players(std::move(players));
+    for (const auto& [island, index] : {std::pair<std::uint16_t, std::uint8_t>{0, 0}, {0, 1}, {1, 0}}) {
+        sim::City& c = city(world, island, index);
+        c.ledger.close_minute(c.goods);
+    }
+    constexpr ui::Form::Id kPlayer = 50;
+    GoodsWindow w(app::GoodsStyle{}, names(25), 192);
+    w.open();
+
+    // A player has the plain title and only its own figures.
+    (void)w.draw(world, assets::BuildingTable{}, kFigures, 0, kNoFonts);
+    CHECK(!shows(w, kPlayer));
+    CHECK(w.watched() == sim::kNoPlayer);
+
+    // A spectator starts with the first player: its two cities on two islands.
+    auto items = w.draw(world, assets::BuildingTable{}, kFigures, sim::kNoPlayer, kNoFonts);
+    CHECK(shows(w, kPlayer));
+    CHECK((w.watchable() == std::vector<sim::PlayerId>{0, 1}));  // neither the absent slot nor the pirates
+    CHECK(w.watched() == 0);
+    CHECK(draws_text(items, tons(14)));
+    click(w, kIsland);
+    click(w, kIsland);
+    CHECK(*w.island() == 1);
+
+    // The next player: its own city only, from all of its islands again.
+    click(w, kPlayer);
+    CHECK(!w.island().has_value());
+    items = w.draw(world, assets::BuildingTable{}, kFigures, sim::kNoPlayer, kNoFonts);
+    CHECK(w.watched() == 1);
+    CHECK(draws_text(items, tons(100)));
+    CHECK(!draws_text(items, tons(14)));
+    click(w, kPlayer);  // round to the first
+    (void)w.draw(world, assets::BuildingTable{}, kFigures, sim::kNoPlayer, kNoFonts);
+    CHECK(w.watched() == 0);
+    click(w, kPlayer, ui::MouseButton::Right);  // backwards: the last
+    (void)w.draw(world, assets::BuildingTable{}, kFigures, sim::kNoPlayer, kNoFonts);
+    CHECK(w.watched() == 1);
+
+    // The choice stays while the window is closed and opened again.
+    w.open();
+    (void)w.draw(world, assets::BuildingTable{}, kFigures, sim::kNoPlayer, kNoFonts);
+    CHECK(w.watched() == 1);
+}
