@@ -1,0 +1,2243 @@
+=== driver start 2026-11-09T20:16:44
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+=== driver ended (exit -1) 2026-11-09T20:23:39; again in 5 s
+=== driver start 2026-11-09T20:23:44
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+  opening: no city yet and none founded; again in 15 s
+=== driver ended (exit -1) 2026-11-09T20:26:15; again in 5 s
+=== driver start 2026-11-09T20:26:20
+  opening: no city yet and none founded; again in 15 s
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+#1 money 14898 bal -15 | 1 options -> buy_tools p=1.00 conf=1.00 | food: , buy price 0, sell price 0, buy up to 0 t, sell above 0 t; tools: buying , buy price 75, sell price 0, buy up to 20 t, sell above 0 t | 4.1s
+#2 money 14896 bal -15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#3 money 14896 bal -15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 1: done; with player 1 now: peace signed, trade signed
+  diplomacy 2: done; with player 2 now: peace signed, trade signed
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 7 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+#4 money 14894 bal -15 | 1 options -> wait p=1.00 conf=1.00 | waited | 34.7s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:27:32; again in 5 s
+=== driver start 2026-11-09T20:27:37
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 7 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+  diplomacy 3: done; with player 3 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+[96m  chat: ClaudeJev: und verkaufe.[0m
+  diplomacy 0: done; with player 0 now: peace signed, trade you offered
+#1 money 14878 bal -15 | 4 options -> food p=0.69 conf=0.59 | fishers_hut: built 1 of 1; paid gold 100 tools 3 t wood 5 t bricks 0 t | 111.5s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:29:30; again in 5 s
+=== driver start 2026-11-09T20:29:35
+=== driver ended (exit -1) 2026-11-09T20:29:36; again in 5 s
+=== driver start 2026-11-09T20:29:41
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: Handel ja - done; with player 0 now: peace signed,
+  chat: ClaudeJev: trade you offered. Mein Kontor zeigt, was ich kaufe
+  chat: ClaudeJev: und verkaufe.
+  chat: ClaudeJev: claim_land - marketplace: built 1 of 1; paid gold
+  chat: ClaudeJev: 200 tools 4 t wood 10 t bricks 0 t
+#1 money 14482 bal -30 | 3 options -> forester p=0.62 conf=0.43 | forester: built 1 of 1; paid gold 50 tools 2 t wood 0 t bricks 0 t; forester at 50,41: road of 7 new tiles over 7 tiles to the network; forest: built 1 of 64, refused: terrain x63; paid gold 5 tools 0 t wood 0 t bricks 0 t | 6.3s
+#2 money 14337 bal -35 | 3 options -> forester p=0.71 conf=0.57 | forester: built 1 of 1; paid gold 50 tools 2 t wood 0 t bricks 0 t; forester at 58,34: road of 2 new tiles over 2 tiles to the network; forest: built 4 of 64, refused: terrain x60; paid gold 20 tools 0 t wood 0 t bricks 0 t | 4.2s
+  chat: Sol: Zaustaden steht: 23 Haeuser, Fisch und Stoff. Handel
+  chat: Sol: mit allen angenommen.
+#3 money 14191 bal -40 | 3 options -> quarter p=0.52 conf=0.27 | quarter at 48,28 (6x9): 3 streets, link road of 12 new tiles over 13 tiles to the network; 4 of 8 houses | 16.6s
+#4 money 14009 bal -35 | 2 options -> plan_chapel p=0.60 conf=0.20 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 1.6s
+  tax: island 14: pioneers 128->144 (satisfaction 128)
+#5 money 13904 bal -40 | 2 options -> plan_chapel p=0.60 conf=0.20 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 3.0s
+#6 money 13797 bal -45 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+#7 money 13797 bal -44 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#8 money 13190 bal -84 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.8s
+#9 money 13190 bal -83 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.5s
+  store: tools at the limit (40.0/40 t): sold above 24 t
+[93m  [RUNOUT] wood: 7.0 t left, falling 28.3 t/min, empty in 0.2 min[0m
+#10 money 13183 bal -82 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+[93m  [RUNOUT] wood: 7.0 t left, falling 27.5 t/min, empty in 0.3 min[0m
+#11 money 13176 bal -82 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] wood: 8.0 t left, falling 24.7 t/min, empty in 0.3 min[0m
+#12 money 13176 bal -81 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 8.0 t left, falling 23.3 t/min, empty in 0.3 min[0m
+#13 money 13169 bal -81 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: houses - built 2 houses
+[93m  [RUNOUT] wood: 8.0 t left, falling 22.1 t/min, empty in 0.4 min[0m
+#14 money 13169 bal -81 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: tools at the limit (40.0/40 t): sold above 24 t
+[93m  [RUNOUT] wood: 11.0 t left, falling 17.6 t/min, empty in 0.6 min[0m
+  tax: island 14: pioneers 144->160 (satisfaction 128)
+#15 money 13162 bal -81 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 4.3s
+[93m  [RUNOUT] wood: 8.0 t left, falling 19.6 t/min, empty in 0.4 min[0m
+#16 money 13155 bal -76 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 8.0 t left, falling 18.7 t/min, empty in 0.4 min[0m
+#17 money 13155 bal -76 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] wood: 9.0 t left, falling 17.1 t/min, empty in 0.5 min[0m
+#18 money 13149 bal -76 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] wood: 7.0 t left, falling 18.0 t/min, empty in 0.4 min[0m
+#19 money 13143 bal -74 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: tools at the limit (40.0/40 t): sold above 24 t
+[93m  [RUNOUT] wood: 7.0 t left, falling 17.0 t/min, empty in 0.4 min[0m
+#20 money 13137 bal -74 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+[93m  [RUNOUT] wood: 7.0 t left, falling 16.6 t/min, empty in 0.4 min[0m
+#21 money 13137 bal -74 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 9.0 t left, falling 14.6 t/min, empty in 0.6 min[0m
+#22 money 13131 bal -74 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] wood: 6.0 t left, falling 16.2 t/min, empty in 0.4 min[0m
+#23 money 13131 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 6.0 t left, falling 15.6 t/min, empty in 0.4 min[0m
+#24 money 13125 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: tools at the limit (40.0/40 t): sold above 24 t
+[93m  [RUNOUT] wood: 8.0 t left, falling 13.6 t/min, empty in 0.6 min[0m
+  tax: island 14: pioneers 160->176 (satisfaction 128)
+#25 money 13119 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+[93m  [RUNOUT] wood: 8.0 t left, falling 13.3 t/min, empty in 0.6 min[0m
+#26 money 13119 bal -70 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 8.0 t left, falling 12.9 t/min, empty in 0.6 min[0m
+#27 money 13119 bal -70 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 8.0 t left, falling 12.5 t/min, empty in 0.6 min[0m
+#28 money 13114 bal -65 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 9.0 t left, falling 11.6 t/min, empty in 0.8 min[0m
+#29 money 13109 bal -64 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+  store: tools at the limit (40.0/40 t): sold above 24 t
+[93m  [RUNOUT] wood: 7.0 t left, falling 12.2 t/min, empty in 0.6 min[0m
+#30 money 13105 bal -61 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+[93m  [RUNOUT] wood: 7.0 t left, falling 12.1 t/min, empty in 0.6 min[0m
+#31 money 13105 bal -61 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 7.0 t left, falling 11.7 t/min, empty in 0.6 min[0m
+#32 money 13101 bal -60 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:31:38; again in 5 s
+=== driver start 2026-11-09T20:31:43
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+#1 money 13097 bal -59 | 2 options -> houses p=0.61 conf=0.22 | built 1 houses | 3.0s
+  tax: island 14: pioneers 176->192 (satisfaction 128)
+#2 money 13093 bal -56 | 1 options -> chapel p=1.00 conf=1.00 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 2.9s
+#3 money 12989 bal -59 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 12989 bal -59 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  store: tools at the limit (38.0/40 t): sold above 24 t
+#5 money 12985 bal -54 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#6 money 12985 bal -54 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#7 money 12982 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#8 money 12979 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#9 money 12979 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: tools at the limit (38.0/40 t): sold above 24 t
+#10 money 12976 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#11 money 12976 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#12 money 12973 bal -52 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#13 money 12970 bal -52 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#14 money 12970 bal -51 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: tools at the limit (38.0/40 t): sold above 24 t
+#15 money 12967 bal -46 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#16 money 12967 bal -46 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#17 money 12965 bal -45 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#18 money 12963 bal -45 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#19 money 12963 bal -45 | 2 options -> street p=0.53 conf=0.06 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.7s
+  store: tools at the limit (38.0/40 t): sold above 24 t
+#20 money 12921 bal -45 | 2 options -> street p=0.54 conf=0.08 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 3.1s
+#21 money 12881 bal -45 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] wood: 8.0 t left, falling 1.9 t/min, empty in 4.2 min[0m
+#22 money 12879 bal -41 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#23 money 12877 bal -43 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] wood: 6.0 t left, falling 3.5 t/min, empty in 1.7 min[0m
+#24 money 12877 bal -41 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 28.0 t left, falling 10.0 t/min, empty in 2.8 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 3.3 t/min, empty in 1.8 min[0m
+#25 money 13575 bal 5 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] tools: 28.0 t left, falling 9.6 t/min, empty in 2.9 min[0m
+#26 money 13574 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 28.0 t left, falling 9.2 t/min, empty in 3.0 min[0m
+#27 money 13574 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 28.0 t left, falling 8.9 t/min, empty in 3.2 min[0m
+#28 money 13573 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 28.0 t left, falling 8.6 t/min, empty in 3.3 min[0m
+#29 money 13573 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 28.0 t left, falling 8.2 t/min, empty in 3.4 min[0m
+#30 money 13572 bal 9 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.8s
+[93m  [RUNOUT] tools: 28.0 t left, falling 8.0 t/min, empty in 3.5 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 2.0 t/min, empty in 3.5 min[0m
+#31 money 13572 bal 10 | 1 options -> chapel p=1.00 conf=1.00 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 1.6s
+[93m  [RUNOUT] tools: 26.0 t left, falling 9.0 t/min, empty in 2.9 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 5.2 t/min, empty in 0.4 min[0m
+#32 money 13471 bal 6 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 8.7 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 4.4 t/min, empty in 0.7 min[0m
+#33 money 13470 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 26.0 t left, falling 8.5 t/min, empty in 3.1 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 4.2 t/min, empty in 0.7 min[0m
+#34 money 13470 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 8.2 t/min, empty in 3.2 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 3.5 t/min, empty in 1.1 min[0m
+#35 money 13469 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 8.0 t/min, empty in 3.3 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 3.4 t/min, empty in 1.2 min[0m
+#36 money 13468 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 7.8 t/min, empty in 3.3 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 3.3 t/min, empty in 1.2 min[0m
+#37 money 13468 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 7.6 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 3.2 t/min, empty in 1.2 min[0m
+#38 money 13467 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 7.4 t/min, empty in 3.5 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 2.1 t/min, empty in 2.9 min[0m
+#39 money 13467 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 7.2 t/min, empty in 3.6 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 2.0 t/min, empty in 2.9 min[0m
+#40 money 13466 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] tools: 26.0 t left, falling 7.2 t/min, empty in 3.6 min[0m
+#41 money 13465 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#42 money 13465 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#43 money 13464 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#44 money 13464 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#45 money 13463 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#46 money 13462 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#47 money 13462 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#48 money 13461 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#49 money 13461 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#50 money 13460 bal 10 | 2 options -> street p=0.62 conf=0.24 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.8s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#51 money 13419 bal 10 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 1.5 t/min, empty in 3.9 min[0m
+#52 money 13419 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#53 money 13419 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#54 money 13419 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#55 money 13419 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#56 money 13419 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#57 money 13419 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#58 money 13419 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#59 money 13419 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.1 t/min, empty in 4.2 min[0m
+#60 money 13419 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#61 money 13419 bal 14 | 2 options -> street p=0.59 conf=0.17 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.7s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#62 money 13379 bal 15 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] tools: 26.0 t left, falling 6.2 t/min, empty in 4.2 min[0m
+#63 money 13379 bal 21 | 1 options -> chapel p=1.00 conf=1.00 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 1.6s
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.1 t/min, empty in 1.0 min[0m
+#64 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 2.0 t left, falling 3.1 t/min, empty in 0.7 min[0m
+#65 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 2.0 t left, falling 3.1 t/min, empty in 0.7 min[0m
+#66 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.6 t/min, empty in 1.2 min[0m
+#67 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.6 t/min, empty in 1.2 min[0m
+#68 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 3.0 t left, falling 3.6 t/min, empty in 0.8 min[0m
+#69 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] wood: 5.0 t left, falling 1.0 t/min, empty in 4.9 min[0m
+#70 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+#71 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#72 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#73 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#74 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#75 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#76 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#77 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#78 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#79 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#80 money 13279 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  chat: ClaudeJev: tax_down_settlers - tax of settlers set to 128 (128
+  chat: ClaudeJev: normal)
+#81 money 13279 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#82 money 13279 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#83 money 13279 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#84 money 13279 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 58,34 at 49%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#85 money 13279 bal 18 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#86 money 13279 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#87 money 13279 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#88 money 13279 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 1.0 t left, falling 5.6 t/min, empty in 0.2 min[0m
+#89 money 13079 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.4s
+[93m  [RUNOUT] wood: 2.0 t left, falling 5.1 t/min, empty in 0.4 min[0m
+#90 money 13079 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+  network: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.1 t/min, empty in 1.0 min[0m
+#91 money 13079 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.6 t/min, empty in 0.8 min[0m
+#92 money 13079 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 2.0 t left, falling 3.1 t/min, empty in 0.7 min[0m
+#93 money 13079 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  network: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.6 t/min, empty in 1.2 min[0m
+#94 money 13079 bal 18 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.6 t/min, empty in 1.2 min[0m
+#95 money 13080 bal 18 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 3.0 t left, falling 3.1 t/min, empty in 1.0 min[0m
+#96 money 13081 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+  network: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 3.0 t left, falling 3.6 t/min, empty in 0.8 min[0m
+#97 money 13081 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 3.0 t left, falling 3.6 t/min, empty in 0.8 min[0m
+#98 money 13082 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 3.0 t left, falling 3.6 t/min, empty in 0.8 min[0m
+#99 money 13082 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  network: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 4.0 t left, falling 4.1 t/min, empty in 1.0 min[0m
+#100 money 13083 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+[93m  [RUNOUT] wood: 4.0 t left, falling 4.1 t/min, empty in 1.0 min[0m
+#101 money 13084 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.0 t/min, empty in 3.9 min[0m
+#102 money 13084 bal 17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+  network: sheep_farm at 44,33: no way to a market road over free land
+#103 money 13014 bal 12 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#104 money 13014 bal 12 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+#105 money 13014 bal 12 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  network: sheep_farm at 44,33: no way to a market road over free land
+#106 money 13014 bal 11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+#107 money 13014 bal 11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#108 money 13014 bal 11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: sheep_farm at 44,33: no way to a market road over free land
+  network: sheep_farm at 44,33: no way to a market road over free land
+#109 money 13014 bal 11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#110 money 13014 bal 12 | 2 options -> market_near p=0.62 conf=0.24 | marketplace: built 1 of 1; paid gold 200 tools 4 t wood 10 t bricks 0 t; sheep_farm at 44,33: road of 7 new tiles over 8 tiles to the network | 4.4s
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 3.9 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 2.0 t/min, empty in 0.5 min[0m
+#111 money 12778 bal 2 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 4.0 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 1.5 t/min, empty in 1.3 min[0m
+#112 money 12778 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: Claude: Claude: 140 Einwohner, 100 Siedler. Holz ist knapp -
+  chat: Claude: wer Holz verkauft, ich kaufe!
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 3.9 min[0m
+#113 money 12777 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 3.9 min[0m
+#114 money 12776 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 4.0 min[0m
+#115 money 12776 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 3.9 min[0m
+[93m  [RUNOUT] wood: 5.0 t left, falling 1.0 t/min, empty in 4.9 min[0m
+#116 money 12775 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 16.0 t left, falling 4.1 t/min, empty in 3.9 min[0m
+#117 money 12775 bal 3 | 1 options -> weaving p=1.00 conf=1.00 | weaving_hut: built 1 of 1; paid gold 200 tools 3 t wood 6 t bricks 0 t | 1.6s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 3.0 t/min, empty in 0.3 min[0m
+#118 money 12573 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.0 t/min, empty in 1.5 min[0m
+#119 money 12571 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.6 t/min, empty in 1.2 min[0m
+#120 money 12571 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.5 t/min, empty in 1.2 min[0m
+#121 money 12569 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] wood: 5.0 t left, falling 1.5 t/min, empty in 3.3 min[0m
+#122 money 12569 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+#123 money 12567 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+#124 money 12565 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+#125 money 12565 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+#126 money 12563 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.6 t/min, empty in 2.3 min[0m
+#127 money 12563 bal -8 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.8 min[0m
+#128 money 12561 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.8 min[0m
+#129 money 12559 bal -7 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#130 money 12559 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#131 money 12557 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#132 money 12557 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#133 money 12555 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.8 min[0m
+#134 money 12553 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#135 money 12553 bal -8 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.7s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#136 money 12551 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#137 money 12551 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#138 money 12549 bal -5 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  chat: ClaudeJev: houses - built 1 houses
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.5 t/min, empty in 2.9 min[0m
+#139 money 12547 bal -3 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#140 money 12547 bal -2 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.6 t/min, empty in 2.9 min[0m
+#141 money 12546 bal -1 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.5 t/min, empty in 3.7 min[0m
+#142 money 12546 bal 4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.5 t/min, empty in 3.7 min[0m
+#143 money 12546 bal 4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: fire_station - fire_station: built 1 of 1; paid gold
+  chat: ClaudeJev: 150 tools 3 t wood 5 t bricks 0 t
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.5 t/min, empty in 3.7 min[0m
+#144 money 12546 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.5 t/min, empty in 3.7 min[0m
+#145 money 12546 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.5 t/min, empty in 3.7 min[0m
+#146 money 12546 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 12.0 t left, falling 4.1 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] wood: 5.0 t left, falling 1.5 t/min, empty in 3.3 min[0m
+#147 money 12546 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 12.0 t left, falling 4.1 t/min, empty in 3.0 min[0m
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#148 money 12545 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] tools: 12.0 t left, falling 4.1 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#149 money 12544 bal 1 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 2.8s
+#150 money 12544 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#151 money 12543 bal 0 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#152 money 11943 bal -39 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+#153 money 11942 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#154 money 11942 bal -36 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#155 money 11942 bal -35 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:39:31; again in 5 s
+=== driver start 2026-11-09T20:39:36
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+#1 money 11942 bal -36 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#2 money 11942 bal -36 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#3 money 11942 bal -34 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 2.8s
+#4 money 11942 bal -35 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 50,41 at 44%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#5 money 11942 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#6 money 11942 bal -35 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#7 money 11941 bal -35 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 2.9s
+#8 money 11941 bal -31 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#9 money 11941 bal -30 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+  efficiency: forester 50,45 at 43%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#10 money 11941 bal -30 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#11 money 11941 bal -29 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#12 money 11941 bal -29 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#13 money 11941 bal -27 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 2.8s
+#14 money 11941 bal -29 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#15 money 11941 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 2.0 t left, falling 5.3 t/min, empty in 0.4 min[0m
+#16 money 11941 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 2.0 t left, falling 5.0 t/min, empty in 0.4 min[0m
+#17 money 11941 bal -23 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 2.0 t left, falling 4.7 t/min, empty in 0.4 min[0m
+#18 money 11941 bal -21 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 16.0 t left, falling 3.3 t/min, empty in 4.8 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.7 t/min, empty in 0.0 min[0m
+#19 money 11942 bal -22 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.3 t/min, empty in 0.0 min[0m
+#20 money 11942 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.0 t/min, empty in 0.0 min[0m
+#21 money 11942 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 4.8 t/min, empty in 0.2 min[0m
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#22 money 11943 bal -18 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 3.6 t/min, empty in 0.5 min[0m
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#23 money 11643 bal -34 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 6.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 3.3 t/min, empty in 0.6 min[0m
+#24 money 11643 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.9 t/min, empty in 0.7 min[0m
+#25 money 11643 bal -34 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 10.2s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.8 t/min, empty in 0.7 min[0m
+#26 money 11643 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.7 t/min, empty in 0.7 min[0m
+#27 money 11644 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.6 t/min, empty in 0.8 min[0m
+#28 money 11645 bal -36 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.3 t/min, empty in 3.2 min[0m
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#29 money 11645 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.2 t/min, empty in 3.3 min[0m
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#30 money 11647 bal -34 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 3.0s
+#31 money 11647 bal -36 | 2 options -> bricks p=0.59 conf=0.18 | quarry: built 1 of 1; paid gold 150 tools 6 t wood 2 t bricks 0 t; quarry at 45,43: road of 2 new tiles over 3 tiles to the network; error: stonemason: built 0 of 1, refused: not enough wood x1; paid gold 0 tools 0 t wood 0 t bricks 0 t | 4.2s
+[93m  [RUNOUT] tools: 14.0 t left, falling 2.9 t/min, empty in 4.9 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.1 t/min, empty in 3.5 min[0m
+#32 money 11488 bal -33 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.3 t/min, empty in 3.9 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 2.8 t/min, empty in 0.4 min[0m
+#33 money 11489 bal -30 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.2 t/min, empty in 4.0 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.2 t/min, empty in 0.9 min[0m
+#34 money 11489 bal -29 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.2 t/min, empty in 4.1 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 1.6 t/min, empty in 1.9 min[0m
+#35 money 11491 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.1 t/min, empty in 4.2 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 1.5 t/min, empty in 1.9 min[0m
+#36 money 11493 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 3.0 t/min, empty in 4.3 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 1.5 t/min, empty in 2.0 min[0m
+#37 money 11493 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 2.9 t/min, empty in 4.4 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.0 t/min, empty in 4.1 min[0m
+#38 money 11495 bal -24 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 2.9 t/min, empty in 4.5 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.0 t/min, empty in 4.2 min[0m
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#39 money 11495 bal -25 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] tools: 13.0 t left, falling 2.8 t/min, empty in 4.7 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 0.9 t/min, empty in 4.3 min[0m
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#40 money 11498 bal -19 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 3.0s
+[93m  [RUNOUT] tools: 13.0 t left, falling 2.8 t/min, empty in 4.7 min[0m
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.4 t/min, empty in 2.9 min[0m
+#41 money 11501 bal -24 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 13.0 t left, falling 2.8 t/min, empty in 4.7 min[0m
+#42 money 11501 bal -20 | 2 options -> bricks p=0.54 conf=0.08 | stonemason: built 1 of 1; paid gold 100 tools 5 t wood 5 t bricks 0 t | 1.7s
+[93m  [RUNOUT] tools: 8.0 t left, falling 5.1 t/min, empty in 1.6 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 3.7 t/min, empty in 0.0 min[0m
+#43 money 11403 bal -23 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 5.2 t/min, empty in 1.5 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 3.8 t/min, empty in 0.0 min[0m
+#44 money 11403 bal -23 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 5.1 t/min, empty in 1.6 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 3.3 t/min, empty in 0.3 min[0m
+#45 money 11406 bal -21 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 8.0 t left, falling 5.2 t/min, empty in 1.5 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 3.8 t/min, empty in 0.3 min[0m
+#46 money 11409 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 5.1 t/min, empty in 1.6 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 2.3 t/min, empty in 0.4 min[0m
+#47 money 11409 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.7 t/min, empty in 1.7 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.9 t/min, empty in 1.1 min[0m
+#48 money 11412 bal -18 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.7 t/min, empty in 1.7 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 0.5 t/min, empty in 4.2 min[0m
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#49 money 11412 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.6 t/min, empty in 1.7 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 0.5 t/min, empty in 4.3 min[0m
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#50 money 11416 bal -13 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 3.0s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.2 t/min, empty in 1.9 min[0m
+#51 money 11419 bal -18 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.2 t/min, empty in 1.9 min[0m
+#52 money 11419 bal -18 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.2 t/min, empty in 1.9 min[0m
+#53 money 11422 bal -16 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 8.0 t left, falling 4.2 t/min, empty in 1.9 min[0m
+#54 money 11422 bal -15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 7.0 t left, falling 4.7 t/min, empty in 1.5 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+#55 money 11425 bal -16 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.5 t/min, empty in 2.1 min[0m
+#56 money 10828 bal -56 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.5 t/min, empty in 2.1 min[0m
+#57 money 10828 bal -54 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#58 money 10831 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: tax_down_settlers - tax of settlers set to 128 (128
+  chat: ClaudeJev: normal)
+#59 money 10831 bal -52 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#60 money 10835 bal -49 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#61 money 10841 bal -38 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 2.9s
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.5 t/min, empty in 2.1 min[0m
+#62 money 10841 bal -45 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 2.9 t/min, empty in 4.9 min[0m
+#63 money 10846 bal -42 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+#64 money 10846 bal -42 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+#65 money 10851 bal -42 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+#66 money 10856 bal -41 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+#67 money 10856 bal -40 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+#68 money 10861 bal -39 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+#69 money 10861 bal -39 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 14.0 t left, falling 3.0 t/min, empty in 4.6 min[0m
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#70 money 10866 bal -38 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  tax: island 14: settlers 144->128 (satisfaction 111)
+#71 money 10872 bal -30 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 2.8s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:43:23; again in 5 s
+=== driver start 2026-11-09T20:43:28
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#1 money 10882 bal -38 | 1 options -> wait p=1.00 conf=1.00 | waited | 5.5s
+#2 money 10887 bal -38 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#3 money 10887 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 10292 bal -77 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 50,45 at 17%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 27%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 58,34 at 43%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#5 money 10297 bal -73 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.2s
+#6 money 10297 bal -73 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#7 money 10302 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#8 money 10307 bal -68 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#9 money 10307 bal -68 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#10 money 10312 bal -67 | 1 options -> sugar p=1.00 conf=1.00 | sugarcane_plantation: built 1 of 1; paid gold 300 tools 2 t wood 3 t bricks 8 t; error: sugarcane_field: built 0 of 36, refused: outside the city x36; paid gold 0 tools 0 t wood 0 t bricks 0 t; sugarcane_plantation at 38,37: road of 5 new tiles over 6 tiles to the network | 5.5s
+#11 money 9898 bal -91 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#12 money 9898 bal -90 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#13 money 9899 bal -89 | 2 options -> rum p=0.55 conf=0.10 | rum_distillery: built 1 of 1; paid gold 200 tools 3 t wood 2 t bricks 5 t | 1.6s
+#14 money 9699 bal -102 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: sugarcane_plantation 38,37 at 0%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: ou)
+#15 money 9699 bal -102 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#16 money 9699 bal -101 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#17 money 9699 bal -100 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#18 money 9699 bal -98 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: outside the )
+#19 money 9699 bal -92 | 1 options -> fire_station p=1.00 conf=1.00 | fire_station: built 1 of 1; paid gold 150 tools 3 t wood 5 t bricks 0 t | 4.2s
+  service: fire_station: road piece with 1 unreached houses linked: road of 1 new tiles over 3 tiles to the network
+#20 money 9543 bal -105 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#21 money 9543 bal -105 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#22 money 9542 bal -105 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#23 money 9542 bal -105 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#24 money 9541 bal -104 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#25 money 8941 bal -142 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#26 money 8940 bal -139 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#27 money 8939 bal -138 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#28 money 8928 bal -136 | 1 options -> wait p=1.00 conf=1.00 | waited | 24.1s
+[93m  [RUNOUT] wood: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#29 money 8884 bal -132 | 1 options -> wait p=1.00 conf=1.00 | waited | 15.4s
+#30 money 8851 bal -126 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+#31 money 8850 bal -127 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#32 money 8850 bal -126 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#33 money 8849 bal -125 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#34 money 8848 bal -123 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:45:53; again in 5 s
+=== driver start 2026-11-09T20:45:58
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: outside the )
+#1 money 8847 bal -117 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+#2 money 8847 bal -117 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#3 money 8847 bal -116 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#4 money 8247 bal -155 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  efficiency: forester 50,41 at 41%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 38,37 at 0%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: ou)
+#5 money 8247 bal -153 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+#6 money 8247 bal -153 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#7 money 8247 bal -151 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#8 money 8247 bal -150 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#9 money 8247 bal -149 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  kontor: Kontor on island 14 upgraded to warehouse_2
+#10 money 8067 bal -147 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#11 money 8067 bal -145 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#12 money 8067 bal -142 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#13 money 8067 bal -141 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#14 money 8067 bal -140 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 50,45 at 47%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#15 money 8067 bal -140 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#16 money 8067 bal -139 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 6.4 t/min, empty in 0.2 min[0m
+#17 money 8067 bal -137 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 6.0 t/min, empty in 0.2 min[0m
+#18 money 8067 bal -133 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 5.7 t/min, empty in 0.2 min[0m
+#19 money 8067 bal -132 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: tax_down_settlers - tax of settlers set to 128 (128
+  chat: ClaudeJev: normal)
+[93m  [RUNOUT] wood: 1.0 t left, falling 5.4 t/min, empty in 0.2 min[0m
+#20 money 8067 bal -131 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 3.0 t left, falling 3.1 t/min, empty in 1.0 min[0m
+#21 money 8067 bal -129 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 5.8 t/min, empty in 0.0 min[0m
+#22 money 8067 bal -127 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 5.6 t/min, empty in 0.0 min[0m
+#23 money 8068 bal -126 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] wood: 1.0 t left, falling 4.4 t/min, empty in 0.2 min[0m
+#24 money 8068 bal -121 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.5 t/min, empty in 1.2 min[0m
+#25 money 8069 bal -119 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.4 t/min, empty in 1.2 min[0m
+#26 money 8069 bal -119 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 3.0 t left, falling 2.3 t/min, empty in 1.3 min[0m
+#27 money 8070 bal -118 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 4.0 t left, falling 1.5 t/min, empty in 2.7 min[0m
+#28 money 7696 bal -142 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#29 money 7696 bal -139 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.8 t/min, empty in 0.7 min[0m
+#30 money 7698 bal -141 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:47:30; again in 5 s
+=== driver start 2026-11-09T20:47:35
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#1 money 7700 bal -135 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+#2 money 7700 bal -135 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#3 money 7702 bal -134 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 7704 bal -133 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 50,45 at 28%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 38%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 38,37 at 26%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: ou)
+#5 money 7706 bal -125 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.2s
+#6 money 7706 bal -125 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#7 money 7708 bal -122 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#8 money 7708 bal -122 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#9 money 7711 bal -118 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#10 money 7714 bal -116 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  chat: Sol: Sol meldet 36 Haeuser. Wein und eigener Stein
+  chat: Sol: laufen; ich baue weiter friedlich aus.
+#11 money 7714 bal -115 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#12 money 7717 bal -115 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#13 money 7717 bal -115 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#14 money 7720 bal -112 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#15 money 7723 bal -110 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#16 money 7723 bal -110 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#17 money 7727 bal -109 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#18 money 7727 bal -106 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#19 money 7731 bal -104 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#20 money 7735 bal -101 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#21 money 7735 bal -102 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#22 money 7739 bal -101 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#23 money 7739 bal -100 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#24 money 7743 bal -100 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#25 money 7747 bal -98 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+#26 money 7747 bal -95 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#27 money 7752 bal -92 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#28 money 7752 bal -91 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#29 money 7757 bal -90 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+#30 money 7762 bal -88 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+#31 money 7762 bal -85 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#32 money 7768 bal -83 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#33 money 7768 bal -61 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#34 money 7777 bal -59 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#35 money 7786 bal -58 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#36 money 7786 bal -57 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#37 money 7795 bal -56 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#38 money 7795 bal -56 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#39 money 7804 bal -55 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#40 money 7513 bal -74 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#41 money 7513 bal -73 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  tax: island 14: settlers 144->160 (satisfaction 128)
+#42 money 7522 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] wood: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#43 money 7522 bal -50 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#44 money 7535 bal -51 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#45 money 7548 bal -49 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#46 money 7548 bal -48 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#47 money 7561 bal -48 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#48 money 7561 bal -47 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#49 money 7574 bal -46 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#50 money 7587 bal -45 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.0 t/min, empty in 1.0 min[0m
+#51 money 7587 bal -44 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+  tax: island 14: settlers 160->176 (satisfaction 128)
+#52 money 7600 bal -40 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  chat: ClaudeJev: houses - built 1 houses
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#53 money 7600 bal -18 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.1s
+#54 money 7617 bal -17 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#55 money 7634 bal -16 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#56 money 7634 bal -13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#57 money 7651 bal -12 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.7s
+#58 money 7651 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.5 t/min, empty in 1.9 min[0m
+#59 money 7668 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#60 money 7685 bal -9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#61 money 7685 bal -9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#62 money 7702 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.5 t/min, empty in 1.9 min[0m
+  tax: island 14: settlers 176->192 (satisfaction 128)
+#63 money 7702 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.5 t/min, empty in 0.6 min[0m
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#64 money 7723 bal 7 | 1 options -> tax_down_settlers p=1.00 conf=1.00 | tax of settlers set to 128 (128 normal) | 2.9s
+  efficiency: forester 58,34 at 49%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#65 money 7727 bal -83 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#66 money 7727 bal -75 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#67 money 7733 bal -68 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#68 money 7733 bal -68 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#69 money 7740 bal -66 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+#70 money 7747 bal -66 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#71 money 7747 bal -65 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#72 money 7754 bal -64 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  tax: island 14: settlers 128->144 (satisfaction 128)
+#73 money 7544 bal -74 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.2s
+#74 money 7553 bal -54 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#75 money 7561 bal -54 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#76 money 7561 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#77 money 7569 bal -53 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#78 money 7194 bal -77 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#79 money 7202 bal -76 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:51:35; again in 5 s
+=== driver start 2026-11-09T20:51:40
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+#1 money 7218 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  tax: island 14: settlers 144->160 (satisfaction 128)
+#2 money 7218 bal -72 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#3 money 7226 bal -47 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#4 money 7238 bal -46 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+  efficiency: forester 50,45 at 45%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 41%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 38,37 at 58%: sugarcane_field planted (sugarcane_field: built 4 of 36, refused: terrain x)
+#5 money 7231 bal -42 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 6.9s
+#6 money 7159 bal -40 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#7 money 7159 bal -38 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#8 money 7172 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  chat: ClaudeJev: street - road of 8 tiles: built 8 of 8; paid gold 40
+  chat: ClaudeJev: tools 0 t wood 0 t bricks 0 t
+#9 money 7172 bal -36 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#10 money 7185 bal -34 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+  tax: island 14: settlers 160->176 (satisfaction 128)
+#11 money 7198 bal -34 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+#12 money 7198 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#13 money 7215 bal -4 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#14 money 7215 bal -4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] alcohol: 1.7 t left, falling 1.0 t/min, empty in 1.6 min[0m
+#15 money 7233 bal -2 | 1 options -> chain_sugarcane_plantation p=1.00 conf=1.00 | sugarcane_plantation: built 1 of 1; paid gold 300 tools 2 t wood 3 t bricks 8 t; new plantation: 29 fields on owned land; sugarcane_plantation at 35,30: road of 5 new tiles over 6 tiles to the network | 78.6s
+[93m  [RUNOUT] food: 6.0 t left, falling 1.8 t/min, empty in 3.3 min[0m
+[93m  [RUNOUT] tools: 16.0 t left, falling 3.9 t/min, empty in 4.2 min[0m
+[93m  [RUNOUT] food: emergency buy order at the Kontor (20 t at 20)[0m
+  tax: island 14: settlers 176->192 (satisfaction 128)
+#16 money 6705 bal 13 | 2 options -> food p=0.75 conf=0.49 | fishers_hut: built 1 of 1; paid gold 100 tools 3 t wood 5 t bricks 0 t; fishers_hut at 53,50: road of 5 new tiles over 6 tiles to the network | 6.9s
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: does not gro)
+[93m  [RUNOUT] tools: 13.0 t left, falling 5.0 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 1.4 t/min, empty in 1.5 min[0m
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#17 money 6595 bal -3 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+[93m  [RUNOUT] food: 6.5 t left, falling 1.5 t/min, empty in 4.4 min[0m
+[93m  [RUNOUT] tools: 13.0 t left, falling 4.9 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 1.3 t/min, empty in 1.5 min[0m
+#18 money 6606 bal -6 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:53:59; again in 5 s
+=== driver start 2026-11-09T20:54:04
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: does not gro)
+#1 money 6417 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.3s
+  tax: island 14: settlers 176->192 (satisfaction 128)
+#2 money 6435 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#3 money 6435 bal -7 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#4 money 6447 bal -32 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  efficiency: forester 50,41 at 41%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 0%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: do)
+  efficiency: sugarcane_plantation 38,37 at 42%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+#5 money 6463 bal 8 | 1 options -> forester p=1.00 conf=1.00 | forester: built 1 of 1; paid gold 50 tools 2 t wood 0 t bricks 0 t; forester at 37,21: road of 9 new tiles over 10 tiles to the network; new plantation: 31 fields on owned land | 71.9s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:55:31; again in 5 s
+=== driver start 2026-11-09T20:55:36
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#1 money 5848 bal -6 | 1 options -> houses p=1.00 conf=1.00 | built 4 houses | 9.7s
+  tax: island 14: settlers 176->192 (satisfaction 128)
+#2 money 5869 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  alert: ? forester 37,21: planted forest (error: forest: built 0 of 64, refused: outside the city x64;)
+  tax: island 14: pioneers 128->144 (satisfaction 128), settlers 192->176 (satisfaction 99)
+#3 money 5892 bal 2 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.1s
+#4 money 5907 bal -33 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  efficiency: forester 50,45 at 30%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 22%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 49%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 37,21 at 40%: forest planted (error: forest: built 0 of 64, refused: outside the)
+  efficiency: sugarcane_plantation 38,37 at 61%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+#5 money 5712 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 9.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:56:07; again in 5 s
+=== driver start 2026-11-09T20:56:12
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? sheep_farm 44,33: too little meadow: demolished (a better place follows)
+  alert: ? forester 37,21: planted forest (error: forest: built 0 of 64, refused: outside the city x64;)
+#1 money 5754 bal 9 | 1 options -> forester p=1.00 conf=1.00 | forester: built 1 of 1; paid gold 50 tools 2 t wood 0 t bricks 0 t; forest: built 25 of 64, refused: terrain x39; paid gold 125 tools 0 t wood 0 t bricks 0 t | 6.9s
+  tax: island 14: pioneers 144->160 (satisfaction 128), settlers 176->192 (satisfaction 128)
+#2 money 5420 bal -5 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 4.2s
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#3 money 5444 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#4 money 5444 bal -14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  efficiency: forester 50,45 at 20%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 33%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 48%: sugarcane_field planted (sugarcane_field: built 10 of 36, refused: terrain )
+  efficiency: forester 37,21 at 28%: forest planted (error: forest: built 0 of 64, refused: outside the)
+  efficiency: sugarcane_plantation 38,37 at 47%: sugarcane_field planted (sugarcane_field: built 13 of 36, refused: terrain )
+#5 money 5369 bal 5 | 1 options -> wait p=1.00 conf=1.00 | waited | 6.9s
+#6 money 5369 bal 5 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T20:56:41; again in 5 s
+=== driver start 2026-11-09T20:56:46
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 37,21: planted forest (error: forest: built 0 of 64, refused: outside the city x64;)
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: terrain x36;)
+#1 money 5432 bal 9 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 6.9s
+  tax: island 14: pioneers 160->176 (satisfaction 128), settlers 176->192 (satisfaction 128)
+#2 money 5454 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#3 money 5454 bal 21 | 1 options -> tavern p=1.00 conf=1.00 | tavern: built 1 of 1; paid gold 250 tools 3 t wood 4 t bricks 6 t | 4.2s
+#4 money 5222 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  efficiency: forester 50,45 at 13%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 23%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 44%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 37,21 at 19%: forest planted (error: forest: built 0 of 64, refused: outside the)
+  efficiency: sugarcane_plantation 38,37 at 38%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+#5 money 5259 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 6.7s
+#6 money 5259 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#7 money 5280 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#8 money 5280 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#9 money 5301 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#10 money 5301 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+  tax: island 14: pioneers 176->192 (satisfaction 128)
+#11 money 5322 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+#12 money 5344 bal 23 | 1 options -> tavern p=1.00 conf=1.00 | tavern: built 1 of 1; paid gold 250 tools 3 t wood 4 t bricks 6 t | 1.6s
+#13 money 5094 bal 8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: houses - built 10 houses
+#14 money 5113 bal 9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 58,34 at 49%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 36,33 at 46%: forest planted (forest: built 23 of 64, refused: terrain x41; paid)
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 8.0 t left, falling 9.7 t/min, empty in 0.8 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 13.3 t/min, empty in 0.0 min[0m
+#15 money 5017 bal 11 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 8.0 t left, falling 9.6 t/min, empty in 0.8 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 13.2 t/min, empty in 0.0 min[0m
+#16 money 5017 bal 11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 36,33: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  chat: Sol: Ich habe Ziegel uebrig und suche Werkzeuge. Wer
+  chat: Sol: handeln mag, nennt bitte sein Angebot.
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 8.0 t left, falling 8.9 t/min, empty in 0.9 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 12.2 t/min, empty in 0.0 min[0m
+#17 money 5037 bal 13 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 8.0 t left, falling 8.6 t/min, empty in 0.9 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 10.7 t/min, empty in 0.1 min[0m
+#18 money 5037 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 5.1 t/min, empty in 2.2 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 9.2 t/min, empty in 0.2 min[0m
+#19 money 4832 bal 0 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 4.8 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 8.7 t/min, empty in 0.2 min[0m
+#20 money 4832 bal 0 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 4.6 t/min, empty in 2.4 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 8.3 t/min, empty in 0.2 min[0m
+#21 money 4852 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 4.4 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 7.9 t/min, empty in 0.3 min[0m
+#22 money 4872 bal 2 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 4.2 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 6.8 t/min, empty in 0.4 min[0m
+#23 money 4872 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 4.1 t/min, empty in 2.7 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 6.5 t/min, empty in 0.5 min[0m
+#24 money 4892 bal 4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 3.9 t/min, empty in 2.8 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 6.2 t/min, empty in 0.5 min[0m
+#25 money 4892 bal 4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 0.7 t/min, empty in 4.9 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 3.8 t/min, empty in 2.9 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 6.0 t/min, empty in 0.5 min[0m
+  tax: island 14: settlers 176->160 (satisfaction 116)
+#26 money 4912 bal 5 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 3.2 t left, falling 0.7 t/min, empty in 4.4 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 3.6 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 5.8 t/min, empty in 0.5 min[0m
+#27 money 4927 bal -24 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 3.2 t left, falling 0.7 t/min, empty in 4.6 min[0m
+[93m  [RUNOUT] tools: 11.0 t left, falling 3.5 t/min, empty in 3.2 min[0m
+[93m  [RUNOUT] wood: 3.0 t left, falling 5.6 t/min, empty in 0.5 min[0m
+#28 money 4927 bal -23 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 3.0 t left, falling 0.8 t/min, empty in 3.7 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 4.0 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 7.3 t/min, empty in 0.0 min[0m
+#29 money 4942 bal -22 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.2s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 3.0 t left, falling 0.8 t/min, empty in 3.8 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.9 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 7.2 t/min, empty in 0.0 min[0m
+#30 money 4942 bal -22 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.9 t left, falling 0.8 t/min, empty in 3.5 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.8 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.9 t/min, empty in 0.0 min[0m
+#31 money 4957 bal -21 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.8 t left, falling 0.9 t/min, empty in 3.3 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.7 t/min, empty in 2.7 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.7 t/min, empty in 0.0 min[0m
+#32 money 4972 bal -20 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (sugarcane_field: built 10 of 36, refused: terrain x26; paid )
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.8 t left, falling 0.8 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.5 t/min, empty in 2.8 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.5 t/min, empty in 0.0 min[0m
+#33 money 4922 bal -16 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.7 t left, falling 0.9 t/min, empty in 3.1 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.5 t/min, empty in 2.9 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.3 t/min, empty in 0.0 min[0m
+#34 money 4937 bal -13 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: bricks at the limit (77.0/80 t): sold above 48 t
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.5 t left, falling 0.9 t/min, empty in 2.7 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.3 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.0 t/min, empty in 0.0 min[0m
+#35 money 4953 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.5 t left, falling 0.9 t/min, empty in 2.7 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.3 t/min, empty in 3.1 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 6.0 t/min, empty in 0.0 min[0m
+#36 money 4953 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.4 t left, falling 1.0 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.2 t/min, empty in 3.1 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 5.8 t/min, empty in 0.0 min[0m
+#37 money 4969 bal -10 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.4 t left, falling 0.9 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.1 t/min, empty in 3.2 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 5.7 t/min, empty in 0.0 min[0m
+#38 money 4969 bal -10 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.3 t left, falling 1.0 t/min, empty in 2.4 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.0 t/min, empty in 3.3 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 5.5 t/min, empty in 0.0 min[0m
+#39 money 4985 bal -9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  store: bricks at the limit (79.0/80 t): sold above 48 t
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.2 t left, falling 1.0 t/min, empty in 2.3 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 2.9 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 5.3 t/min, empty in 0.0 min[0m
+  tax: island 14: settlers 160->144 (satisfaction 119)
+#40 money 5001 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.1s
+  alert: road of 4 tiles: built 4 of 4; paid gold 20 tools 0 t wood 0 t bricks 4 t
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.2 t left, falling 0.9 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 2.9 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 4.4 t/min, empty in 0.0 min[0m
+#41 money 4981 bal -40 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.0 t left, falling 1.0 t/min, empty in 2.0 min[0m
+[93m  [RUNOUT] tools: 10.0 t left, falling 3.0 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 4.4 t/min, empty in 0.0 min[0m
+#42 money 4991 bal -38 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 2.0 t left, falling 1.4 t/min, empty in 1.4 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 2.5 t/min, empty in 0.0 min[0m
+#43 money 4991 bal -37 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.9 t left, falling 1.5 t/min, empty in 1.3 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.0 t/min, empty in 1.0 min[0m
+#44 money 5002 bal -35 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.9 t left, falling 1.4 t/min, empty in 1.3 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.0 t/min, empty in 1.0 min[0m
+#45 money 5147 bal -26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  chat: Claude: Claude: Schiff kommt nach Worrach, kaufe euer Holz.
+  chat: Claude: Danke ClaudeJev!
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.8 t left, falling 1.4 t/min, empty in 1.3 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 2.0 t/min, empty in 0.0 min[0m
+#46 money 5158 bal -25 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.1s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.7 t left, falling 1.5 t/min, empty in 1.1 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.5 t/min, empty in 0.7 min[0m
+#47 money 5169 bal -24 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.7 t left, falling 1.5 t/min, empty in 1.2 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 2.1 t/min, empty in 0.0 min[0m
+#48 money 5169 bal -23 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.5 t left, falling 1.5 t/min, empty in 1.0 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.5 t/min, empty in 0.7 min[0m
+#49 money 5180 bal -23 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.7s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.5 t left, falling 1.4 t/min, empty in 1.0 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.5 t/min, empty in 0.7 min[0m
+#50 money 5180 bal -22 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.4 t left, falling 1.4 t/min, empty in 1.0 min[0m
+[93m  [RUNOUT] wood: 2.0 t left, falling 2.0 t/min, empty in 1.0 min[0m
+#51 money 5191 bal -22 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.3 t left, falling 1.5 t/min, empty in 0.9 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#52 money 5202 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.3 t left, falling 1.4 t/min, empty in 0.9 min[0m
+#53 money 5272 bal -13 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] alcohol: 1.2 t left, falling 1.5 t/min, empty in 0.8 min[0m
+#54 money 5283 bal -12 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 1.0 t left, falling 1.5 t/min, empty in 0.7 min[0m
+#55 money 5294 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] alcohol: 1.0 t left, falling 1.5 t/min, empty in 0.7 min[0m
+#56 money 5294 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 0.9 t left, falling 1.5 t/min, empty in 0.6 min[0m
+#57 money 5305 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 0.9 t left, falling 1.5 t/min, empty in 0.6 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#58 money 5305 bal -10 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.4s
+  chat: ClaudeJev: ClaudeJev: Suche Werkzeug und Tuch, zahle gut
+  chat: ClaudeJev: (Werkzeug 80). Wer verkauft? Mein Kontor kauft
+  chat: ClaudeJev: Werkzeug.
+[93m  [RUNOUT] alcohol: 0.8 t left, falling 1.5 t/min, empty in 0.5 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#59 money 5316 bal -10 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 0.8 t left, falling 1.4 t/min, empty in 0.6 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 0.5 t/min, empty in 2.0 min[0m
+#60 money 5316 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] alcohol: 0.7 t left, falling 1.4 t/min, empty in 0.5 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#61 money 5307 bal -9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 0.5 t left, falling 1.5 t/min, empty in 0.3 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#62 money 5318 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 0.5 t left, falling 1.5 t/min, empty in 0.3 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#63 money 5318 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 1.4 t left, falling 1.0 t/min, empty in 1.4 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#64 money 5329 bal -8 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: Claude: Claude: Holz war schon weg - schade. Ich verkaufe
+  chat: Claude: Ziegel (45) und Gewuerze, suche Holz und Werkzeug.
+[93m  [RUNOUT] alcohol: 1.4 t left, falling 1.0 t/min, empty in 1.4 min[0m
+[93m  [RUNOUT] wood: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#65 money 5329 bal -5 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] alcohol: 1.3 t left, falling 1.0 t/min, empty in 1.3 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.0 t/min, empty in 1.0 min[0m
+#66 money 5341 bal -4 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.1s
+[93m  [RUNOUT] alcohol: 2.2 t left, falling 0.5 t/min, empty in 4.3 min[0m
+[93m  [RUNOUT] wood: 1.0 t left, falling 1.0 t/min, empty in 1.0 min[0m
+#67 money 5353 bal -3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#68 money 5353 bal -4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 2.0 t left, falling 0.5 t/min, empty in 3.9 min[0m
+#69 money 5365 bal -3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 2.0 t left, falling 0.5 t/min, empty in 4.3 min[0m
+#70 money 5365 bal -2 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+  tax: island 14: settlers 144->160 (satisfaction 128)
+#71 money 5377 bal -2 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.8s
+#72 money 5188 bal 24 | 1 options -> forester p=1.00 conf=1.00 | forester: built 1 of 1; paid gold 50 tools 2 t wood 0 t bricks 0 t; forester at 36,13: road of 9 new tiles over 10 tiles to the network; forest: built 4 of 64, refused: outside the city x1 terrain x59; paid gold 20 tools 0 t wood 0 t bricks 0 t | 6.5s
+#73 money 5058 bal 20 | 2 options -> chain_sheep_farm p=0.52 conf=0.03 | sheep_farm: built 1 of 1; paid gold 200 tools 2 t wood 4 t bricks 0 t; sheep_farm at 24,22: road of 5 new tiles over 6 tiles to the network | 2.9s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 2.9 min[0m
+#74 money 4833 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#75 money 4847 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#76 money 4861 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#77 money 4861 bal 14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#78 money 4875 bal 15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#79 money 4875 bal 19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#80 money 4889 bal 19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#81 money 4903 bal 19 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#82 money 4903 bal 21 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.0 t/min, empty in 3.0 min[0m
+#83 money 4918 bal 21 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 6.0 t left, falling 2.5 t/min, empty in 2.4 min[0m
+#84 money 4918 bal 24 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T21:01:13; again in 5 s
+=== driver start 2026-11-09T21:01:18
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (sugarcane_field: built 13 of 36, refused: terrain x23; paid )
+#1 money 4900 bal 31 | 2 options -> school p=0.74 conf=0.48 | school: built 1 of 1; paid gold 300 tools 4 t wood 5 t bricks 5 t | 4.3s
+#2 money 4600 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#3 money 4611 bal 2 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 4611 bal 1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  service: fire_station: road piece with 1 unreached houses linked: road of 6 new tiles over 8 tiles to the network
+  efficiency: forester 50,45 at 34%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 34%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 53%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 36,33 at 4%: forest planted (forest: built 23 of 64, refused: terrain x41; paid)
+  efficiency: sugarcane_plantation 38,37 at 10%: sugarcane_field planted (sugarcane_field: built 13 of 36, refused: terrain )
+#5 money 4359 bal -1 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 12.1s
+#6 money 4370 bal 2 | 1 options -> chapel p=1.00 conf=1.00 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 1.6s
+#7 money 4270 bal -2 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#8 money 4280 bal 0 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#9 money 4280 bal 1 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.5s
+  tax: island 14: settlers 160->144 (satisfaction 118)
+#10 money 4291 bal 2 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#11 money 4296 bal -32 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#12 money 4296 bal -31 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.6 t/min, empty in 2.1 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 8.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 5.3 t/min, empty in 1.3 min[0m
+#13 money 4301 bal -31 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.5 t/min, empty in 2.2 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 7.5 t/min, empty in 0.0 min[0m
+#14 money 4301 bal -30 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 7.0 t/min, empty in 0.0 min[0m
+#15 money 4306 bal -30 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 0.0 t left, falling 6.6 t/min, empty in 0.0 min[0m
+#16 money 4312 bal -27 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 6.3 t/min, empty in 0.0 min[0m
+#17 money 4312 bal -25 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.5s
+[93m  [RUNOUT] tools: 0.0 t left, falling 6.0 t/min, empty in 0.0 min[0m
+#18 money 4278 bal -24 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] tools: 0.0 t left, falling 5.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 3.8 t/min, empty in 1.8 min[0m
+#19 money 4278 bal -19 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 5.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 9.0 t left, falling 1.8 t/min, empty in 5.0 min[0m
+#20 money 4285 bal -19 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.7s
+[93m  [RUNOUT] tools: 0.0 t left, falling 5.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 3.5 t/min, empty in 2.0 min[0m
+#21 money 4292 bal -15 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 0.0 t left, falling 5.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 3.3 t/min, empty in 2.1 min[0m
+#22 money 4292 bal -14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 4.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 2.4 t/min, empty in 3.3 min[0m
+#23 money 4299 bal -14 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 0.0 t left, falling 4.6 t/min, empty in 0.0 min[0m
+#24 money 4299 bal -13 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] tools: 0.0 t left, falling 4.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 3.0 t/min, empty in 2.4 min[0m
+#25 money 4307 bal -11 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 0.0 t left, falling 4.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 2.1 t/min, empty in 3.7 min[0m
+#26 money 4315 bal -10 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: houses - built 2 houses
+  chat: Sol: Claude: Holz ueber40t zu10 in Zaustaden,
+  chat: Sol: Kontor398,96. Suche Nahrung oder Werkzeug.
+[93m  [RUNOUT] tools: 0.0 t left, falling 4.1 t/min, empty in 0.0 min[0m
+#27 money 4315 bal -9 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] tools: 0.0 t left, falling 4.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 2.7 t/min, empty in 2.6 min[0m
+#28 money 4323 bal -9 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 2.5 t/min, empty in 2.8 min[0m
+#29 money 4331 bal -5 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.6s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 2.5 t/min, empty in 2.8 min[0m
+#30 money 4331 bal -5 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.6 t/min, empty in 0.0 min[0m
+#31 money 4339 bal -4 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 2.9s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 2.9 t/min, empty in 2.0 min[0m
+#32 money 4339 bal -2 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (sugarcane_field: built 10 of 36, refused: terrain x26; paid )
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 2.8 t/min, empty in 2.1 min[0m
+#33 money 4298 bal 0 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 1.7 t/min, empty in 4.8 min[0m
+#34 money 4298 bal -1 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 1.6 t/min, empty in 4.9 min[0m
+#35 money 4307 bal 3 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.2 t/min, empty in 0.0 min[0m
+#36 money 4316 bal 4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.1 t/min, empty in 0.0 min[0m
+#37 money 4316 bal 4 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 3.0 t/min, empty in 0.0 min[0m
+#38 money 4325 bal 5 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 2.9 t/min, empty in 0.0 min[0m
+#39 money 4325 bal 5 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 2.0 t left, falling 1.9 t/min, empty in 1.1 min[0m
+  tax: island 14: settlers 144->160 (satisfaction 128)
+#40 money 4184 bal -6 | 1 options -> chapel p=1.00 conf=1.00 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 3.1s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#41 money 4099 bal 26 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#42 money 4099 bal 27 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#43 money 4114 bal 27 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.6 t/min, empty in 0.0 min[0m
+#44 money 4114 bal 28 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+#45 money 4129 bal 30 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.7s
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#46 money 4104 bal 31 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#47 money 4104 bal 37 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.5s
+  chat: Claude: Claude: Danke Sol! Mein Schiff kommt und kauft dein
+  chat: Claude: Holz zu 10.
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 1.5 t/min, empty in 3.9 min[0m
+#48 money 4120 bal 40 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.1s
+  chat: ClaudeJev: houses - built 3 houses
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#49 money 4120 bal 44 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  tax: island 14: settlers 160->176 (satisfaction 128)
+#50 money 4137 bal 44 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#51 money 4160 bal 82 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#52 money 4160 bal 82 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#53 money 4183 bal 83 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#54 money 4183 bal 82 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 58,34 at 40%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#55 money 4206 bal 85 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+[93m  [RUNOUT] alcohol: 2.8 t left, falling 0.6 t/min, empty in 4.6 min[0m
+#56 money 4229 bal 86 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.6s
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+[93m  [RUNOUT] alcohol: 2.8 t left, falling 1.1 t/min, empty in 2.6 min[0m
+#57 money 4189 bal 86 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 4.2s
+[93m  [RUNOUT] alcohol: 2.7 t left, falling 1.1 t/min, empty in 2.4 min[0m
+#58 money 4213 bal 93 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 2.5 t left, falling 1.2 t/min, empty in 2.1 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 1.5 t/min, empty in 3.9 min[0m
+#59 money 4237 bal 93 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 2.5 t left, falling 1.1 t/min, empty in 2.2 min[0m
+  tax: island 14: settlers 176->192 (satisfaction 128)
+#60 money 4237 bal 93 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] alcohol: 2.4 t left, falling 1.7 t/min, empty in 1.4 min[0m
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#61 money 4644 bal 133 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 2.9s
+[93m  [RUNOUT] alcohol: 2.4 t left, falling 1.6 t/min, empty in 1.5 min[0m
+#62 money 4644 bal 102 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: ClaudeJev: Danke SolJev, 29 t Ziegel gekauft. Suche
+  chat: ClaudeJev: weiter Werkzeug (zahle 110).
+[93m  [RUNOUT] alcohol: 2.3 t left, falling 1.6 t/min, empty in 1.4 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 1.5 t/min, empty in 3.9 min[0m
+#63 money 4666 bal 106 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] cloth: 0.6 t left, falling 0.2 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] alcohol: 2.2 t left, falling 1.6 t/min, empty in 1.4 min[0m
+#64 money 4691 bal 122 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 2.2 t left, falling 1.5 t/min, empty in 1.4 min[0m
+#65 money 4691 bal 122 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] alcohol: 2.0 t left, falling 1.6 t/min, empty in 1.2 min[0m
+#66 money 4716 bal 123 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 2.0 t left, falling 1.6 t/min, empty in 1.3 min[0m
+#67 money 4716 bal 123 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 1.9 t left, falling 1.6 t/min, empty in 1.2 min[0m
+#68 money 4741 bal 124 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] cloth: 0.1 t left, falling 0.1 t/min, empty in 2.0 min[0m
+[93m  [RUNOUT] alcohol: 1.8 t left, falling 1.6 t/min, empty in 1.1 min[0m
+#69 money 4766 bal 123 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 1.8 t left, falling 1.5 t/min, empty in 1.2 min[0m
+#70 money 4766 bal 124 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  chat: Claude: Claude: 40t Holz gekauft, danke Sol! Fairer Handel.
+[93m  [RUNOUT] cloth: 0.0 t left, falling 0.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 1.6 t left, falling 1.6 t/min, empty in 1.0 min[0m
+#71 money 4791 bal 124 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 1.5 t left, falling 1.6 t/min, empty in 0.9 min[0m
+#72 money 4791 bal 124 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 2.8s
+[93m  [RUNOUT] alcohol: 1.5 t left, falling 1.6 t/min, empty in 0.9 min[0m
+#73 money 4776 bal 125 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] cloth: 0.5 t left, falling 0.1 t/min, empty in 4.9 min[0m
+[93m  [RUNOUT] alcohol: 1.3 t left, falling 1.7 t/min, empty in 0.8 min[0m
+#74 money 4802 bal 131 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+[93m  [RUNOUT] alcohol: 1.3 t left, falling 1.6 t/min, empty in 0.8 min[0m
+#75 money 4802 bal 133 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] alcohol: 1.2 t left, falling 1.6 t/min, empty in 0.7 min[0m
+#76 money 4828 bal 133 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 2.2 t left, falling 1.1 t/min, empty in 2.1 min[0m
+#77 money 4828 bal 134 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 2.1 t left, falling 1.1 t/min, empty in 1.9 min[0m
+#78 money 4854 bal 134 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 1.9 t left, falling 1.2 t/min, empty in 1.6 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#79 money 4881 bal 137 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 6.2 t left, falling 1.4 t/min, empty in 4.5 min[0m
+#80 money 4881 bal 137 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 5.8 t left, falling 1.6 t/min, empty in 3.7 min[0m
+[93m  [RUNOUT] alcohol: 2.8 t left, falling 0.6 t/min, empty in 4.6 min[0m
+#81 money 4908 bal 138 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.6s
+#82 money 4868 bal 138 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] alcohol: 2.7 t left, falling 0.6 t/min, empty in 4.4 min[0m
+#83 money 4855 bal 138 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+#84 money 4883 bal 142 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#85 money 4883 bal 142 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.7s
+#86 money 4871 bal 143 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.5s
+#87 money 4831 bal 142 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+  chat: ClaudeJev: chapel - chapel: built 1 of 1; paid gold 100 tools 2
+  chat: ClaudeJev: t wood 5 t bricks 0 t
+#88 money 4859 bal 146 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#89 money 4887 bal 148 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#90 money 4887 bal 148 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  tax: island 14: settlers 176->192 (satisfaction 128)
+#91 money 4915 bal 148 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  tax: island 14: settlers 192->176 (satisfaction 99)
+#92 money 4915 bal 154 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 2.8s
+#93 money 4899 bal 121 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.5s
+#94 money 4886 bal 143 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+[93m  [RUNOUT] wood: 7.0 t left, falling 2.5 t/min, empty in 2.8 min[0m
+#95 money 4886 bal 153 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 5.9 t left, falling 1.2 t/min, empty in 5.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 2.1 t/min, empty in 3.9 min[0m
+#96 money 4915 bal 153 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#97 money 4915 bal 153 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#98 money 4944 bal 154 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T21:06:25; again in 5 s
+=== driver start 2026-11-09T21:06:30
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+#1 money 4803 bal 144 | 2 options -> chapel p=0.58 conf=0.16 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 3.0s
+#2 money 4732 bal 140 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#3 money 4732 bal 139 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#4 money 4761 bal 139 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 50,45 at 37%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 48%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 58,34 at 36%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 56%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 36,33 at 4%: forest planted (forest: built 23 of 64, refused: terrain x41; paid)
+  efficiency: sugarcane_plantation 38,37 at 60%: sugarcane_field planted (sugarcane_field: built 13 of 36, refused: terrain )
+#5 money 4639 bal 140 | 1 options -> street p=1.00 conf=1.00 | road of 7 tiles: built 7 of 7; paid gold 35 tools 0 t wood 0 t bricks 0 t | 9.3s
+#6 money 4604 bal 140 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 3.0s
+#7 money 4633 bal 146 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#8 money 4633 bal 147 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 37,21: planted forest (forest: built 6 of 64, refused: terrain x58; paid gold 30 to)
+  chat: ClaudeJev: houses - built 7 houses
+#9 money 4633 bal 147 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 2.9s
+#10 money 4623 bal 147 | 1 options -> street p=1.00 conf=1.00 | road of 6 tiles: built 6 of 6; paid gold 30 tools 0 t wood 0 t bricks 0 t | 1.7s
+#11 money 4593 bal 147 | 1 options -> street p=1.00 conf=1.00 | road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 0 t | 1.5s
+#12 money 4583 bal 148 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 1.6s
+#13 money 4583 bal 151 | 1 options -> street p=1.00 conf=1.00 | road of 5 tiles: built 5 of 5; paid gold 25 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] tools: 0.0 t left, falling 2.6 t/min, empty in 0.0 min[0m
+#14 money 4588 bal 153 | 1 options -> houses p=1.00 conf=1.00 | built 2 houses | 2.9s
+  efficiency: forester 37,21 at 44%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+[93m  [RUNOUT] tools: 0.0 t left, falling 2.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 7.2 t/min, empty in 1.0 min[0m
+#15 money 4619 bal 157 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] tools: 0.0 t left, falling 2.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 5.8 t/min, empty in 1.4 min[0m
+#16 money 4619 bal 158 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+[93m  [RUNOUT] tools: 0.0 t left, falling 2.1 t/min, empty in 0.0 min[0m
+#17 money 4651 bal 160 | 1 options -> houses p=1.00 conf=1.00 | built 3 houses | 6.7s
+[93m  [RUNOUT] food: 5.0 t left, falling 1.5 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 2.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 6.9 t/min, empty in 0.9 min[0m
+#18 money 4683 bal 167 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (sugarcane_field: built 10 of 36, refused: terrain x26; paid )
+[93m  [RUNOUT] food: 4.5 t left, falling 1.8 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 6.4 t/min, empty in 0.9 min[0m
+#19 money 4666 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.8 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 7.0 t left, falling 5.4 t/min, empty in 1.3 min[0m
+#20 money 4666 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 5.1 t left, falling 1.2 t/min, empty in 4.3 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.7 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 4.3 t/min, empty in 1.9 min[0m
+#21 money 4699 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] food: 4.6 t left, falling 1.6 t/min, empty in 2.9 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.6 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 4.1 t/min, empty in 1.9 min[0m
+#22 money 4732 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.6 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 3.9 t/min, empty in 2.0 min[0m
+#23 money 4732 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] food: 5.1 t left, falling 1.1 t/min, empty in 4.8 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.5 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 3.8 t/min, empty in 2.1 min[0m
+#24 money 4765 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: terrain x36;)
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 3.6 t/min, empty in 2.2 min[0m
+#25 money 4798 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 3.5 t/min, empty in 2.3 min[0m
+#26 money 4798 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.4 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 9.0 t left, falling 2.7 t/min, empty in 3.3 min[0m
+#27 money 4831 bal 172 | 1 options -> houses p=1.00 conf=1.00 | built 1 houses | 2.8s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 6.0 t left, falling 4.6 t/min, empty in 1.3 min[0m
+#28 money 4831 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 4.7 t left, falling 1.1 t/min, empty in 4.1 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 9.0 t left, falling 2.6 t/min, empty in 3.5 min[0m
+#29 money 4865 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#30 money 4655 bal 161 | 1 options -> chapel p=1.00 conf=1.00 | chapel: built 1 of 1; paid gold 100 tools 2 t wood 5 t bricks 0 t | 1.7s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 8.0 t left, falling 3.0 t/min, empty in 2.7 min[0m
+#31 money 4588 bal 156 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 4.7 t left, falling 1.0 t/min, empty in 4.5 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.2 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] wood: 9.0 t left, falling 2.3 t/min, empty in 3.9 min[0m
+#32 money 4621 bal 157 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 4.7 t left, falling 1.0 t/min, empty in 4.6 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+#33 money 4621 bal 157 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 4.2 t left, falling 1.3 t/min, empty in 3.3 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+#34 money 4654 bal 157 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+#35 money 4654 bal 157 | 1 options -> street p=1.00 conf=1.00 | road of 6 tiles: built 6 of 6; paid gold 30 tools 0 t wood 0 t bricks 0 t | 1.7s
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#36 money 4657 bal 157 | 1 options -> street p=1.00 conf=1.00 | road of 5 tiles: built 5 of 5; paid gold 25 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] food: 4.2 t left, falling 1.2 t/min, empty in 3.6 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#37 money 4665 bal 159 | 1 options -> street p=1.00 conf=1.00 | road of 4 tiles: built 4 of 4; paid gold 20 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] food: 4.2 t left, falling 1.1 t/min, empty in 3.7 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#38 money 4645 bal 162 | 1 options -> street p=1.00 conf=1.00 | road of 6 tiles: built 6 of 6; paid gold 30 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] food: 3.8 t left, falling 1.3 t/min, empty in 2.9 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#39 money 4648 bal 161 | 1 options -> street p=1.00 conf=1.00 | road of 5 tiles: built 5 of 5; paid gold 25 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] food: 3.8 t left, falling 1.3 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+#40 money 4623 bal 161 | 1 options -> street p=1.00 conf=1.00 | road of 4 tiles: built 4 of 4; paid gold 20 tools 0 t wood 0 t bricks 0 t | 1.8s
+[93m  [RUNOUT] food: 3.3 t left, falling 1.3 t/min, empty in 2.5 min[0m
+#41 money 4636 bal 162 | 1 options -> street p=1.00 conf=1.00 | road of 4 tiles: built 4 of 4; paid gold 20 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] food: 2.8 t left, falling 2.0 t/min, empty in 1.4 min[0m
+#42 money 4649 bal 162 | 1 options -> street p=1.00 conf=1.00 | road of 4 tiles: built 4 of 4; paid gold 20 tools 0 t wood 0 t bricks 0 t | 1.6s
+[93m  [RUNOUT] food: 2.8 t left, falling 1.8 t/min, empty in 1.6 min[0m
+#43 money 4629 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 3.3 t left, falling 1.2 t/min, empty in 2.7 min[0m
+#44 money 4663 bal 167 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 4.3 t left, falling 1.2 t/min, empty in 3.6 min[0m
+#45 money 4663 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 3.8 t left, falling 1.2 t/min, empty in 3.2 min[0m
+#46 money 4697 bal 172 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 3.3 t left, falling 1.4 t/min, empty in 2.3 min[0m
+#47 money 4732 bal 173 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#48 money 4732 bal 173 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#49 money 4767 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] food: 3.8 t left, falling 1.2 t/min, empty in 3.1 min[0m
+#50 money 4767 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] food: 3.3 t left, falling 1.3 t/min, empty in 2.6 min[0m
+#51 money 4802 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.8 t left, falling 1.5 t/min, empty in 1.8 min[0m
+#52 money 4627 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 3.8 t left, falling 1.3 t/min, empty in 2.9 min[0m
+#53 money 4627 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 3.3 t left, falling 1.3 t/min, empty in 2.5 min[0m
+#54 money 4662 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 3.3 t left, falling 1.3 t/min, empty in 2.6 min[0m
+#55 money 4662 bal 165 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  chat: Claude: Claude: Kaufe Werkzeug (100), Nahrung und Tuch.
+  chat: Claude: Verkaufe Tabakwaren, Ziegel, Holz. Angebote?
+[93m  [RUNOUT] food: 2.9 t left, falling 1.3 t/min, empty in 2.2 min[0m
+#56 money 4697 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.4 t left, falling 1.3 t/min, empty in 1.8 min[0m
+#57 money 4732 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#58 money 4732 bal 165 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.9 t left, falling 1.3 t/min, empty in 2.2 min[0m
+#59 money 4767 bal 167 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.9 t left, falling 1.1 t/min, empty in 2.6 min[0m
+#60 money 4767 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] food: 2.4 t left, falling 1.1 t/min, empty in 2.1 min[0m
+#61 money 4803 bal 170 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 1.9 t left, falling 1.9 t/min, empty in 1.0 min[0m
+#62 money 4839 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.9 t left, falling 1.1 t/min, empty in 2.6 min[0m
+#63 money 4839 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.4 t left, falling 1.7 t/min, empty in 1.4 min[0m
+#64 money 4875 bal 170 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 3.4 t left, falling 1.1 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] alcohol: 5.8 t left, falling 1.6 t/min, empty in 3.7 min[0m
+#65 money 4875 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 2.9 t left, falling 1.2 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] alcohol: 5.6 t left, falling 1.6 t/min, empty in 3.4 min[0m
+#66 money 4911 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.4 t left, falling 1.4 t/min, empty in 1.7 min[0m
+[93m  [RUNOUT] alcohol: 5.5 t left, falling 1.7 t/min, empty in 3.2 min[0m
+#67 money 4947 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.4 t left, falling 1.2 t/min, empty in 2.0 min[0m
+[93m  [RUNOUT] alcohol: 5.5 t left, falling 1.6 t/min, empty in 3.5 min[0m
+#68 money 4947 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 1.9 t left, falling 2.0 t/min, empty in 1.0 min[0m
+[93m  [RUNOUT] alcohol: 5.3 t left, falling 1.7 t/min, empty in 3.1 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#69 money 4983 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 1.9 t left, falling 1.7 t/min, empty in 1.1 min[0m
+[93m  [RUNOUT] alcohol: 5.3 t left, falling 1.6 t/min, empty in 3.2 min[0m
+#70 money 4983 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.5s
+[93m  [RUNOUT] food: 2.4 t left, falling 1.2 t/min, empty in 2.0 min[0m
+[93m  [RUNOUT] alcohol: 5.2 t left, falling 1.6 t/min, empty in 3.3 min[0m
+#71 money 5019 bal 173 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 1.9 t left, falling 1.4 t/min, empty in 1.3 min[0m
+[93m  [RUNOUT] alcohol: 5.0 t left, falling 1.7 t/min, empty in 3.0 min[0m
+#72 money 5056 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 1.9 t left, falling 1.2 t/min, empty in 1.6 min[0m
+[93m  [RUNOUT] alcohol: 5.0 t left, falling 1.6 t/min, empty in 3.0 min[0m
+#73 money 5056 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 1.3 t left, falling 2.0 t/min, empty in 0.6 min[0m
+[93m  [RUNOUT] alcohol: 4.9 t left, falling 1.7 t/min, empty in 2.9 min[0m
+#74 money 5093 bal 178 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: bricks at the limit (87.0/90 t): sold above 54 t
+[93m  [RUNOUT] food: 1.8 t left, falling 1.5 t/min, empty in 1.2 min[0m
+[93m  [RUNOUT] alcohol: 4.8 t left, falling 1.7 t/min, empty in 2.9 min[0m
+#75 money 5129 bal 176 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] food: 1.8 t left, falling 1.2 t/min, empty in 1.5 min[0m
+[93m  [RUNOUT] alcohol: 4.8 t left, falling 1.6 t/min, empty in 3.0 min[0m
+#76 money 5129 bal 176 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  [RUNOUT] food: 1.3 t left, falling 1.5 t/min, empty in 0.9 min[0m
+[93m  [RUNOUT] alcohol: 4.6 t left, falling 1.7 t/min, empty in 2.7 min[0m
+#77 money 5165 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 2.3 t left, falling 0.8 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] alcohol: 4.6 t left, falling 1.6 t/min, empty in 2.8 min[0m
+#78 money 5165 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: road of 8 tiles: built 8 of 8; paid gold 40 tools 0 t wood 0 t bricks 8 t
+[93m  [RUNOUT] food: 1.3 t left, falling 1.2 t/min, empty in 1.0 min[0m
+[93m  [RUNOUT] alcohol: 4.3 t left, falling 1.7 t/min, empty in 2.5 min[0m
+#79 money 4987 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.3s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T21:10:41; again in 5 s
+=== driver start 2026-11-09T21:10:46
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: terrain x36;)
+#1 money 5059 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 7.1s
+#2 money 5059 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#3 money 5095 bal 165 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 5131 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  efficiency: forester 50,45 at 22%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 34%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 56%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 36,33 at 4%: forest planted (forest: built 18 of 64, refused: terrain x46; paid)
+  efficiency: sugarcane_plantation 38,37 at 31%: sugarcane_field planted (sugarcane_field: built 9 of 36, refused: terrain x)
+#5 money 5068 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 6.9s
+#6 money 5068 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#7 money 5068 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#8 money 5104 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#9 money 5104 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  efficiency: forester 58,34 at 42%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#10 money 5140 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#11 money 5176 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#12 money 5176 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#13 money 5212 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#14 money 5212 bal 169 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  store: bricks at the limit (87.0/90 t): sold above 54 t
+  ruins: 4 ruin tiles cleared
+  efficiency: forester 37,21 at 46%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  chat: Claude: Claude: Zahle 150 pro t Werkzeug (bis 10 t) und 40
+  chat: Claude: pro t Nahrung. Biete dafuer auch Tabakwaren, Ziegel,
+  chat: Claude: Holz. Wer hat?
+[93m  [RUNOUT] food: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+#15 money 5170 bal 160 | 1 options -> wait p=1.00 conf=1.00 | waited | 9.5s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+#16 money 5170 bal 160 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 37,21: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: error: road of 8 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+#17 money 5206 bal 161 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.2s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+#18 money 5206 bal 161 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (sugarcane_field: built 9 of 36, refused: terrain x27; paid g)
+  alert: road of 6 tiles: built 6 of 6; paid gold 30 tools 0 t wood 0 t bricks 6 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+#19 money 5167 bal 162 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.3 t/min, empty in 0.0 min[0m
+#20 money 5203 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+#21 money 5203 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.2 t/min, empty in 0.0 min[0m
+#22 money 5239 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.2 t/min, empty in 0.0 min[0m
+#23 money 5239 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#24 money 5275 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.2 t/min, empty in 0.0 min[0m
+#25 money 5311 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T21:12:18; again in 5 s
+=== driver start 2026-11-09T21:12:23
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: terrain x36;)
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: terrain x36;)
+#1 money 5383 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.3s
+#2 money 5383 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#3 money 5419 bal 166 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 5455 bal 167 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+  efficiency: forester 50,45 at 20%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 32%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 58,34 at 27%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 28%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 36,33 at 4%: forest planted (forest: built 18 of 64, refused: terrain x46; paid)
+  efficiency: forester 37,21 at 47%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 38,37 at 13%: sugarcane_field planted (sugarcane_field: built 9 of 36, refused: terrain x)
+#5 money 5288 bal 159 | 1 options -> wait p=1.00 conf=1.00 | waited | 12.0s
+#6 money 5288 bal 159 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: error: road of 8 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#7 money 5288 bal 159 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#8 money 5324 bal 160 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: error: road of 6 tiles: built 0 of 2, refused: terrain x2; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#9 money 5360 bal 125 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  store: bricks at the limit (90.0/90 t): sold above 54 t
+#10 money 5360 bal 91 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: error: road of 4 tiles: built 0 of 1, refused: terrain x1; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#11 money 5381 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.3s
+#12 money 5381 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: error: no road path between those tiles (both ends must be land a road may take: ground, forest, road; not beach, rock or buildings)
+#13 money 5402 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 1.3 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 5.9 t left, falling 1.8 t/min, empty in 3.4 min[0m
+#14 money 5423 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: road of 3 tiles: built 3 of 3; paid gold 15 tools 0 t wood 0 t bricks 3 t
+  store: bricks at the limit (87.0/90 t): sold above 54 t
+[93m  [RUNOUT] food: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 5.8 t left, falling 1.7 t/min, empty in 3.5 min[0m
+#15 money 5429 bal 72 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+[93m  [RUNOUT] food: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 5.8 t left, falling 1.7 t/min, empty in 3.5 min[0m
+#16 money 5429 bal 72 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 1.1 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 5.8 t left, falling 1.6 t/min, empty in 3.7 min[0m
+#17 money 5429 bal 72 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] food: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+[93m  [RUNOUT] alcohol: 5.7 t left, falling 1.6 t/min, empty in 3.6 min[0m
+#18 money 5450 bal 73 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#19 money 5471 bal 73 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: bricks at the limit (87.0/90 t): sold above 54 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+#20 money 5492 bal 74 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  alert: road of 3 tiles: built 2 of 3, refused: terrain x1; paid gold 10 tools 0 t wood 0 t bricks 2 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.9 t/min, empty in 0.0 min[0m
+#21 money 5482 bal 75 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+#22 money 5482 bal 75 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+[93m  [RUNOUT] food: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+#23 money 5503 bal 75 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.8 t/min, empty in 0.0 min[0m
+#24 money 5524 bal 75 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: ? forester 36,13: planted forest (error: forest: built 0 of 64, refused: outside the city x1 t)
+  alert: fishers_hut at 60,26: road of 1 new tiles over 4 tiles to the network, 2 of 2 piers (2 t bricks each)
+[93m  [RUNOUT] food: 0.0 t left, falling 0.7 t/min, empty in 0.0 min[0m
+#25 money 5409 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 5.5s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.7 t/min, empty in 0.0 min[0m
+#26 money 5409 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#27 money 5429 bal 71 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+#28 money 5449 bal 72 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+#29 money 5169 bal 54 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+#30 money 5189 bal 55 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  alert: road of 3 tiles: built 2 of 3, refused: terrain x1; paid gold 10 tools 0 t wood 0 t bricks 2 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+#31 money 5199 bal 55 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+#32 money 5199 bal 55 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.6 t/min, empty in 0.0 min[0m
+#33 money 5219 bal 56 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  chat: ClaudeJev: houses - built 1 houses
+[93m  [RUNOUT] food: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#34 money 5219 bal 56 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+#35 money 5239 bal 56 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+#36 money 5239 bal 56 | 1 options -> sell_wood p=1.00 conf=1.00 | wood: selling, buy price 22, sell price 15, buy up to 25 t, sell above 20 t | 1.6s
+  alert: road of 3 tiles: built 1 of 3, refused: terrain x2; paid gold 5 tools 0 t wood 0 t bricks 1 t
+#37 money 5254 bal 57 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#38 money 5274 bal 58 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] food: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#39 money 5274 bal 58 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  store: bricks at the limit (89.0/90 t): sold above 54 t
+  efficiency: forester 36,13 at 46%: forest planted (error: forest: built 0 of 64, refused: outside the)
+  network: fishers_hut at 48,53: road of 2 new tiles over 3 tiles to the network
+[93m  [RUNOUT] food: 0.0 t left, falling 0.4 t/min, empty in 0.0 min[0m
+#40 money 5212 bal 108 | 1 options -> wait p=1.00 conf=1.00 | waited | 5.7s
+  alert: road of 3 tiles: built 3 of 3; paid gold 15 tools 0 t wood 0 t bricks 3 t
+[93m  [RUNOUT] food: 0.0 t left, falling 0.4 t/min, empty in 0.0 min[0m
+#41 money 5197 bal 109 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#42 money 5197 bal 109 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#43 money 5225 bal 109 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#44 money 5253 bal 110 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  store: bricks at the limit (87.0/90 t): sold above 54 t
+#45 money 5281 bal 111 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#46 money 5281 bal 111 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: road of 2 tiles: built 1 of 2, refused: terrain x1; paid gold 5 tools 0 t wood 0 t bricks 1 t
+#47 money 5304 bal 111 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+#48 money 5304 bal 111 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#49 money 5332 bal 111 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  store: wood at the limit (87.0/90 t): sold above 54 t
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+#50 money 5360 bal 133 | 1 options -> wait p=1.00 conf=1.00 | waited | 2.9s
+#51 money 5360 bal 133 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#52 money 5360 bal 148 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: road of 2 tiles: built 1 of 2, refused: terrain x1; paid gold 5 tools 0 t wood 0 t bricks 1 t
+#53 money 5389 bal 149 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.5s
+#54 money 5423 bal 150 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: road of 2 tiles: built 1 of 2, refused: terrain x1; paid gold 5 tools 0 t wood 0 t bricks 1 t
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+#55 money 5453 bal 152 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+#56 money 5453 bal 152 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#57 money 5453 bal 153 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#58 money 5488 bal 154 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: road of 2 tiles: built 1 of 2, refused: terrain x1; paid gold 5 tools 0 t wood 0 t bricks 1 t
+#59 money 5238 bal 135 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  store: wood at the limit (87.0/90 t): sold above 54 t
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+#60 money 5273 bal 135 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+  alert: road of 18 tiles: built 14 of 18, refused: terrain x4; paid gold 70 tools 0 t wood 0 t bricks 14 t
+[93m  [RUNOUT] alcohol: 5.2 t left, falling 1.1 t/min, empty in 4.9 min[0m
+#61 money 5203 bal 136 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] alcohol: 5.2 t left, falling 1.0 t/min, empty in 5.0 min[0m
+#62 money 5203 bal 136 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 5.0 t left, falling 1.1 t/min, empty in 4.6 min[0m
+#63 money 5238 bal 141 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.9 t left, falling 1.6 t/min, empty in 3.0 min[0m
+#64 money 5273 bal 141 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.4s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+[93m  [RUNOUT] alcohol: 4.7 t left, falling 1.7 t/min, empty in 2.8 min[0m
+#65 money 5308 bal 142 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] food: 0.6 t left, falling 0.2 t/min, empty in 3.0 min[0m
+[93m  [RUNOUT] alcohol: 4.7 t left, falling 1.6 t/min, empty in 2.9 min[0m
+#66 money 5308 bal 142 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.7 t left, falling 1.6 t/min, empty in 3.0 min[0m
+#67 money 5308 bal 145 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.6 t left, falling 1.6 t/min, empty in 2.9 min[0m
+#68 money 5344 bal 146 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.4 t left, falling 1.7 t/min, empty in 2.6 min[0m
+#69 money 5380 bal 147 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (87.0/90 t): sold above 54 t
+[93m  [RUNOUT] alcohol: 4.3 t left, falling 1.7 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] tools: 1.0 t left, falling 0.5 t/min, empty in 2.0 min[0m
+#70 money 5416 bal 149 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] alcohol: 4.3 t left, falling 1.7 t/min, empty in 2.6 min[0m
+[93m  [RUNOUT] tools: 1.0 t left, falling 0.5 t/min, empty in 2.0 min[0m
+#71 money 5416 bal 149 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 4.3 t left, falling 1.6 t/min, empty in 2.8 min[0m
+[93m  [RUNOUT] tools: 1.0 t left, falling 0.5 t/min, empty in 2.0 min[0m
+#72 money 5416 bal 149 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.1 t left, falling 1.7 t/min, empty in 2.5 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#73 money 5452 bal 151 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.0 t left, falling 1.7 t/min, empty in 2.4 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#74 money 5488 bal 151 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (87.0/90 t): sold above 54 t
+[93m  [RUNOUT] alcohol: 4.8 t left, falling 1.2 t/min, empty in 3.9 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 1.0 t/min, empty in 0.0 min[0m
+#75 money 5525 bal 155 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] alcohol: 4.8 t left, falling 1.2 t/min, empty in 3.9 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#76 money 5525 bal 155 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.8 t left, falling 1.2 t/min, empty in 4.2 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#77 money 5525 bal 156 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 4.7 t left, falling 1.2 t/min, empty in 3.9 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#78 money 5562 bal 158 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.5 t left, falling 1.2 t/min, empty in 3.7 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#79 money 5599 bal 158 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+[93m  [RUNOUT] alcohol: 4.4 t left, falling 1.2 t/min, empty in 3.6 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#80 money 5636 bal 160 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+[93m  [RUNOUT] alcohol: 4.4 t left, falling 1.2 t/min, empty in 3.6 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#81 money 5636 bal 160 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 4.4 t left, falling 1.2 t/min, empty in 3.7 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#82 money 5636 bal 162 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.2 t left, falling 1.2 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#83 money 5673 bal 165 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 4.1 t left, falling 1.2 t/min, empty in 3.4 min[0m
+[93m  [RUNOUT] tools: 0.0 t left, falling 0.5 t/min, empty in 0.0 min[0m
+#84 money 5711 bal 168 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the driver's code changed: ending, the runner starts the new one[0m
+=== driver ended (exit 3) 2026-11-09T21:16:54; again in 5 s
+=== driver start 2026-11-09T21:16:59
+  opening: home island 14, Kontor at 61,41
+islands: [14]
+plan for crops ['grain', 'sugar'] (half ['tobacco', 'wine']): 5 stages
+  alert: ? sugarcane_plantation 35,30: planted sugarcane_field (sugarcane_field: built 9 of 36, refused: terrain x27; paid g)
+  alert: ? sugarcane_plantation 38,37: planted sugarcane_field (error: sugarcane_field: built 0 of 36, refused: terrain x36;)
+#1 money 5742 bal 170 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.3s
+#2 money 5780 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#3 money 5780 bal 171 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#4 money 5819 bal 173 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  efficiency: forester 50,45 at 35%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 50,41 at 25%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: sugarcane_plantation 35,30 at 19%: sugarcane_field planted (error: sugarcane_field: built 0 of 36, refused: te)
+  efficiency: forester 36,33 at 4%: forest planted (forest: built 18 of 64, refused: terrain x46; paid)
+  efficiency: sugarcane_plantation 38,37 at 26%: sugarcane_field planted (sugarcane_field: built 9 of 36, refused: terrain x)
+#5 money 5480 bal 155 | 1 options -> wait p=1.00 conf=1.00 | waited | 9.4s
+#6 money 5480 bal 155 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#7 money 5519 bal 158 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#8 money 5519 bal 159 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: ? forester 50,45: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: ? forester 50,41: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+#9 money 5597 bal 162 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (89.0/90 t): sold above 54 t
+#10 money 5597 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+  alert: error: road of 8 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#11 money 5597 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#12 money 5636 bal 163 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: error: road of 6 tiles: built 0 of 2, refused: terrain x2; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#13 money 5675 bal 164 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#14 money 5675 bal 165 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: error: road of 4 tiles: built 0 of 1, refused: terrain x1; paid gold 0 tools 0 t wood 0 t bricks 0 t
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (89.0/90 t): sold above 54 t
+  efficiency: forester 58,34 at 47%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+  efficiency: forester 36,13 at 46%: forest planted (error: forest: built 0 of 64, refused: outside the)
+#15 money 5753 bal 167 | 1 options -> wait p=1.00 conf=1.00 | waited | 6.9s
+#16 money 5753 bal 167 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: error: no road path between those tiles (both ends must be land a road may take: ground, forest, road; not beach, rock or buildings)
+#17 money 5793 bal 170 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+#18 money 5793 bal 170 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: ? forester 58,34: planted forest (error: forest: built 0 of 64, refused: terrain x64; paid gol)
+  alert: error: road of 3 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#19 money 5833 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (90.0/90 t): sold above 54 t
+#20 money 5873 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+  alert: error: road of 3 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#21 money 5873 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#22 money 5913 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: error: road of 3 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#23 money 5913 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#24 money 5953 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: error: road of 3 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (90.0/90 t): sold above 54 t
+  efficiency: forester 37,21 at 41%: forest planted (error: forest: built 0 of 64, refused: terrain x64)
+#25 money 5993 bal 176 | 1 options -> wait p=1.00 conf=1.00 | waited | 5.7s
+#26 money 6033 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  alert: error: road of 3 tiles: built 0 of 3, refused: terrain x3; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#27 money 6033 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#28 money 6073 bal 178 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: error: road of 2 tiles: built 0 of 2, refused: terrain x2; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#29 money 6113 bal 178 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (90.0/90 t): sold above 54 t
+#30 money 5873 bal 161 | 1 options -> wait p=1.00 conf=1.00 | waited | 5.6s
+  alert: error: road of 2 tiles: built 0 of 2, refused: terrain x2; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#31 money 5873 bal 161 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#32 money 5913 bal 172 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.1s
+  alert: error: road of 2 tiles: built 0 of 1, refused: terrain x1; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#33 money 5955 bal 173 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.6s
+#34 money 5955 bal 173 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: error: road of 2 tiles: built 0 of 2, refused: terrain x2; paid gold 0 tools 0 t wood 0 t bricks 0 t
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (90.0/90 t): sold above 54 t
+#35 money 5997 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 5.2s
+#36 money 5997 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  alert: error: road of 18 tiles: built 0 of 8, refused: terrain x8; paid gold 0 tools 0 t wood 0 t bricks 0 t
+#37 money 6039 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 4.2s
+#38 money 6071 bal 174 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#39 money 6113 bal 175 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+#40 money 6113 bal 176 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+#41 money 6155 bal 176 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+#42 money 6155 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 4.2 t left, falling 1.0 t/min, empty in 4.3 min[0m
+#43 money 6197 bal 177 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 4.1 t left, falling 1.4 t/min, empty in 2.9 min[0m
+#44 money 6239 bal 178 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+  store: bricks at the limit (88.0/90 t): sold above 54 t
+[93m  [RUNOUT] alcohol: 3.9 t left, falling 1.5 t/min, empty in 2.7 min[0m
+#45 money 6281 bal 179 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.0s
+[93m  [RUNOUT] alcohol: 3.9 t left, falling 1.4 t/min, empty in 2.7 min[0m
+#46 money 6281 bal 179 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  [RUNOUT] alcohol: 3.9 t left, falling 1.4 t/min, empty in 2.7 min[0m
+#47 money 6281 bal 179 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 3.8 t left, falling 1.4 t/min, empty in 2.8 min[0m
+#48 money 6323 bal 179 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  alert: road of 17 tiles: built 17 of 17; paid gold 85 tools 0 t wood 0 t bricks 17 t
+[93m  [RUNOUT] alcohol: 3.6 t left, falling 1.4 t/min, empty in 2.5 min[0m
+#49 money 6280 bal 180 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.7s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+[93m  [RUNOUT] alcohol: 3.6 t left, falling 1.4 t/min, empty in 2.5 min[0m
+#50 money 6280 bal 181 | 1 options -> wait p=1.00 conf=1.00 | waited | 1.8s
+[93m  [RUNOUT] alcohol: 3.4 t left, falling 1.4 t/min, empty in 2.4 min[0m
+#51 money 6322 bal 181 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  [RUNOUT] alcohol: 3.4 t left, falling 1.4 t/min, empty in 2.5 min[0m
+#52 money 6322 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.4 t/min, empty in 2.4 min[0m
+#53 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.8 t/min, empty in 1.8 min[0m
+#54 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.7 t/min, empty in 1.9 min[0m
+#55 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.5s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.7 t/min, empty in 1.9 min[0m
+#56 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.7 t/min, empty in 1.9 min[0m
+#57 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.7 t/min, empty in 2.0 min[0m
+#58 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.6 t/min, empty in 2.1 min[0m
+#59 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+  store: wood at the limit (90.0/90 t): sold above 54 t
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.5 t/min, empty in 2.1 min[0m
+#60 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 3.6s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.5 t/min, empty in 2.2 min[0m
+#61 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.5 t/min, empty in 2.2 min[0m
+#62 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.4 t/min, empty in 2.4 min[0m
+#63 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.2s
+[93m  the game was paused: resumed[0m
+[93m  [RUNOUT] alcohol: 3.3 t left, falling 1.4 t/min, empty in 2.4 min[0m
+#64 money 6364 bal 182 | 1 options -> wait p=1.00 conf=1.00 | waited | 0.3s

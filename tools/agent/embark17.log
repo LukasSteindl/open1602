@@ -1,0 +1,75 @@
+board [57] board: ordered
+go [56, 58, 108, 109, 136, 137, 138, 139, 140] units-go: ordered
+board [57, 58, 108, 109] board: ordered
+go [56, 136, 137, 138, 139, 140] units-go: ordered
+board [57, 108, 109] board: ordered
+go [136, 137, 138, 139, 140] units-go: ordered
+board [56, 57, 108, 109] board: ordered
+go [136, 137, 138, 139, 140] units-go: ordered
+board [57, 108, 109] board: ordered
+go [136, 137, 138, 139, 140, 167, 168, 169] units-go: ordered
+board [57, 108, 109] board: ordered
+go [136, 137, 138, 139, 140, 167, 169] units-go: ordered
+board [57, 108, 109, 168] board: ordered
+go [136, 137, 138, 139, 140, 167] units-go: ordered
+board [57, 108, 109, 169] board: ordered
+go [136, 137, 138, 139, 140, 167] units-go: ordered
+board [57, 108, 109] board: ordered
+go [136, 137, 138, 139, 140, 167] units-go: ordered
+board [57, 108, 109, 140] board: ordered
+go [136, 138, 169] units-go: ordered
+board [57, 108, 109, 137, 139, 140, 167] board: ordered
+go [136, 169] units-go: ordered
+board [57, 108, 109, 137, 138, 139, 140, 167] board: ordered
+go [169] units-go: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167] board: ordered
+go [169] units-go: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+go [206, 207, 208, 209] units-go: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169] board: ordered
+go [208, 209] units-go: ordered
+board [57, 108, 109, 136, 137, 138, 139, 140, 167, 169, 207] board: ordered
+go [208, 209] units-go: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207] board: ordered
+go [208] units-go: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 209] board: ordered
+go [208] units-go: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 209] board: ordered
+go [208] units-go: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 209] board: ordered
+go [208] units-go: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+board [57, 68, 108, 109, 136, 137, 138, 139, 140, 167, 169, 206, 207, 208, 209] board: ordered
+ship 24 "Reliance" figure 25 at world 231,104 idle, health 2080, cannons 8
+  lies at the Kontor of island 17 city 0 (yours)
+  cargo: 25 50.0 t; 25 50.0 t; 25 50.0 t; (3 holds)
+ship 25 "Roll Off" figure 21 at world 238,131 moving, health 1600, cannons 0
+  cargo: empty (4 holds)
+ship 26 "Rosinante" fi
+left on land: [(57, 17, 26, False), (68, 16, 26, False), (108, 18, 28, False), (109, 16, 26, False), (110, 35, 36, True), (136, 16, 26, False), (137, 16, 26, False), (138, 16, 26, False), (139, 16, 26, False), (140, 17, 26, False), (167, 16, 26, False), (169, 16, 26, False), (206, 16, 26, False), (207, 16, 26, False), (208, 16, 26, False), (209, 16, 26, False)]

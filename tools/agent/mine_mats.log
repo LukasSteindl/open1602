@@ -1,0 +1,10 @@
+kap True
+loaded 20.0 t of tools loaded 40.0 t of wood loaded 13.0 t of bricks
+keln True
+unloaded 20.0 t of tools
+unloaded 40.0 t of wood
+unloaded 13.0 t of bricks
+gold_mine: built 1 of 1; paid gold 1000 tools 10 t wood 20 t bricks 5 t
+gold_mine at 8,5: road of 4 new tiles over 5 tiles to the network
+ tools 13.0; wood 20.0; bricks 18.0;
+houses by class: 0/0/0/0/0; without market 

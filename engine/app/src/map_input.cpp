@@ -290,6 +290,9 @@ ui::KeyBindings MapInput::default_keys() {
     general(chord(SDLK_K, true), KeyAction::ShowCoordinates);
     general(chord(SDLK_M), KeyAction::ShowUnitArms);
     general(chord(SDLK_R, true, true), KeyAction::ReloadPackages);
+    general(chord(SDLK_A, true, true), KeyAction::Autoplay);
+    general(chord(SDLK_C, true, true), KeyAction::CameraHold);
+    general(chord(SDLK_P, true, true), KeyAction::AgentBox);
     general(chord(SDLK_F11), KeyAction::Fullscreen);
     general(ui::KeyChord{static_cast<std::int32_t>(SDLK_RETURN), false, false, true}, KeyAction::Fullscreen);
     general(chord(SDLK_Q, true), KeyAction::Quit);
@@ -1093,6 +1096,15 @@ void MapInput::run_action(const ui::KeyBinding& b) {
             break;
         case KeyAction::ShowOwners:
             m_host.toggle_owners();
+            break;
+        case KeyAction::Autoplay:
+            m_host.toggle_autoplay();
+            break;
+        case KeyAction::CameraHold:
+            m_host.toggle_camera_hold();
+            break;
+        case KeyAction::AgentBox:
+            m_host.toggle_agent_box();
             break;
         case KeyAction::ShowFertility:
             m_host.toggle_fertility();

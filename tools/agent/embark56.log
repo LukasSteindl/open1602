@@ -1,0 +1,58 @@
+board [167] board: ordered
+go [255] units-go: ordered
+go [169, 209, 255] units-go: ordered
+board [169, 209] board: ordered
+go [139, 255] units-go: ordered
+board [139] board: ordered
+go [68, 110, 255] units-go: ordered
+board [68, 110] board: ordered
+go [108, 167, 255] units-go: ordered
+board [108, 167] board: ordered
+go [255] units-go: ordered
+go [109, 139, 209, 255] units-go: ordered
+board [109, 139, 209] board: ordered
+go [169, 255] units-go: ordered
+board [169] board: ordered
+go [109, 255] units-go: ordered
+board [109] board: ordered
+go [140, 255] units-go: ordered
+board [140] board: ordered
+go [167, 209, 255] units-go: ordered
+board [167, 209] board: ordered
+go [68, 169, 208, 255] units-go: ordered
+board [68, 169, 208] board: ordered
+go [255] units-go: ordered
+go [109, 255] units-go: ordered
+board [109] board: ordered
+go [68, 139, 255] units-go: ordered
+board [68, 139] board: ordered
+go [255] units-go: ordered
+go [140, 255] units-go: ordered
+board [140] board: ordered
+go [57, 209, 255] units-go: ordered
+board [57, 209] board: ordered
+go [255] units-go: ordered
+go [255] units-go: ordered
+go [110, 255] units-go: ordered
+board [110] board: ordered
+go [57, 109, 140, 255] units-go: ordered
+board [57, 109, 140] board: ordered
+go [255] units-go: ordered
+go [68, 255] units-go: ordered
+board [68] board: ordered
+go [57, 139, 167, 255] units-go: ordered
+board [57, 139, 167] board: ordered
+go [110, 255] units-go: ordered
+board [110] board: ordered
+go [167, 255] units-go: ordered
+board [167] board: ordered
+go [209, 255] units-go: ordered
+board [209] board: ordered
+go [57, 169, 255] units-go: ordered
+board [57, 169] board: ordered
+go [255] units-go: ordered
+ship 56 "Milan" figure 25 at world 232,309 idle, health 2080, cannons 8
+  lies at the Kontor of island 5 city 0 (foreign)
+  cargo: empty (3 holds)
+
+left on land: [(57, 42, 38, True), (68, 32, 35, True), (108, 41, 38, True), (109, 42, 38, True), (110, 40, 38, True), (139, 25, 45, False), (140, 45, 39, True), (167, 35, 36, True), (169, 37, 38, True), (208, 35, 35, True), (209, 25, 45, False), (255, 57, 17, False)]

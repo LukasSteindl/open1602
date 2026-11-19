@@ -26,6 +26,10 @@ struct ViewerOptions {
     std::filesystem::path save;        ///< save the game before exiting (.o1602, or .gam for the original)
     render::Zoom zoom = render::Zoom::Large;
     bool show_owners = false;  ///< start with the ownership view
+    /// The computer plays the own slot from the start (--autoplay; Ctrl+Shift+A switches back).
+    bool autoplay = false;
+    /// Listen for text commands on 127.0.0.1:control_port (--control; 0: no); the game starts paused.
+    std::uint16_t control_port = 0;
     /// Show figures at the smallest zoom level from half-size graphics of the middle level (the
     /// original shows none there). Off: only the sheets the original has.
     bool derive_small_figures = true;

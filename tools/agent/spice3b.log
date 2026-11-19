@@ -1,0 +1,7 @@
+48 unloaded 20.0 t of tools
+48 unloaded 14.0 t of wood
+Traceback (most recent call last):
+  File "C:\Users\LUKASS~1\AppData\Local\Temp\claude\583017d337738eb4\825eb81d-e4e5-48a5-b382-a199b0d5edbb\scratchpad\spice3b.py", line 8, in <module>
+    if j.ctl("ship-move", 54, k[0] + r, k[1])[0] == 0:
+                              ~^^^
+TypeError: 'NoneType' object is not subscriptable

@@ -487,6 +487,16 @@ core::Result<std::unique_ptr<MapViewer>> MapViewer::create(const assets::GameDir
     viewer->m_sound->set_listener([self = viewer.get()](MessageId message, std::uint16_t flags,
                                                         std::optional<std::pair<double, double>> tile,
                                                         std::optional<sim::PlayerId> about, std::string_view text) {
+        if (self->m_control) {
+            // The control port reports what the game announced since the last `advance`.
+            std::string line = text.empty() ? "message " + std::to_string(static_cast<int>(message)) : std::string(text);
+            if ((flags & audio::kMessageNormalSpeed) != 0 && self->m_state->simulation.speed() > 1) {
+                line += " (the game went back to speed x1)";
+            }
+            if (self->m_control_messages.size() < 40) {
+                self->m_control_messages.push_back(std::move(line));
+            }
+        }
         if ((flags & audio::kMessageNormalSpeed) != 0 && self->m_state->simulation.speed() > 1 &&
             (!self->m_session || self->host_session() != nullptr) &&
             slows_down(self->m_app_settings.display.event_speed, message)) {
@@ -569,6 +579,20 @@ core::Result<std::unique_ptr<MapViewer>> MapViewer::create(const assets::GameDir
         viewer->m_input->selection_changed(false);
         viewer->m_camera.center_on(render::TilePos{static_cast<std::uint32_t>(std::max(0.0, s.x())),
                                                    static_cast<std::uint32_t>(std::max(0.0, s.y()))});
+    }
+    if (options.autoplay) {
+        viewer->set_autoplay(true);
+    }
+    if (options.control_port != 0) {
+        auto server = ControlServer::start(options.control_port);
+        if (!server) {
+            return server.error();
+        }
+        viewer->m_control = std::move(*server);
+        if (!options.multiplayer) {
+            viewer->control_pause(true);  // the agent's turn: the game waits for `advance`
+        }  // a multiplayer game runs for everyone: the agents act while it runs
+        std::fprintf(stderr, "control: listening on 127.0.0.1:%u\n", static_cast<unsigned>(options.control_port));
     }
     viewer->start_preloading();
     // The menu draws no world: its sprites are made while the player chooses, and a quit from the
@@ -1118,6 +1142,7 @@ void MapViewer::update(std::uint32_t delta_ms) {
     }
     apply_construction();
     autosave_if_due();
+    serve_control();
 }
 
 namespace {
@@ -1152,8 +1177,11 @@ void MapViewer::autosave_if_due() {
     // and writing the file read nothing of the game and run on a thread of their own.
     const auto started = std::chrono::steady_clock::now();
     const auto target = prepare_save(slot_file(save_folder(), kLastGameSlot));
-    auto sections = target ? sim::encode_game(m_state->world, m_buildings, &m_state->simulation)
-                           : core::Result<core::Bytes>(target.error());
+    auto sections = [&] {
+        const HumanWhileSaving human(*this);
+        return target ? sim::encode_game(m_state->world, m_buildings, &m_state->simulation)
+                      : core::Result<core::Bytes>(target.error());
+    }();
     if (!sections) {
         std::fprintf(stderr, "autosave: %s\n", sections.error().message.c_str());
         return;
@@ -2250,8 +2278,119 @@ void MapViewer::draw_unit_arms() {
 
 void MapViewer::draw_corner_info() {
     const bool cheat_line = m_input != nullptr && m_input->cheats().open();
-    if (m_hud == nullptr || (!m_show_fps && !m_show_coordinates && !cheat_line)) {
+    const bool one_line = m_agent_box_mode == 0;
+    const bool agent = one_line ? !m_agent_last.empty()
+                                : m_agent_box_mode == 1 && (!m_agent_plan.empty() || !m_agent_steps.empty());
+    // A multiplayer game: who plays which colour, at the map's top right, in every player's window
+    // (what the lobby shows anyway): a stream of several windows side by side tells them apart.
+    std::vector<std::pair<std::string, assets::Rgba>> named;
+    if (m_session && m_state && !in_menu()) {
+        const sim::World& world = m_state->world;
+        for (std::size_t i = 0; i < world.players().size(); ++i) {
+            const sim::Player& p = world.players()[i];
+            const auto id = static_cast<sim::PlayerId>(i);
+            const bool settled = std::any_of(world.cities().begin(), world.cities().end(),
+                                             [id](const sim::City& c) { return c.owner == id; });
+            if (p.role != sim::PlayerRole::Human || !p.active() || (!settled && id != m_local_player)) {
+                continue;  // a referee hosting without a city of its own stays out
+            }
+            const render::Banner* b = m_banners.get(p.banner);
+            named.emplace_back((id == m_local_player ? "> " : "  ") + p.name,
+                               b != nullptr ? b->colour : assets::Rgba{255, 255, 255, 255});
+        }
+    }
+    if (m_hud == nullptr || (!m_show_fps && !m_show_coordinates && !cheat_line && !agent && named.empty())) {
         return;
+    }
+    std::vector<ui::DrawItem> agent_items;
+    if (!named.empty()) {
+        const ui::Rect& v = m_hud->game_view();
+        const double scale = m_hud->scale();
+        const std::int32_t line_h = ui::to_pixels(16, scale);
+        const std::int32_t pad = ui::to_pixels(6, scale);
+        const std::int32_t swatch = ui::to_pixels(10, scale);
+        ui::DrawItem box;
+        box.kind = ui::DrawItem::Kind::Fill;
+        box.w = ui::to_pixels(150, scale);
+        box.h = static_cast<std::int32_t>(named.size()) * line_h + 2 * pad;
+        // Bottom right: the agent's line takes the top, the chat box the bottom left.
+        box.x = v.x + v.w - box.w - ui::to_pixels(8, scale);
+        box.y = v.y + v.h - box.h - ui::to_pixels(8, scale);
+        box.colour = ui::rgb_ink(assets::Rgba{20, 24, 32, 255});
+        agent_items.push_back(box);
+        std::int32_t y = box.y + pad;
+        for (auto& [name, colour] : named) {
+            ui::DrawItem mark;
+            mark.kind = ui::DrawItem::Kind::Fill;
+            mark.x = box.x + pad;
+            mark.y = y + (line_h - swatch) / 2;
+            mark.w = swatch;
+            mark.h = swatch;
+            mark.colour = ui::rgb_ink(colour);
+            agent_items.push_back(mark);
+            ui::DrawItem d;
+            d.kind = ui::DrawItem::Kind::Text;
+            d.block = 1;
+            d.colour = 0;
+            d.align = ui::Align::Left;
+            d.x = mark.x + swatch + pad;
+            d.y = y + line_h - ui::to_pixels(3, scale);
+            d.text = std::move(name);
+            agent_items.push_back(std::move(d));
+            y += line_h;
+        }
+    }
+    if (agent) {
+        // The agent's plan and steps (control port): a dark box at the map's top left.
+        const ui::Rect& v = m_hud->game_view();
+        const double scale = m_hud->scale();
+        std::vector<std::pair<std::string, std::int32_t>> rows;  // text, palette colour of the font
+        if (one_line) {
+            // One line, nothing more (user): the last action, cut to what fits.
+            std::string last = m_agent_last;
+            if (last.size() > 110) {
+                last = last.substr(0, 107) + "...";
+            }
+            rows.emplace_back(std::move(last), 0);
+        } else if (!m_agent_plan.empty()) {
+            rows.emplace_back("PLAN", 0);
+            for (const std::string& p : m_agent_plan) {
+                rows.emplace_back(p, 0);
+            }
+        }
+        if (!one_line && !m_agent_steps.empty()) {
+            rows.emplace_back("NOW", 0);
+            for (const std::string& s : m_agent_steps) {
+                rows.emplace_back(s, 0);
+            }
+        }
+        const std::int32_t line_h = ui::to_pixels(14, scale);
+        const std::int32_t pad = ui::to_pixels(6, scale);
+        ui::DrawItem box;
+        box.kind = ui::DrawItem::Kind::Fill;
+        box.x = v.x + ui::to_pixels(8, scale);
+        box.y = v.y + ui::to_pixels(40, scale);
+        box.w = one_line ? std::min(v.w - ui::to_pixels(16, scale), ui::to_pixels(820, scale))
+                         : std::min(v.w / 2, ui::to_pixels(470, scale));
+        box.h = static_cast<std::int32_t>(rows.size()) * line_h + 2 * pad;
+        box.colour = ui::rgb_ink(assets::Rgba{20, 24, 32, 255});
+        agent_items.push_back(box);
+        std::int32_t y = box.y + pad + line_h - ui::to_pixels(2, scale);
+        for (auto& [text, colour] : rows) {
+            ui::DrawItem d;
+            d.kind = ui::DrawItem::Kind::Text;
+            d.block = 1;
+            d.colour = colour;
+            d.align = ui::Align::Left;
+            d.x = box.x + pad;
+            d.y = y;
+            if (text == "PLAN" || text == "NOW") {
+                d.ink = ui::rgb_ink(assets::Rgba{255, 210, 80, 255});
+            }
+            d.text = std::move(text);
+            agent_items.push_back(std::move(d));
+            y += line_h;
+        }
     }
     std::vector<std::string> lines;
     if (m_show_fps) {
@@ -2297,6 +2436,8 @@ void MapViewer::draw_corner_info() {
         d.text = m_input->cheats().line() + "_";
         items.push_back(std::move(d));
     }
+    items.insert(items.begin(), std::make_move_iterator(agent_items.begin()),
+                 std::make_move_iterator(agent_items.end()));
     m_hud->draw_over_map(items);
 }
 
@@ -2914,7 +3055,13 @@ void MapViewer::update_title(double fps) {
         m_window->set_title(ui::tr("title.editor", {name}) + (m_editor->document.modified() ? " *" : ""));
         return;
     }
-    std::string title = m_debug_title ? debug_title(fps) : "Open1602 - " + game_title();
+    // A multiplayer game: the player's name first, so that windows of several players on one
+    // computer (a stream capturing each by its title) stay apart while the rest of the title ticks.
+    std::string who;
+    if (const sim::Player* me = m_session ? m_state->world.player(m_local_player) : nullptr; me != nullptr) {
+        who = " [" + core::cp1252_to_utf8(me->name) + "]";
+    }
+    std::string title = m_debug_title ? debug_title(fps) : "Open1602" + who + " - " + game_title();
     const std::uint64_t seconds = m_state->simulation.game_time_ms() / 1000;
     char clock[32];
     std::snprintf(clock, sizeof clock, " | %02llu:%02llu:%02llu", static_cast<unsigned long long>(seconds / 3600),
@@ -3040,6 +3187,45 @@ core::Result<std::filesystem::path> MapViewer::prepare_save(const std::filesyste
     return target;
 }
 
+void MapViewer::set_autoplay(bool on) {
+    // The computer's own players act at the same point of every tick (ai::Engine::tick takes on a
+    // slot that turns Computer and leaves one that turns Human), so a game alone can hand the
+    // local slot over and take it back at any frame. In a multiplayer game every computer would
+    // have to do it at the same tick: not there.
+    sim::Player* p = m_state->world.player(m_local_player);
+    if (m_session || m_state->view_only || p == nullptr || !p->active() ||
+        (p->role != sim::PlayerRole::Human && p->role != sim::PlayerRole::Computer)) {
+        std::fputs("autoplay: only in a game alone, with an own slot\n", stderr);
+        return;
+    }
+    m_autoplay = on;
+    p->role = on ? sim::PlayerRole::Computer : sim::PlayerRole::Human;
+    std::fprintf(stderr, "autoplay: %s\n", on ? "the computer plays" : "back to you");
+    session_line(on ? ui::tr("autoplay.on") : ui::tr("autoplay.off"), {});
+}
+
+void MapViewer::set_camera_held(bool on) {
+    m_camera_held = on;
+    std::fprintf(stderr, "camera: %s\n", on ? "held by the person" : "follows the control port again");
+    session_line(on ? ui::tr("camera_hold.on") : ui::tr("camera_hold.off"), {});
+}
+
+MapViewer::HumanWhileSaving::HumanWhileSaving(MapViewer& viewer) {
+    // A savegame keeps the slot a person's: loaded, it is theirs to play (or --autoplay again).
+    if (viewer.m_autoplay) {
+        m_player = viewer.m_state->world.player(viewer.m_local_player);
+        if (m_player != nullptr) {
+            m_player->role = sim::PlayerRole::Human;
+        }
+    }
+}
+
+MapViewer::HumanWhileSaving::~HumanWhileSaving() {
+    if (m_player != nullptr) {
+        m_player->role = sim::PlayerRole::Computer;
+    }
+}
+
 core::Status MapViewer::save_game(const std::filesystem::path& path) {
     finish_autosave();  // its file must not land after this one
     const auto target = prepare_save(path);
@@ -3051,9 +3237,12 @@ core::Status MapViewer::save_game(const std::filesystem::path& path) {
     std::string ending = core::path_to_utf8(target->extension());
     std::transform(ending.begin(), ending.end(), ending.begin(),
                    [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    auto bytes = ending == ".gam" ? sim::write_savegame(m_state->world, m_buildings, &m_state->simulation)
-                                  : sim::write_game(m_state->world, m_buildings, &m_state->simulation,
-                                                    sim::SaveOptions{.compress = true, .fast = true});
+    auto bytes = [&] {
+        const HumanWhileSaving human(*this);
+        return ending == ".gam" ? sim::write_savegame(m_state->world, m_buildings, &m_state->simulation)
+                                : sim::write_game(m_state->world, m_buildings, &m_state->simulation,
+                                                  sim::SaveOptions{.compress = true, .fast = true});
+    }();
     if (!bytes) {
         return bytes.error();
     }
@@ -3885,6 +4074,7 @@ void MapViewer::adopt_state(std::unique_ptr<GameState> next, const std::filesyst
         [this](const sim::World& now) { m_ambient.tick(now, m_buildings, m_figures); });
     // In a multiplayer game the slot the host gave this computer (kNoPlayer: watching); nobody in
     // the editor's world.
+    m_autoplay = false;  // the loaded game's slots are as it was saved
     m_local_player = m_state->view_only ? sim::kNoPlayer
                      : m_session        ? m_session->local_seat()
                                         : sim::first_human_player(m_state->world);

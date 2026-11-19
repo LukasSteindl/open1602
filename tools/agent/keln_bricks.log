@@ -1,0 +1,13 @@
+drisden True
+"Dolores" figure 25 at world 231,107 moving, health 1561, cannons 8
+  lies at the Kontor of island 17 city 0 (yours)
+  cargo: wood 18.0 t; (3 holds)
+bricks loaded 20.0 t of bricks
+tools loaded 7.0 t of tools
+wood loaded 20.0 t of wood
+keln True
+unloaded 20.0 t of bricks
+unloaded 7.0 t of tools
+unloaded 38.0 t of wood
+error: goldsmith: built 0 of 1, refused: terrain x1; paid gold 0 tools 0 t wood 0 t bricks 0 t
+island 5: 8 walls, 1 towers on 51 beach tiles

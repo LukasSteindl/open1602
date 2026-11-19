@@ -1,0 +1,79 @@
+docked at Drisden
+go [68, 108, 139, 169, 208, 209, 255] units-go: ordered
+board [68, 108, 139, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+board [139, 169, 208] board: ordered
+go [255] units-go: ordered
+ship 36 "Wikkinger" figure 25 at world 231,104 idle, health 2080, cannons 8
+  lies at the Kontor of island 17 city 0 (yours)
+  cargo: 25 50.0 t; 25 50.0 t; 37 50.0 t; (3 holds)
+ship 37 "Altair" figure 25 at world 240,303 idle, health 2080, cannons 8
+  cargo: empty (3 holds)
+ship 38 "America" figure 
+left on land: [(57, 37, 38, True), (109, 38, 38, True), (110, 45, 39, True), (139, 16, 26, False), (140, 34, 35, True), (167, 39, 38, True), (169, 16, 25, False), (208, 16, 26, False), (255, 57, 17, False)]

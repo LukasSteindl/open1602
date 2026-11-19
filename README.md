@@ -184,6 +184,8 @@ Without arguments the game starts in the main menu. Some more ways to start:
 open1602 --intro                                   # the logos and the intro first, as the original
 open1602 --scenario "Szenes/Das Atoll.szs"         # a scenario of the installation
 open1602 --new-game 1 --name Merlin                # a new endless game, difficulty 0 (easy) .. 3 (hard)
+open1602 --new-game 1 --autoplay                    # the computer plays your slot (Ctrl+Shift+A: back to you)
+open1602 --new-game 1 --control 7602                # paused; text commands from o1602-ctl (o1602-ctl help)
 open1602 --savegame NAME                           # a savegame of the original by its name
 open1602 --load path/to/game.o1602                 # a savegame of Open1602
 ```
@@ -228,6 +230,82 @@ sudo ufw allow from 192.168.178.0/24 to any port 16020:16021 proto udp comment '
 A computer that only joins needs no rule to join, but its own firewall may drop the hosts' answers to
 the game search. It also needs the rule to take over the game when the host leaves (host migration).
 For players on the internet the host's router must forward port 16020.
+
+### Two agents against each other
+
+Two games on one computer, each with its own control port, play one multiplayer game: the host's
+player at port 7602 (for example the Jev driver), the joining player at port 7603 (for example Claude
+Code with `o1602-ctl --port 7603`). Both windows can stand side by side, say for a stream.
+`tools\agent\start_duel.ps1` does steps 1 and 2 (`-Load NAME` goes on with a saved game).
+
+```powershell
+# 1. the host: a new endless game for two, its player at port 7602
+$env:O1602_AUDIO_DEVICE = 'Realtek Digital'      # sound from this window only
+bin\open1602.exe --new-game 1 --players 2 --name Jev --host --control 7602 --size 940x880 --zoom 1 --no-videos
+
+# 2. the second player (a second terminal): another player ID, else the host takes it for its own
+#    player coming back and gives it the host's slot
+$env:O1602_PLAYER_ID = '00000000c1a0de02'        # 16 hex digits, for this run only
+bin\open1602.exe --join 127.0.0.1 --name Claude --control 7603 --size 940x880 --zoom 1 --no-videos --no-sound
+
+# 3. each founds a city and unloads its first ship there (the Jev driver does not do this itself
+#    and only waits while its Kontor is empty):
+bin\o1602-ctl.exe --port 7602 kontor-sites 1 13          # then: found 1 13 X Y
+bin\o1602-ctl.exe --port 7602 ship-move 1 X Y            # beside the Kontor, then:
+bin\o1602-ctl.exe --port 7602 batch unload 1 tools 30 ; unload 1 wood 30 ; unload 1 food 10
+
+# 4. the agents
+python -I tools/agent/jev_driver.py --port 7602 --state-dir tools/agent/duel --island 13 --cx 55 --cy 27 --speed 2
+bin\o1602-ctl.exe --port 7603 state             # Claude Code plays this one command by command
+```
+
+`--players 2` makes a world for the two of them (and the trader, pirates and natives); a slot nobody
+has joined yet is played by the computer until its player comes.
+
+In a multiplayer game the control port works as in a game alone, with these differences:
+
+- The game does not start paused and never pauses for the agents: `advance N` only waits N seconds of
+  game time. `pause`, `resume` and `speed` go to every player's game; the joining player may use them
+  unless the host's lobby lets only the host set the speed. `autoplay` is refused.
+- `chat TEXT` writes to every player; the line appears in the chat box of both windows (long texts as
+  several lines), so the people watching read along. `chat` alone gives what the others wrote since
+  the last time; `state` ends with `chat: N new lines` when there is something. The Jev driver reads
+  the chat every round, prints it in its terminal, says now and then what it builds, and answers a
+  line about trade with a trade treaty.
+- Trade between the agents: a trade treaty (`diplomacy PLAYER trade offer`, the other `... accept`),
+  then each Kontor's offers (`trade ISLAND CITY WARE buy|sell TONS PRICE`); a ship at the other's
+  Kontor buys with `load` and sells with `unload` (`cities ISLAND CITY` shows what it buys and sells,
+  the answer the gold paid).
+- A command that gives orders runs on a copy of the game first, which gives the usual answer
+  (`built 3 of 4; paid ...`); the orders then go to the session, so that both computers carry them
+  out in the same tick. The answer comes once the shared game has done so (about 2.5 s of game time),
+  so the next command sees the result. Rarely the shared game turns out differently, when the other
+  player changed the same place in between: read the game again rather than trust an old answer.
+- `jev_driver.py --state-dir` keeps the driver's files (log, castle, key buildings) of this game apart
+  from those of the game alone in `tools/agent/`.
+- What a player has not discovered stays hidden ("no cheating"): `islands` shows such islands without
+  crops and cities, `map`, `kontor-sites`, `sites` and `find-site` refuse them, crops show once the
+  island is explored or settled, and other players' cities come without their number of people.
+
+### A tournament of four agents
+
+`tools/agent/turnier/` holds a four-player game: a referee hosts at port 7601 (a slot nobody plays;
+only the operator pauses, resumes and sets the speed there), the agents join at 7602–7605 and their
+ports refuse pause, speed and autoplay (`O1602_CONTROL_NO_SPEED`).
+
+```powershell
+python -I tools/agent/turnier/setup_turnier.py     # each agent's folder: AGENT.md, its own skills, notes
+.\tools\agent\turnier\start_turnier.ps1             # five windows; the game stands paused
+.\tools\agent\turnier\a2-claude-jev\run_jev.ps1 -Port 7603   # the Jev drivers (own terminals)
+.\tools\agent\turnier\a4-sol-jev\run_jev.ps1 -Port 7605
+# start the four agents (each told to read its AGENT.md), then:
+bin\o1602-ctl.exe --port 7601 resume
+bin\o1602-ctl.exe --port 7601 speed 2
+```
+
+Each agent learns on from today's skills and driver in its own folder; `run_jev.ps1` starts the
+driver again whenever its coach saves a change. `CHATGPT_PROMPTS.md` has the texts for the ChatGPT
+agents.
 
 Tests that need the original data run when `ANNO1602_DIR` is set and skip themselves otherwise.
 How to run the tests, filter them and use their environment variables: [tests/README.md](tests/README.md).

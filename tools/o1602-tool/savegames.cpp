@@ -228,6 +228,7 @@ void town_summary(const sim::World& world, const assets::BuildingTable& building
         std::size_t no_market = 0;
         std::size_t lacking = 0;
         std::array<std::size_t, 6> classes{};
+        std::array<std::size_t, 6> people_of{};  ///< inhabitants by the houses' class
         const sim::IslandMap& map = world.islands()[c.island].map;
         const auto w = static_cast<std::int32_t>(map.width());
         const auto h = static_cast<std::int32_t>(map.height());
@@ -239,6 +240,7 @@ void town_summary(const sim::World& world, const assets::BuildingTable& building
             ++houses;
             people += hs.inhabitants();
             ++classes[std::min<std::size_t>(hs.resident_class, classes.size() - 1)];
+            people_of[std::min<std::size_t>(hs.resident_class, people_of.size() - 1)] += hs.inhabitants();
             no_market += hs.market ? 0U : 1U;
             lacking += hs.services_complete ? 0U : 1U;
             for (std::int32_t dy = -2; dy <= 3; ++dy) {
@@ -304,10 +306,12 @@ void town_summary(const sim::World& world, const assets::BuildingTable& building
             }
         }
         std::printf(
-            "town of player %u island %u #%u: %zu houses, %zu inhabitants, classes %zu/%zu/%zu/%zu/%zu, %zu "
+            "town of player %u island %u #%u: %zu houses, %zu inhabitants (%zu/%zu/%zu/%zu/%zu), "
+            "classes %zu/%zu/%zu/%zu/%zu, %zu "
             "markets, %zu public tiles, %zu roads (%.2f a house), %zu squares, %zu fields (%zu by houses), "
             "%zu houses without market, %zu lacking services, %zu free ground, land %dx%d\n",
-            static_cast<unsigned>(c.owner), c.island, c.index, houses, people, classes[0], classes[1], classes[2],
+            static_cast<unsigned>(c.owner), c.island, c.index, houses, people, people_of[0], people_of[1],
+            people_of[2], people_of[3], people_of[4], classes[0], classes[1], classes[2],
             classes[3], classes[4], market_tiles / market_size, public_tiles, roads,
             static_cast<double>(roads) / static_cast<double>(houses), squares, fields, fields_in_town, no_market,
             lacking, free, x1 - x0 + 1, y1 - y0 + 1);

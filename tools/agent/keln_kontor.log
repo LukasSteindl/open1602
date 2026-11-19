@@ -1,0 +1,12 @@
+found 29 12 Kontor: built 1 of 1; paid gold 100 tools 3 t wood 6 t bricks 0 t
+48 unloaded 17.0 t of tools
+48 unloaded 8.0 t of wood
+54 error: nothing moved (at your Kontor, within 5 tiles? room? stock?)
+54 error: nothing moved (at your Kontor, within 5 tiles? room? stock?)
+city "Salzburgen" island 5 city 0 owner 0, Kontor at 29,12, room 30 t per good
+taxes 0, food supplied 0%
+pioneers: 0 inhabitants, satisfaction 0 (128 content), tax 128, supplied:
+next class settlers will need: cloth alcohol (and its public buildings in reach)
+stock: tools 17.0; wood 8.0;
+houses by class: 0/0/0/0/0; without market 0; lacking public buildings 0
+

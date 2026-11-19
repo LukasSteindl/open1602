@@ -4,6 +4,8 @@
 add_executable(open1602
     src/main.cpp
     src/diagnostics.cpp
+    src/control_server.cpp
+    src/control_commands.cpp
     src/editor_mode.cpp
     src/editor_goals.cpp
     src/editor_markers.cpp
@@ -22,6 +24,9 @@ add_executable(open1602
 )
 target_link_libraries(open1602 PRIVATE o1602::sim o1602::render_sdl o1602::platform o1602::audio o1602::ui o1602::video o1602::net o1602::menus o1602::script o1602::editor)
 o1602_set_warnings(open1602)
+if(WIN32)
+    target_link_libraries(open1602 PRIVATE ws2_32)
+endif()
 target_compile_definitions(open1602 PRIVATE O1602_VERSION="${PROJECT_VERSION}")  # the log's first line
 o1602_set_output_dir(open1602)
 

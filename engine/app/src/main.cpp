@@ -46,7 +46,7 @@ int usage() {
     std::fputs(
         "usage: open1602 [--game-dir DIR] [--scenario FILE | --savegame NAME | --load FILE] [--size WxH]\n"
         "                [--zoom 0|1|2] [--frames N]\n"
-        "                [--owners] [--original-sheets] [--original-flags] [--original-data] [--refund MODE]\n"
+        "                [--owners] [--autoplay] [--control PORT] [--original-sheets] [--original-flags] [--original-data] [--refund MODE]\n"
         "                [--droughts MODE] [--volcanoes MODE] [--plagues MODE] [--fires MODE]\n"
         "                [--pirates MODE] [--pirate-nests MODE] [--reveal MODE] [--reveal-resources MODE]\n"
         "                [--ore-veins MODE] [--bread MODE] [--computers MODE] [--ai MODE]\n"

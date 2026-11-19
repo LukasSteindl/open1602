@@ -22,6 +22,7 @@
 #include "build_tool.hpp"
 #include "catchment_view.hpp"
 #include "command_sink.hpp"
+#include "control_server.hpp"
 #include "event_presenter.hpp"
 #include "game_sound.hpp"
 #include "game_state.hpp"
@@ -142,6 +143,76 @@ private:
     void request_screenshot() override;
     void quit() override;
     void toggle_owners() override { m_show_owners = !m_show_owners; }
+    void toggle_autoplay() override { set_autoplay(!m_autoplay); }
+    void toggle_camera_hold() override { set_camera_held(!m_camera_held); }
+    void toggle_agent_box() override { m_agent_box_mode = (m_agent_box_mode + 1) % 3; }
+    /// The person holds the camera (on): the control port no longer moves it, until off again.
+    void set_camera_held(bool on);
+    /// The computer plays the local slot (on) or hands it back (off); a game alone only.
+    void set_autoplay(bool on);
+    /// The control port (--control, control_server.hpp): carries out the commands that came in
+    /// since the last frame and answers a running `advance` once its game time has passed.
+    void serve_control();
+    /// One command of the control port; the answer as text. `request` stays open for answers
+    /// given later (advance), in which case the result is empty.
+    std::string control_command(const std::vector<std::string>& args,
+                                const std::shared_ptr<ControlServer::Request>& request);
+    std::string control_help() const;
+    std::string control_state() const;
+    std::string control_ships() const;
+    std::string control_cities(const std::vector<std::string>& args) const;
+    std::string control_islands() const;
+    std::string control_map(const std::vector<std::string>& args) const;
+    std::string control_buildings(const std::vector<std::string>& args) const;
+    std::string control_goods() const;
+    std::string control_build(const std::vector<std::string>& args);
+    std::string control_found(const std::vector<std::string>& args);
+    std::string control_road(const std::vector<std::string>& args);
+    std::string control_demolish(const std::vector<std::string>& args);
+    std::string control_ship_move(const std::vector<std::string>& args);
+    std::string control_cargo(const std::vector<std::string>& args, bool to_ship);
+    void control_pause(bool paused);
+    /// Carries out a player's order of the control port. A game alone: at once. A multiplayer game
+    /// (ADR 0011): the order goes to the session, so that every computer carries it out in the same
+    /// tick; during control_dry_run() it is also carried out on the copy, for the answer.
+    sim::CommandResult control_execute(const sim::Command& command);
+    /// A multiplayer game ("no cheating" between two agents): the control port tells a player only
+    /// what the game shows them, so nothing of an island they have not discovered yet. A game
+    /// alone keeps the full answers.
+    [[nodiscard]] bool control_hides(std::uint16_t island) const;
+    /// A command that gives orders, in a multiplayer game: runs on a copy of the game, which gives
+    /// the answer as in a game alone, and its orders go to the session. The answer waits until the
+    /// shared game has carried them out (m_control_wait), so that the next command sees them.
+    std::string control_dry_run(const std::vector<std::string>& args,
+                                const std::shared_ptr<ControlServer::Request>& request);
+    /// The camera jumps to where the control port just acted (camera follow on|off), so that a
+    /// person watching, or a stream, sees each action happen.
+    void control_look_at(std::uint16_t island, std::int32_t x, std::int32_t y);
+    /// Turns the camera to what a command is about (island tile, Kontor, ship) when following.
+    void control_look_for(const std::vector<std::string>& args);
+    std::string control_unconnected(std::uint16_t island, bool fix);
+    std::string control_alerts(std::optional<std::uint16_t> only) const;
+    // Where the control port last turned the camera, and when (a far jump waits 1.5 s).
+    std::uint64_t m_control_look_ms = 0;
+    std::int64_t m_control_look_x = 0;
+    std::int64_t m_control_look_y = 0;
+    std::string control_houses(std::uint16_t island) const;
+    std::string control_house_sites(std::uint16_t island, std::size_t max) const;
+    std::string control_sites(const std::vector<std::string>& args) const;
+    void control_look_at_world(std::int64_t wx, std::int64_t wy);
+    bool m_control_follow = true;
+    bool m_camera_held = false;  ///< the person holds the camera: the control port leaves it alone
+    /// While a game is written: the local slot a person's again, though the computer plays it.
+    class HumanWhileSaving {
+    public:
+        explicit HumanWhileSaving(MapViewer& viewer);
+        ~HumanWhileSaving();
+        HumanWhileSaving(const HumanWhileSaving&) = delete;
+        HumanWhileSaving& operator=(const HumanWhileSaving&) = delete;
+
+    private:
+        sim::Player* m_player = nullptr;
+    };
     void toggle_fps() override { m_show_fps = !m_show_fps; }
     void toggle_coordinates() override { m_show_coordinates = !m_show_coordinates; }
     void toggle_unit_arms() override { m_show_unit_arms = !m_show_unit_arms; }
@@ -220,6 +291,10 @@ private:
     void save_settings();
     /// Writes a newly drawn player ID into settings.cfg, leaving the file's other lines as they are.
     static void remember_player_id(std::uint64_t id);
+    /// The player ID multiplayer games know this person by: settings.cfg's, or O1602_PLAYER_ID (16
+    /// hex digits) for this run only, so that a second game on the same computer (two agents at two
+    /// control ports) is someone else to the host instead of the host's own player coming back.
+    [[nodiscard]] std::uint64_t own_player_id() const;
     /// Replaces the running game by a savegame (Open1602's own or the original's) while the
     /// program runs (F9); the game goes on as it was if the file cannot be read. `rules`: the
     /// settings chosen for a scenario (a savegame of Open1602 keeps its own).
@@ -955,9 +1030,42 @@ private:
     EditorNewMap m_editor_new;  ///< the settings of the last new map
     bool m_running = true;
     bool m_show_owners = false;              ///< ownership overlay (key O)
+    bool m_autoplay = false;                 ///< the computer plays m_local_player (Ctrl+Shift+A)
+    std::unique_ptr<ControlServer> m_control;  ///< --control: text commands from 127.0.0.1
+    /// A running `advance`: answered when the game time reaches until_ms, then the game pauses.
+    struct ControlAdvance {
+        std::shared_ptr<ControlServer::Request> request;
+        std::uint64_t until_ms = 0;
+        std::uint64_t from_ms = 0;
+        std::uint64_t real_from_ms = 0;  ///< SDL_GetTicks() at the start (a shared game's wait ends by 2 min)
+    };
+    std::optional<ControlAdvance> m_control_advance;
+    /// A multiplayer game: an answer that waits until the session carried out its orders.
+    struct ControlWait {
+        std::shared_ptr<ControlServer::Request> request;
+        std::string answer;
+        std::uint64_t from_ms = 0;       ///< game time when the orders went out
+        std::uint64_t real_from_ms = 0;  ///< SDL_GetTicks() then: a paused game answers after a while
+    };
+    std::optional<ControlWait> m_control_wait;
+    std::vector<std::string> m_control_chat;  ///< chat lines of the others since the last 'chat' (UTF-8)
+    bool m_control_dry_run = false;           ///< m_state is a copy (control_dry_run)
+    std::vector<sim::Command> m_control_orders;  ///< the orders a dry run gave
+    /// What the agent at the control port says it plans and does ('plan', 'say'), shown over the
+    /// map's top left corner so a person watching can follow it.
+    std::vector<std::string> m_agent_plan;
+    std::vector<std::string> m_agent_steps;  ///< the last few, newest last
+    std::vector<std::string> m_control_messages;  ///< the game's messages since the last `advance` answer
+    std::string control_route(const std::vector<std::string>& args);
+    std::string control_coverage(std::uint16_t island, std::int32_t x, std::int32_t y, std::int32_t w,
+                                 std::int32_t h) const;
     bool m_show_island_numbers = false;      ///< the islands' numbers over the map (editor)
     bool m_show_fps = false;                 ///< the frame rate in the map's corner (Ctrl+F)
     bool m_show_coordinates = false;         ///< the tile under the mouse in the map's corner (Ctrl+K)
+    /// The agent's box over the map (Ctrl+Shift+P cycles): 0 only its last action in one line at
+    /// the top (gone while it waits), 1 the plan and steps, 2 nothing.
+    int m_agent_box_mode = 0;
+    std::string m_agent_last;  ///< the agent's last action ('say'), empty while it waits
     bool m_show_unit_arms = false;           ///< coats of arms over the own land units (M)
     bool m_show_fertility = false;           ///< fertility view (Ctrl+B): the build tool's or selected farm's crop
     double m_fps = 0.0;                      ///< frames a second, measured for the title

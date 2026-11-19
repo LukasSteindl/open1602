@@ -1,0 +1,30 @@
+5 sail True
+5 refused: the ship must lie still at an island that still hides something
+8 sail True
+8 refused: the ship must lie still at an island that still hides something
+0 sail True
+0 refused: the ship must lie still at an island that still hides something
+14 sail True
+14 exploring the island the ship lies at (see 'islands' for the deposits found)
+19 sail True
+19 refused: the ship must lie still at an island that still hides something
+3 sail True
+3 refused: the ship must lie still at an island that still hides something
+13 sail True
+13 exploring the island the ship lies at (see 'islands' for the deposits found)
+6 sail True
+6 refused: the ship must lie still at an island that still hides something
+7 sail True
+7 refused: the ship must lie still at an island that still hides something
+10 sail True
+10 refused: the ship must lie still at an island that still hides something
+15 sail True
+15 exploring the island the ship lies at (see 'islands' for the deposits found)
+16 sail True
+16 exploring the island the ship lies at (see 'islands' for the deposits found)
+island 12: world 310,20 size 50x52, north, discovered, crops: grain tobacco(half) sugar wine(half); cities of: 0(you); known deposits: ore at 29,15 (small)
+island 13: world 120,260 size 50x52, south, discovered, crops: grain spices cotton cocoa(half); cities of: 3; known deposits: ore at 15,19 (small)
+island 14: world 30,130 size 50x52, north, discovered, crops: grain tobacco sugar wine(half); cities of: 2 6; known deposits: ore at 14,23 (big)
+island 15: world 240,200 size 70x60, south, discovered, crops: grain spices cotton(half) cocoa; cities of: 1; known deposits: ore at 43,25 (small)
+island 16: world 400,30 size 70x60, north, discovered, crops: grain tobacco sugar wine(half); cities of: 2; known deposits: ore at 36,43 (big)
+island 17: world 220,80 size 70x60, north, discovered, crops: grain tobacco sugar(half) wine; cities of: 0(you); known deposits: ore at 42,17 (big)

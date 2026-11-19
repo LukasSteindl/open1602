@@ -1,0 +1,26 @@
+load tools loaded 25.0 t of tools
+load wood loaded 50.0 t of wood
+load bricks loaded 40.0 t of bricks
+14 Kontor sites on island 0 (world position of tile 0,0: 340,220); nearest to the ship first (x y: result; ship_too_far: sail closer, within 16 tiles):
+  17 5: ok (world 357,225)
+  20 4: ok (world 360,224)
+  12 6: ok (world 352,226)
+  11 6: ok (world 351,226)
+  10 6: ok (world 350,226)
+  9 6: ok (wo
+found 17 5 Kontor: built 1 of 1; paid gold 100 tools 3 t wood 6 t bricks 0 t
+unload tools error: nothing moved (at your Kontor, within 5 tiles? room? stock?)
+unload wood error: nothing moved (at your Kontor, within 5 tiles? room? stock?)
+unload bricks error: nothing moved (at your Kontor, within 5 tiles? room? stock?)
+city "San Cambo" island 0 city 1 owner 0, Kontor at 17,5, room 30 t per good
+taxes 0, food supplied 100%
+pioneers: 0 inhabitants, satisfaction 128 (128 content), tax 128, supplied:
+next class settlers will need: cloth alcohol (and its public buildings in reach)
+stock: nothing
+houses by class: 0/0/0/0/0; without market 0; lacking public buildings 0
+
+city "Falkenstain" island 0 city 0 owner 6, Kontor at 11,17, room 30 t per good
+trade treaty: yes (a ship of yours at this Kontor buys with load, sells with unload)
+their Kontor sells: spices 17 t at 0;
+buys: alcohol up to 10 t at 0; cloth up to 10 t at 0;
+

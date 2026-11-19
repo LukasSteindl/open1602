@@ -158,6 +158,9 @@ KeyHelpPlace key_help_place(KeyAction action) noexcept {
         case KeyAction::ShowCoordinates:
         case KeyAction::ShowUnitArms:
         case KeyAction::ReloadPackages:
+        case KeyAction::Autoplay:
+        case KeyAction::CameraHold:
+        case KeyAction::AgentBox:
         case KeyAction::Fullscreen:
             return {4, 0};
     }

@@ -66,6 +66,12 @@ public:
         virtual void quit() = 0;
         /// Ctrl+O: the ownership overlay.
         virtual void toggle_owners() = 0;
+        /// Ctrl+Shift+A: the computer plays the own slot, or gives it back.
+        virtual void toggle_autoplay() = 0;
+        /// Ctrl+Shift+C: the person holds the camera; the control port no longer moves it.
+        virtual void toggle_camera_hold() = 0;
+        /// Ctrl+Shift+P: the agent's plan and steps box over the map, shown or hidden.
+        virtual void toggle_agent_box() = 0;
         /// Ctrl+B: the fertility view for the crop of the selected farm (fertility_view.hpp).
         virtual void toggle_fertility() = 0;
         /// Ctrl+F, Ctrl+K: the frame rate, the tile under the mouse in the corner of the map.

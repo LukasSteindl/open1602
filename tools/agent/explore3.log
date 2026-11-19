@@ -1,0 +1,44 @@
+16 (401, 31) refused: the ship must lie still at an island that still hides something
+16 (468, 31) refused: the ship must lie still at an island that still hides something
+16 (401, 88) refused: the ship must lie still at an island that still hides something
+16 (468, 88) refused: the ship must lie still at an island that still hides something
+16 no corner accepted (explored already or no sea inside)
+10 (331, 121) exploring the island the ship lies at (see 'islands' for the deposits found)
+6 (401, 181) exploring the island the ship lies at (see 'islands' for the deposits found)
+7 (281, 281) refused: the ship must lie still at an island that still hides something
+7 (318, 281) exploring the island the ship lies at (see 'islands' for the deposits found)
+1 (401, 101) exploring the island the ship lies at (see 'islands' for the deposits found)
+0 (341, 221) exploring the island the ship lies at (see 'islands' for the deposits found)
+5 (201, 291) exploring the island the ship lies at (see 'islands' for the deposits found)
+15 (241, 201) refused: the ship must lie still at an island that still hides something
+15 (308, 201) refused: the ship must lie still at an island that still hides something
+15 (241, 258) refused: the ship must lie still at an island that still hides something
+15 (308, 258) refused: the ship must lie still at an island that still hides something
+15 no corner accepted (explored already or no sea inside)
+3 (171, 211) exploring the island the ship lies at (see 'islands' for the deposits found)
+8 (51, 221) exploring the island the ship lies at (see 'islands' for the deposits found)
+13 (121, 261) refused: the ship must lie still at an island that still hides something
+13 (168, 261) refused: the ship must lie still at an island that still hides something
+13 (121, 310) refused: the ship must lie still at an island that still hides something
+13 (168, 310) refused: the ship must lie still at an island that still hides something
+13 no corner accepted (explored already or no sea inside)
+18 (101, 131) exploring the island the ship lies at (see 'islands' for the deposits found)
+14 (31, 131) refused: the ship must lie still at an island that still hides something
+14 (78, 131) refused: the ship must lie still at an island that still hides something
+14 (31, 180) 
+14 (78, 180) refused: the ship must lie still at an island that still hides something
+14 no corner accepted (explored already or no sea inside)
+19 (91, 51) refused: the ship must lie still at an island that still hides something
+19 (158, 51) exploring the island the ship lies at (see 'islands' for the deposits found)
+11 (391, 251) exploring the island the ship lies at (see 'islands' for the deposits found)
+island 5: world 200,290 size 40x40, south, discovered, crops: grain spices(half) cotton(half) cocoa(half); cities of: 3; known deposits: ore at 6,8 (small) gold at 5,5 (small)
+island 8: world 50,220 size 40x40, south, discovered, crops: grain spices(half) cotton(half) cocoa; cities of: 3; known deposits: ore at 25,10 (small)
+island 10: world 330,120 size 50x52, south, discovered, crops: grain spices cotton cocoa(half); cities of: 1; known deposits: ore at 36,35 (big)
+island 12: world 310,20 size 50x52, north, discovered, crops: grain tobacco(half) sugar wine(half); cities of: 0(you); known deposits: ore at 29,15 (small)
+island 13: world 120,260 size 50x52, south, discovered, crops: grain spices cotton cocoa(half); cities of: 3; known deposits: ore at 15,19 (small)
+island 14: world 30,130 size 50x52, north, discovered, crops: grain tobacco sugar wine(half); cities of: 2 6; known deposits: ore at 14,23 (big)
+island 15: world 240,200 size 70x60, south, discovered, crops: grain spices cotton(half) cocoa; cities of: 1; known deposits: ore at 43,25 (small)
+island 16: world 400,30 size 70x60, north, discovered, crops: grain tobacco sugar wine(half); cities of: 2; known deposits: ore at 36,43 (big)
+island 17: world 220,80 size 70x60, north, discovered, crops: grain tobacco sugar(half) wine; cities of: 0(you); known deposits: ore at 42,17 (big)
+island 18: world 100,130 size 70x60, south, discovered, crops: grain spices(half) cotton cocoa; cities of: 0(you); known deposits: ore at 16,23 (small)
+island 19: world 90,50 size 70x60, north, discovered, crops: grain tobacco sugar(half) wine; cities of: 3 6; known deposits: ore at 38,26 (big)

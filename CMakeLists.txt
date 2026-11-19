@@ -101,6 +101,7 @@ add_subdirectory(engine)
 
 if(O1602_BUILD_TOOLS)
     add_subdirectory(tools/o1602-tool)
+    add_subdirectory(tools/o1602-ctl)
 endif()
 
 if(O1602_BUILD_TESTS)

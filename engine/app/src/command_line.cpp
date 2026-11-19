@@ -221,6 +221,14 @@ core::Result<CommandLine> parse_command_line(int argc, const char* const* argv) 
             options.message = argv[++i];
         } else if (arg == "--owners") {
             options.show_owners = true;
+        } else if (arg == "--autoplay") {
+            options.autoplay = true;
+        } else if (arg == "--control" && has_value) {
+            std::int32_t port = 0;
+            if (!parse_number(argv[++i], port) || port < 1 || port > 65535) {
+                return bad(i);
+            }
+            options.control_port = static_cast<std::uint16_t>(port);
         } else if (arg == "--original-sheets") {
             options.derive_small_figures = false;
         } else if (arg == "--original-flags") {

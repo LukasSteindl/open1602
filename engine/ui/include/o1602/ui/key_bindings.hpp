@@ -91,6 +91,9 @@ enum class KeyAction : std::uint16_t {
     ShowCoordinates,  ///< the tile under the mouse in the corner of the map (History Edition)
     ShowUnitArms,     ///< the owner's coat of arms over the own land units (History Edition)
     ReloadPackages,   ///< reads the packages' files again, for their makers (Open1602)
+    Autoplay,         ///< the computer plays the own slot, or gives it back (Open1602)
+    CameraHold,       ///< the person holds the camera; the control port no longer moves it (Open1602)
+    AgentBox,         ///< the control port's plan and steps box over the map, on or off (Open1602)
     Fullscreen,       ///< window or full screen
     Quit,
     // Editor (ADR 0013)

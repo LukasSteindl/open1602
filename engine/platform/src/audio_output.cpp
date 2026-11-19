@@ -18,7 +18,25 @@ core::Result<std::unique_ptr<AudioOutput>> AudioOutput::open(std::uint32_t rate)
     spec.format = SDL_AUDIO_S16;
     spec.channels = 2;
     spec.freq = static_cast<int>(rate);
-    SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, nullptr, nullptr);
+    // O1602_AUDIO_DEVICE=<part of a name>: play on that output instead of the default one (a
+    // stream that captures the game's sound while the person at the computer hears nothing).
+    SDL_AudioDeviceID device = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
+    if (const char* wanted = SDL_getenv("O1602_AUDIO_DEVICE"); wanted != nullptr && *wanted != '\0') {
+        int count = 0;
+        if (SDL_AudioDeviceID* ids = SDL_GetAudioPlaybackDevices(&count); ids != nullptr) {
+            for (int i = 0; i < count; ++i) {
+                const char* name = SDL_GetAudioDeviceName(ids[i]);
+                if (name != nullptr && SDL_strcasestr(name, wanted) != nullptr) {
+                    device = ids[i];
+                    break;
+                }
+            }
+            SDL_free(ids);
+        }
+        SDL_Log("audio: O1602_AUDIO_DEVICE=%s -> %s", wanted,
+                device == SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK ? "not found, default output" : SDL_GetAudioDeviceName(device));
+    }
+    SDL_AudioStream* stream = SDL_OpenAudioDeviceStream(device, &spec, nullptr, nullptr);
     if (stream == nullptr) {
         auto error = sdl_error("SDL_OpenAudioDeviceStream");
         SDL_QuitSubSystem(SDL_INIT_AUDIO);

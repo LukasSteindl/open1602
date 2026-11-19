@@ -1,0 +1,10 @@
+sail True
+ship 24 "Reliance" figure 25 at world 279,165 idle, health 2080, cannons 8
+  cargo: 25 50.0 t; 25 50.0 t; 25 50.0 t; (3 holds)
+
+land units landing
+landed [256, 257, 258]
+board board: ordered
+ship 24 "Reliance" figure 25 at world 279,165 idle, health 2080, cannons 8
+  cargo: 25 50.0 t; 25 50.0 t; 25 50.0 t; (3 holds)
+

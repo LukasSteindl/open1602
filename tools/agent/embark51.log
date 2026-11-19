@@ -1,0 +1,66 @@
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209, 282] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+board [57, 68, 108, 109, 139, 140, 167, 169, 208, 209] board: ordered
+go [255] units-go: ordered
+go [108, 208, 255] units-go: ordered
+board [108, 208] board: ordered
+go [140, 209, 255] units-go: ordered
+board [140, 209] board: ordered
+go [167, 255] units-go: ordered
+ship 51 "Verena" figure 25 at world 236,306 moving, health 2080, cannons 8
+  cargo: 37 50.0 t; (3 holds)
+ship 52 "Wavebreaker" figure 25 at world 244,163 moving, health 2080, cannons 8
+  cargo: alcohol 5.0 t; (3 holds)
+ship 53 "Defender" figure 25 at world 151,52 moving, health 2080, cannons 6
+  car
+left on land: [(57, 43, 39, True), (68, 35, 36, True), (108, 36, 37, True), (109, 36, 37, True), (110, 40, 38, True), (139, 35, 35, True), (140, 36, 36, True), (167, 16, 26, False), (169, 27, 45, True), (208, 34, 35, True), (209, 35, 35, True), (255, 57, 17, False)]

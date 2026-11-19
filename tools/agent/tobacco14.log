@@ -1,0 +1,27 @@
+25 Kontor sites on island 14 (world position of tile 0,0: 30,130); nearest to the ship first (x y: result; ship_too_far: sail closer, within 16 tiles):
+  23 5: the ship is too far away (world 53,135)
+  22 5: the ship is too far away (world 52,135)
+  19 6: the ship is too far away (world 49,136)
+  14 10: the ship is too far away (world 44,140)
+  13 10: the ship is too far away (world 43,140)
+  12 1
+found 23 5 Kontor: built 1 of 1; paid gold 100 tools 3 t wood 6 t bricks 0 t
+unload tools unloaded 12.0 t of tools
+unload wood unloaded 30.0 t of wood
+unload bricks unloaded 30.0 t of bricks
+city "Tudexo Capan" island 14 city 0 owner 6, Kontor at 14,39, room 30 t per good
+trade treaty: yes (a ship of yours at this Kontor buys with load, sells with unload)
+their Kontor sells: tobacco_goods 22 t at 0;
+buys: alcohol up to 10 t at 0; cloth up to 2 t at 0;
+
+city "Port Morosby" island 14 city 1 owner 2, Kontor at 31,38, room 120 t per good
+trade treaty: yes (a ship of yours at this Kontor buys with load, sells with unload)
+their Kontor sells: ore 15 t at 45; wood 60 t at 15; bricks 60 t at 22;
+buys: food up to 4 t at 19; cloth up to 3 t at 37;
+
+city "Vrielachen" island 14 city 2 owner 0, Kontor at 23,5, room 30 t per good
+taxes 0, food supplied 100%
+pioneers: 0 inhabitants, satisfaction 128 (128 content), tax 128, supplied:
+next class settlers will need: cloth alcohol (and its public buildings in reach)
+stock: tools 12.0; wood 30.0; bricks
+done

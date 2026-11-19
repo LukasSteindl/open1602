@@ -1,0 +1,4271 @@
+{
+  "source": {
+    "haeuser_cod": "D:\\SteamLibrary\\steamapps\\common\\Anno 1602 - History Edition\\haeuser.cod",
+    "figuren_cod": "D:\\SteamLibrary\\steamapps\\common\\Anno 1602 - History Edition\\figuren.cod",
+    "extractor": "tools/planner/extract_game_data.py",
+    "engine_files": [
+      "engine/assets/src/building_table.cpp",
+      "engine/assets/src/figure_table.cpp",
+      "engine/sim/src/production_cycle.cpp",
+      "engine/sim/src/consumption.cpp",
+      "engine/sim/src/houses.cpp",
+      "engine/sim/include/o1602/sim/growth.hpp",
+      "engine/sim/src/pathfinding.cpp",
+      "engine/assets/src/original_names.cpp",
+      "engine/assets/include/o1602/assets/game_data.hpp"
+    ]
+  },
+  "units": {
+    "time": "game seconds (s) / game minutes (min); the city tick is 10 s, production advances once per game second",
+    "goods": "tons (t); the engine stores 1/32 t (stock units) and the demand of residents in 1/8192 t",
+    "money": "gold",
+    "build_cost": "gold and tons of tools/wood/bricks(/cannons)",
+    "running_cost_gold_per_min": "gold per game minute while switched on; idle_cost_gold_per_min while switched off",
+    "t_per_100_inhabitants_per_min": "tons per 100 inhabitants of that class per game minute, as the engine computes it",
+    "t_per_min_at_full_speed": "tons per game minute when the building never waits for raw material, carriers or room",
+    "radius_tiles": "catchment radius in tiles around the building's centre",
+    "tax_gold_per_inhabitant_per_min_at_normal_rate": "gold per inhabitant per game minute at the normal tax rate (128/128)",
+    "base_price": "gold per ton (the price traders base buying and selling on)"
+  },
+  "notes": [
+    "Goods amounts in haeuser.cod (Prodmenge, Rohmenge, Workmenge, Maxlager, build costs) are tons; the engine multiplies by 32 and truncates (1/32 t units). All values in haeuser.cod are exact multiples of 1/32, so the tons here are exact.",
+    "Residents' needs: haeuser.cod gives t per 100 inhabitants per minute (BGRUPPE_WARE `Ware: W, v`, global `Nahrung` for food). The engine converts each to k = trunc(trunc(v*8192)/600) in 1/8192 t per inhabitant per 10 s city tick (building_table.cpp per_tick); the effective rate is k*600/8192 t per 100 inhabitants per minute, a little below v because of the two truncations (e.g. food 1.3 -> 17 -> 1.2451 t). t_per_100_inhabitants_per_min is that effective value; cod_value_t_per_100_per_min the file's.",
+    "Every class eats food (NAHRUNG). consumption.cpp adds k * inhabitants of each class (whole inhabitants) to the demand every 10 s; demand and supply both decay by 15/16 per tick, and each tick, when demand is ahead of supply, takes (demand-supplied)/256 + 1 stock units (1/32 t) from the warehouse. The '+1' only rounds up: over time the use equals the nominal rate (the overshoot is bounded and decays). The supply ratio (0..128) per ware drives satisfaction, growth and rising to the next class.",
+    "A house rises into the next class only when the city's food supply and the next class's satisfaction are full (128), the house has the next class's public buildings in reach, the city is not material-locked, and the warehouse holds the next class's house cost (cost_to_reach_this_class, houses.cpp pay_materials: tools/wood/bricks and gold).",
+    "Inhabitants of a class consume from the moment a house is queued to rise into that class (n_eff in consumption.cpp).",
+    "Pioneers (class 0) have no wares besides food in this haeuser.cod (History Edition values; the cod comments 'ORG/SUN' list the older values).",
+    "Tax: the engine keeps trunc(Steuer*16/3) and pays tax*inhabitants*6/32 gold per minute at the normal rate (consumption.cpp tax_income); the money of a city changes every 10 s by (taxes - running costs)/6, truncated toward zero.",
+    "Required public buildings (houses.cpp kServiceNeeds): each inner list is a choice; any one building of it in reach of the house will do. Pioneers need a marketplace OR a warehouse (Kontor) in reach. The cathedral counts as a church. Without them a house does not rise to the next class and loses inhabitants.",
+    "Unlock levels (BAUINFRA): level n is reached by a player when one of their cities has at least min_inhabitants inhabitants of the level's class or any higher class (consumption.cpp unlock_levels, per city, not summed over cities). Levels without a BAUINFRA entry (1 market, 2 chapel) and level 0 are available from the start. Levels 13 (triumphal arch) and 14 (monument) are, besides, granted by special rules; 11 castle/palace and 12 cathedral are one per player.",
+    "cycle_s_at_full_speed is production_cycle.cpp full_speed_seconds: Interval for workshops, mines, pastures and quarries; for farms/plantations (PLANTAGE), hunters and fishers Interval + the worker's walk out to the catchment edge and back, walk_s = (reach*20000/Speed + Worktime_ms) // 1000 with reach 22/30/40/50 tenths of a tile for radius <=1/2/3/>=4, times the raw tons per cycle (raw_units >> 5). It is an upper bound on output: real production also needs raw material in the building (carriers bring it from the warehouse/market for workshops) and room in the store.",
+    "A cycle runs at a rate of fill/128 of full speed when the building holds less raw material than a full cycle needs (production_cycle.cpp cycle_rate): output and time scale together, and below half a cycle's raw material (rate < 64) it does not start. Without raw material it waits 11 s and checks again.",
+    "Farms (grain_farm, plantations, winery, forester's woodcutter) get 1 t per harvested ripe field tile (logistics.cpp finish_work). A harvested field becomes its growing record again and needs growth_stages stages of 40 s + 7 s*growth_class each (growth.hpp; growth_class from the field's Interval/AnimAnz, building_table.cpp). The global stage clocks make the first stage last 0..1 stage, so regrow_s_avg = (stages-0.5)*stage_s and regrow_s_max = stages*stage_s. fields_for_full_speed = ceil(harvest rate at full speed * regrow time); newly planted fields start with a random +0..2 growth class (slower). Fields must lie inside the catchment circle (catchment_tiles_excluding_building).",
+    "computer_player_plants is the number of fields the computer players keep around their farms (ai_build.cpp: 7 for grain, 14 otherwise): a practical reference, not a rule.",
+    "Pastures (sheep_farm, cattle_farm, WEIDETIER) send Figuranz animals that graze ripe grass tiles (1 t each) until they carry Maxtrag; their cycle at full speed is just Interval (full_speed_seconds does not add a walk for them). Hunters shoot game, fishers' boats fish shoals (raw ware 'game'/'fish' on the map).",
+    "Running costs are charged per minute for every production building, warehouse, market and public building while switched on (running_cost), idle_cost while switched off (consumption.cpp for_each_cost). Houses cost nothing. Castles (castle, large_castle, fortress) cost their running_cost only for human players.",
+    "Farms/plantations, hunters and fishers send exactly one worker (production.workers_out; logistics.cpp send_worker ignores Figuranz, which is 0 for the plantations in haeuser.cod: cod_figuranz). Pastures keep up to Figuranz animals out.",
+    "All values are the haeuser.cod defaults as the engine loads them; data_fixes.cpp changes no economic field. A scenario's balance (sim/balance.cpp apply_building_values) and content packages (classes.toml, levels.toml, own buildings) can override them per game.",
+    "Verification: the Python full_speed_seconds reproduces the engine's unit-test oracle (tests/unit/test_goods_statistics.cpp: fisher Speed 400, Worktime 2 s, radius 3, 1 t raw, Interval 30 -> 34 s; without figures 30 s; workshop -> its Interval 20 s). Real example: grain_farm = 8 + ((22*20000/220 + 8000) // 1000) * 32 >> 5 = 18 s.",
+    "Mines (ore_mine, deep_ore_mine, gold_mine) take no raw ware: they dig 1 t per Interval from the deposit of the mountain slot they stand on (ore deposits are finite; a deep mine replaces an ore mine in place). Hunters shoot game (deer) in their radius, whose numbers are not modelled here: their cycle_s_at_full_speed assumes game is always found.",
+    "Fishers: every open sea tile in reach carries fish; a fished tile regrows in 6 stages (growth class 5, 75 s each). The fisher's catchment counts land tiles too, so the number of sea tiles is what matters.",
+    "Fertility: a field only grows on islands whose climate/fertility allows that crop; not modelled here.",
+    "Building ids are the HAUS Id of haeuser.cod (island tiles store id - 20000); names are the stable names of engine/assets/src/original_names.cpp (package 'anno1602:')."
+  ],
+  "food": {
+    "ware": "food",
+    "ware_id": 14,
+    "cod_nahrung_t_per_100_per_min": 1.3,
+    "engine_units_per_inhabitant_per_10s": 17,
+    "t_per_100_inhabitants_per_min": 1.245117
+  },
+  "classes": [
+    {
+      "id": 0,
+      "name": "pioneers",
+      "house_building": "house",
+      "house_record_id": 20605,
+      "house_size": [
+        2,
+        2
+      ],
+      "cost_to_reach_this_class": {
+        "gold": 0,
+        "tools_t": 0.0,
+        "wood_t": 3.0,
+        "bricks_t": 0.0
+      },
+      "max_inhabitants_per_house": 2,
+      "tax_value_engine": 7,
+      "cod_steuer": 1.4,
+      "tax_gold_per_inhabitant_per_min_at_normal_rate": 1.3125,
+      "satisfaction_share_engine": 0,
+      "cod_prozent": 0,
+      "needs": [
+        {
+          "ware": "food",
+          "ware_id": 14,
+          "is_food": true,
+          "cod_value_t_per_100_per_min": 1.3,
+          "engine_units_per_inhabitant_per_10s": 17,
+          "t_per_100_inhabitants_per_min": 1.245117
+        }
+      ],
+      "required_public_buildings": [
+        [
+          "marketplace",
+          "warehouse"
+        ]
+      ],
+      "unlock_levels": [
+        {
+          "infra": 15,
+          "name": "level_1a",
+          "min_inhabitants_of_this_class_or_higher": 30,
+          "buildings": [
+            "butcher",
+            "cattle_farm"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 1,
+      "name": "settlers",
+      "house_building": "house",
+      "house_record_id": 20621,
+      "house_size": [
+        2,
+        2
+      ],
+      "cost_to_reach_this_class": {
+        "gold": 0,
+        "tools_t": 1.0,
+        "wood_t": 3.0,
+        "bricks_t": 0.0
+      },
+      "max_inhabitants_per_house": 6,
+      "tax_value_engine": 8,
+      "cod_steuer": 1.6,
+      "tax_gold_per_inhabitant_per_min_at_normal_rate": 1.5,
+      "satisfaction_share_engine": 60,
+      "cod_prozent": 47,
+      "needs": [
+        {
+          "ware": "food",
+          "ware_id": 14,
+          "is_food": true,
+          "cod_value_t_per_100_per_min": 1.3,
+          "engine_units_per_inhabitant_per_10s": 17,
+          "t_per_100_inhabitants_per_min": 1.245117
+        },
+        {
+          "ware": "cloth",
+          "ware_id": 19,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        },
+        {
+          "ware": "alcohol",
+          "ware_id": 18,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.5,
+          "engine_units_per_inhabitant_per_10s": 6,
+          "t_per_100_inhabitants_per_min": 0.439453
+        }
+      ],
+      "required_public_buildings": [
+        [
+          "marketplace"
+        ],
+        [
+          "chapel",
+          "church"
+        ]
+      ],
+      "unlock_levels": [
+        {
+          "infra": 3,
+          "name": "school",
+          "min_inhabitants_of_this_class_or_higher": 100,
+          "buildings": [
+            "school"
+          ]
+        },
+        {
+          "infra": 4,
+          "name": "tavern",
+          "min_inhabitants_of_this_class_or_higher": 50,
+          "buildings": [
+            "tavern"
+          ]
+        },
+        {
+          "infra": 16,
+          "name": "level_2a",
+          "min_inhabitants_of_this_class_or_higher": 15,
+          "buildings": [
+            "paved_road",
+            "stone_bridge",
+            "quarry",
+            "stonemason",
+            "fire_station"
+          ]
+        },
+        {
+          "infra": 17,
+          "name": "level_2b",
+          "min_inhabitants_of_this_class_or_higher": 30,
+          "buildings": [
+            "palisade",
+            "wooden_gate",
+            "warehouse_2"
+          ]
+        },
+        {
+          "infra": 18,
+          "name": "level_2c",
+          "min_inhabitants_of_this_class_or_higher": 40,
+          "buildings": [
+            "tobacco_products",
+            "rum_distillery",
+            "tobacco_plantation",
+            "tobacco_field",
+            "spice_plantation",
+            "spice_field",
+            "winery",
+            "vines",
+            "sugarcane_plantation",
+            "sugarcane_field"
+          ]
+        },
+        {
+          "infra": 19,
+          "name": "level_2d",
+          "min_inhabitants_of_this_class_or_higher": 75,
+          "buildings": [
+            "grain_mill",
+            "bakery",
+            "water_mill",
+            "grain_farm",
+            "grain_field"
+          ]
+        },
+        {
+          "infra": 20,
+          "name": "level_2e",
+          "min_inhabitants_of_this_class_or_higher": 100,
+          "buildings": [
+            "toolmaker"
+          ]
+        },
+        {
+          "infra": 21,
+          "name": "level_2f",
+          "min_inhabitants_of_this_class_or_higher": 120,
+          "buildings": [
+            "ore_mine",
+            "ore_smelter",
+            "small_shipyard"
+          ]
+        },
+        {
+          "infra": 23,
+          "name": "level_2g",
+          "min_inhabitants_of_this_class_or_higher": 200,
+          "buildings": [
+            "wooden_watchtower",
+            "wall",
+            "gate",
+            "watchtower",
+            "city_gate",
+            "castle",
+            "square_1",
+            "swordsmith"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "citizens",
+      "house_building": "house",
+      "house_record_id": 20631,
+      "house_size": [
+        2,
+        2
+      ],
+      "cost_to_reach_this_class": {
+        "gold": 0,
+        "tools_t": 2.0,
+        "wood_t": 2.0,
+        "bricks_t": 6.0
+      },
+      "max_inhabitants_per_house": 15,
+      "tax_value_engine": 11,
+      "cod_steuer": 2.1,
+      "tax_gold_per_inhabitant_per_min_at_normal_rate": 2.0625,
+      "satisfaction_share_engine": 90,
+      "cod_prozent": 71,
+      "needs": [
+        {
+          "ware": "food",
+          "ware_id": 14,
+          "is_food": true,
+          "cod_value_t_per_100_per_min": 1.3,
+          "engine_units_per_inhabitant_per_10s": 17,
+          "t_per_100_inhabitants_per_min": 1.245117
+        },
+        {
+          "ware": "cloth",
+          "ware_id": 19,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.7,
+          "engine_units_per_inhabitant_per_10s": 9,
+          "t_per_100_inhabitants_per_min": 0.65918
+        },
+        {
+          "ware": "alcohol",
+          "ware_id": 18,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        },
+        {
+          "ware": "tobacco_goods",
+          "ware_id": 15,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.5,
+          "engine_units_per_inhabitant_per_10s": 6,
+          "t_per_100_inhabitants_per_min": 0.439453
+        },
+        {
+          "ware": "spices",
+          "ware_id": 16,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.5,
+          "engine_units_per_inhabitant_per_10s": 6,
+          "t_per_100_inhabitants_per_min": 0.439453
+        }
+      ],
+      "required_public_buildings": [
+        [
+          "marketplace"
+        ],
+        [
+          "tavern"
+        ],
+        [
+          "chapel",
+          "church"
+        ],
+        [
+          "school",
+          "college"
+        ]
+      ],
+      "unlock_levels": [
+        {
+          "infra": 5,
+          "name": "church",
+          "min_inhabitants_of_this_class_or_higher": 150,
+          "buildings": [
+            "church"
+          ]
+        },
+        {
+          "infra": 6,
+          "name": "bathhouse",
+          "min_inhabitants_of_this_class_or_higher": 210,
+          "buildings": [
+            "bathhouse"
+          ]
+        },
+        {
+          "infra": 9,
+          "name": "doctor",
+          "min_inhabitants_of_this_class_or_higher": 50,
+          "buildings": [
+            "doctor"
+          ]
+        },
+        {
+          "infra": 10,
+          "name": "gallows",
+          "min_inhabitants_of_this_class_or_higher": 100,
+          "buildings": [
+            "gallows"
+          ]
+        },
+        {
+          "infra": 22,
+          "name": "level_3a",
+          "min_inhabitants_of_this_class_or_higher": 100,
+          "buildings": [
+            "warehouse_3"
+          ]
+        },
+        {
+          "infra": 24,
+          "name": "level_3b",
+          "min_inhabitants_of_this_class_or_higher": 150,
+          "buildings": [
+            "gold_mine"
+          ]
+        },
+        {
+          "infra": 25,
+          "name": "level_3c",
+          "min_inhabitants_of_this_class_or_higher": 200,
+          "buildings": [
+            "tailor",
+            "weaving_mill",
+            "cotton_plantation",
+            "cotton_field",
+            "cocoa_plantation",
+            "cocoa_field"
+          ]
+        },
+        {
+          "infra": 26,
+          "name": "level_3d",
+          "min_inhabitants_of_this_class_or_higher": 300,
+          "buildings": []
+        },
+        {
+          "infra": 27,
+          "name": "level_3e",
+          "min_inhabitants_of_this_class_or_higher": 400,
+          "buildings": [
+            "cannon_foundry"
+          ]
+        },
+        {
+          "infra": 28,
+          "name": "level_3f",
+          "min_inhabitants_of_this_class_or_higher": 450,
+          "buildings": [
+            "deep_ore_mine"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "merchants",
+      "house_building": "house",
+      "house_record_id": 20641,
+      "house_size": [
+        2,
+        2
+      ],
+      "cost_to_reach_this_class": {
+        "gold": 0,
+        "tools_t": 3.0,
+        "wood_t": 3.0,
+        "bricks_t": 9.0
+      },
+      "max_inhabitants_per_house": 25,
+      "tax_value_engine": 12,
+      "cod_steuer": 2.4,
+      "tax_gold_per_inhabitant_per_min_at_normal_rate": 2.25,
+      "satisfaction_share_engine": 99,
+      "cod_prozent": 78,
+      "needs": [
+        {
+          "ware": "food",
+          "ware_id": 14,
+          "is_food": true,
+          "cod_value_t_per_100_per_min": 1.3,
+          "engine_units_per_inhabitant_per_10s": 17,
+          "t_per_100_inhabitants_per_min": 1.245117
+        },
+        {
+          "ware": "cloth",
+          "ware_id": 19,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.8,
+          "engine_units_per_inhabitant_per_10s": 10,
+          "t_per_100_inhabitants_per_min": 0.732422
+        },
+        {
+          "ware": "alcohol",
+          "ware_id": 18,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.7,
+          "engine_units_per_inhabitant_per_10s": 9,
+          "t_per_100_inhabitants_per_min": 0.65918
+        },
+        {
+          "ware": "cocoa",
+          "ware_id": 17,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.7,
+          "engine_units_per_inhabitant_per_10s": 9,
+          "t_per_100_inhabitants_per_min": 0.65918
+        },
+        {
+          "ware": "tobacco_goods",
+          "ware_id": 15,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        },
+        {
+          "ware": "spices",
+          "ware_id": 16,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        }
+      ],
+      "required_public_buildings": [
+        [
+          "marketplace"
+        ],
+        [
+          "tavern"
+        ],
+        [
+          "church"
+        ],
+        [
+          "school",
+          "college"
+        ],
+        [
+          "bathhouse"
+        ]
+      ],
+      "unlock_levels": [
+        {
+          "infra": 7,
+          "name": "theatre",
+          "min_inhabitants_of_this_class_or_higher": 300,
+          "buildings": [
+            "theatre"
+          ]
+        },
+        {
+          "infra": 8,
+          "name": "college",
+          "min_inhabitants_of_this_class_or_higher": 250,
+          "buildings": [
+            "college"
+          ]
+        },
+        {
+          "infra": 29,
+          "name": "level_4a",
+          "min_inhabitants_of_this_class_or_higher": 250,
+          "buildings": [
+            "square_2",
+            "square_3",
+            "ornamental_tree",
+            "goldsmith",
+            "warehouse_4"
+          ]
+        },
+        {
+          "infra": 30,
+          "name": "level_4b",
+          "min_inhabitants_of_this_class_or_higher": 400,
+          "buildings": [
+            "large_castle",
+            "musket_maker"
+          ]
+        },
+        {
+          "infra": 31,
+          "name": "level_5a",
+          "min_inhabitants_of_this_class_or_higher": 500,
+          "buildings": [
+            "large_shipyard"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "aristocrats",
+      "house_building": "house",
+      "house_record_id": 20651,
+      "house_size": [
+        2,
+        2
+      ],
+      "cost_to_reach_this_class": {
+        "gold": 0,
+        "tools_t": 3.0,
+        "wood_t": 3.0,
+        "bricks_t": 12.0
+      },
+      "max_inhabitants_per_house": 40,
+      "tax_value_engine": 13,
+      "cod_steuer": 2.6,
+      "tax_gold_per_inhabitant_per_min_at_normal_rate": 2.4375,
+      "satisfaction_share_engine": 107,
+      "cod_prozent": 84,
+      "needs": [
+        {
+          "ware": "food",
+          "ware_id": 14,
+          "is_food": true,
+          "cod_value_t_per_100_per_min": 1.3,
+          "engine_units_per_inhabitant_per_10s": 17,
+          "t_per_100_inhabitants_per_min": 1.245117
+        },
+        {
+          "ware": "alcohol",
+          "ware_id": 18,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.8,
+          "engine_units_per_inhabitant_per_10s": 10,
+          "t_per_100_inhabitants_per_min": 0.732422
+        },
+        {
+          "ware": "cocoa",
+          "ware_id": 17,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        },
+        {
+          "ware": "tobacco_goods",
+          "ware_id": 15,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        },
+        {
+          "ware": "spices",
+          "ware_id": 16,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.6,
+          "engine_units_per_inhabitant_per_10s": 8,
+          "t_per_100_inhabitants_per_min": 0.585938
+        },
+        {
+          "ware": "clothes",
+          "ware_id": 20,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.5,
+          "engine_units_per_inhabitant_per_10s": 6,
+          "t_per_100_inhabitants_per_min": 0.439453
+        },
+        {
+          "ware": "jewellery",
+          "ware_id": 21,
+          "is_food": false,
+          "cod_value_t_per_100_per_min": 0.2,
+          "engine_units_per_inhabitant_per_10s": 2,
+          "t_per_100_inhabitants_per_min": 0.146484
+        }
+      ],
+      "required_public_buildings": [
+        [
+          "marketplace"
+        ],
+        [
+          "tavern"
+        ],
+        [
+          "church"
+        ],
+        [
+          "college"
+        ],
+        [
+          "bathhouse"
+        ],
+        [
+          "theatre"
+        ]
+      ],
+      "unlock_levels": [
+        {
+          "infra": 11,
+          "name": "castle",
+          "min_inhabitants_of_this_class_or_higher": 1500,
+          "buildings": [
+            "palace"
+          ]
+        },
+        {
+          "infra": 12,
+          "name": "cathedral",
+          "min_inhabitants_of_this_class_or_higher": 2500,
+          "buildings": [
+            "cathedral"
+          ]
+        },
+        {
+          "infra": 13,
+          "name": "triumphal_arch",
+          "min_inhabitants_of_this_class_or_higher": 25000,
+          "buildings": [
+            "triumphal_arch"
+          ]
+        },
+        {
+          "infra": 14,
+          "name": "monument",
+          "min_inhabitants_of_this_class_or_higher": 25000,
+          "buildings": [
+            "monument"
+          ]
+        },
+        {
+          "infra": 32,
+          "name": "level_5b",
+          "min_inhabitants_of_this_class_or_higher": 600,
+          "buildings": [
+            "fortress"
+          ]
+        }
+      ]
+    }
+  ],
+  "levels_available_from_start": [
+    {
+      "infra": 0,
+      "name": "none",
+      "buildings": [
+        "dirt_road",
+        "wooden_bridge",
+        "weaving_hut",
+        "hunters_hut",
+        "forester",
+        "forest",
+        "sheep_farm",
+        "warehouse_1",
+        "fishers_hut",
+        "pier",
+        "house",
+        "marketplace",
+        "chapel"
+      ]
+    },
+    {
+      "infra": 1,
+      "name": "market",
+      "buildings": []
+    },
+    {
+      "infra": 2,
+      "name": "chapel",
+      "buildings": []
+    }
+  ],
+  "unlock_levels": [
+    {
+      "infra": 3,
+      "name": "school",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 100,
+      "buildings": [
+        "school"
+      ]
+    },
+    {
+      "infra": 4,
+      "name": "tavern",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 50,
+      "buildings": [
+        "tavern"
+      ]
+    },
+    {
+      "infra": 5,
+      "name": "church",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 150,
+      "buildings": [
+        "church"
+      ]
+    },
+    {
+      "infra": 6,
+      "name": "bathhouse",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 210,
+      "buildings": [
+        "bathhouse"
+      ]
+    },
+    {
+      "infra": 7,
+      "name": "theatre",
+      "class": "merchants",
+      "class_id": 3,
+      "min_inhabitants_of_class_or_higher": 300,
+      "buildings": [
+        "theatre"
+      ]
+    },
+    {
+      "infra": 8,
+      "name": "college",
+      "class": "merchants",
+      "class_id": 3,
+      "min_inhabitants_of_class_or_higher": 250,
+      "buildings": [
+        "college"
+      ]
+    },
+    {
+      "infra": 9,
+      "name": "doctor",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 50,
+      "buildings": [
+        "doctor"
+      ]
+    },
+    {
+      "infra": 10,
+      "name": "gallows",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 100,
+      "buildings": [
+        "gallows"
+      ]
+    },
+    {
+      "infra": 11,
+      "name": "castle",
+      "class": "aristocrats",
+      "class_id": 4,
+      "min_inhabitants_of_class_or_higher": 1500,
+      "buildings": [
+        "palace"
+      ]
+    },
+    {
+      "infra": 12,
+      "name": "cathedral",
+      "class": "aristocrats",
+      "class_id": 4,
+      "min_inhabitants_of_class_or_higher": 2500,
+      "buildings": [
+        "cathedral"
+      ]
+    },
+    {
+      "infra": 13,
+      "name": "triumphal_arch",
+      "class": "aristocrats",
+      "class_id": 4,
+      "min_inhabitants_of_class_or_higher": 25000,
+      "buildings": [
+        "triumphal_arch"
+      ]
+    },
+    {
+      "infra": 14,
+      "name": "monument",
+      "class": "aristocrats",
+      "class_id": 4,
+      "min_inhabitants_of_class_or_higher": 25000,
+      "buildings": [
+        "monument"
+      ]
+    },
+    {
+      "infra": 15,
+      "name": "level_1a",
+      "class": "pioneers",
+      "class_id": 0,
+      "min_inhabitants_of_class_or_higher": 30,
+      "buildings": [
+        "butcher",
+        "cattle_farm"
+      ]
+    },
+    {
+      "infra": 16,
+      "name": "level_2a",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 15,
+      "buildings": [
+        "paved_road",
+        "stone_bridge",
+        "quarry",
+        "stonemason",
+        "fire_station"
+      ]
+    },
+    {
+      "infra": 17,
+      "name": "level_2b",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 30,
+      "buildings": [
+        "palisade",
+        "wooden_gate",
+        "warehouse_2"
+      ]
+    },
+    {
+      "infra": 18,
+      "name": "level_2c",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 40,
+      "buildings": [
+        "tobacco_products",
+        "rum_distillery",
+        "tobacco_plantation",
+        "tobacco_field",
+        "spice_plantation",
+        "spice_field",
+        "winery",
+        "vines",
+        "sugarcane_plantation",
+        "sugarcane_field"
+      ]
+    },
+    {
+      "infra": 19,
+      "name": "level_2d",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 75,
+      "buildings": [
+        "grain_mill",
+        "bakery",
+        "water_mill",
+        "grain_farm",
+        "grain_field"
+      ]
+    },
+    {
+      "infra": 20,
+      "name": "level_2e",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 100,
+      "buildings": [
+        "toolmaker"
+      ]
+    },
+    {
+      "infra": 21,
+      "name": "level_2f",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 120,
+      "buildings": [
+        "ore_mine",
+        "ore_smelter",
+        "small_shipyard"
+      ]
+    },
+    {
+      "infra": 22,
+      "name": "level_3a",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 100,
+      "buildings": [
+        "warehouse_3"
+      ]
+    },
+    {
+      "infra": 23,
+      "name": "level_2g",
+      "class": "settlers",
+      "class_id": 1,
+      "min_inhabitants_of_class_or_higher": 200,
+      "buildings": [
+        "wooden_watchtower",
+        "wall",
+        "gate",
+        "watchtower",
+        "city_gate",
+        "castle",
+        "square_1",
+        "swordsmith"
+      ]
+    },
+    {
+      "infra": 24,
+      "name": "level_3b",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 150,
+      "buildings": [
+        "gold_mine"
+      ]
+    },
+    {
+      "infra": 25,
+      "name": "level_3c",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 200,
+      "buildings": [
+        "tailor",
+        "weaving_mill",
+        "cotton_plantation",
+        "cotton_field",
+        "cocoa_plantation",
+        "cocoa_field"
+      ]
+    },
+    {
+      "infra": 26,
+      "name": "level_3d",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 300,
+      "buildings": []
+    },
+    {
+      "infra": 27,
+      "name": "level_3e",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 400,
+      "buildings": [
+        "cannon_foundry"
+      ]
+    },
+    {
+      "infra": 28,
+      "name": "level_3f",
+      "class": "citizens",
+      "class_id": 2,
+      "min_inhabitants_of_class_or_higher": 450,
+      "buildings": [
+        "deep_ore_mine"
+      ]
+    },
+    {
+      "infra": 29,
+      "name": "level_4a",
+      "class": "merchants",
+      "class_id": 3,
+      "min_inhabitants_of_class_or_higher": 250,
+      "buildings": [
+        "square_2",
+        "square_3",
+        "ornamental_tree",
+        "goldsmith",
+        "warehouse_4"
+      ]
+    },
+    {
+      "infra": 30,
+      "name": "level_4b",
+      "class": "merchants",
+      "class_id": 3,
+      "min_inhabitants_of_class_or_higher": 400,
+      "buildings": [
+        "large_castle",
+        "musket_maker"
+      ]
+    },
+    {
+      "infra": 31,
+      "name": "level_5a",
+      "class": "merchants",
+      "class_id": 3,
+      "min_inhabitants_of_class_or_higher": 500,
+      "buildings": [
+        "large_shipyard"
+      ]
+    },
+    {
+      "infra": 32,
+      "name": "level_5b",
+      "class": "aristocrats",
+      "class_id": 4,
+      "min_inhabitants_of_class_or_higher": 600,
+      "buildings": [
+        "fortress"
+      ]
+    }
+  ],
+  "buildings": {
+    "palisade": {
+      "id": 22521,
+      "record": 348,
+      "menu_section": "MILITAR",
+      "production_kind": 32,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 10,
+        "tools_t": 0.0,
+        "wood_t": 2.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 17,
+      "unlock_level_name": "level_2b",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 30
+      }
+    },
+    "wooden_gate": {
+      "id": 21404,
+      "record": 361,
+      "menu_section": "MILITAR",
+      "production_kind": 32,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 12,
+        "tools_t": 0.0,
+        "wood_t": 2.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 17,
+      "unlock_level_name": "level_2b",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 30
+      }
+    },
+    "wooden_watchtower": {
+      "id": 21405,
+      "record": 362,
+      "menu_section": "MILITAR",
+      "production_kind": 16,
+      "production_kind_name": "tower",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 2.0,
+        "wood_t": 7.0,
+        "bricks_t": 0.0,
+        "cannons_t": 2.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 5,
+      "radius_tiles": 8,
+      "workers": 2,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "wall": {
+      "id": 22501,
+      "record": 339,
+      "menu_section": "MILITAR",
+      "production_kind": 32,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 18,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 2.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "gate": {
+      "id": 20304,
+      "record": 358,
+      "menu_section": "MILITAR",
+      "production_kind": 32,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 15,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 3.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "watchtower": {
+      "id": 20305,
+      "record": 359,
+      "menu_section": "MILITAR",
+      "production_kind": 16,
+      "production_kind_name": "tower",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 2.0,
+        "wood_t": 1.0,
+        "bricks_t": 6.0,
+        "cannons_t": 2.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 5,
+      "radius_tiles": 8,
+      "workers": 2,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "city_gate": {
+      "id": 20303,
+      "record": 357,
+      "menu_section": "MILITAR",
+      "production_kind": 32,
+      "production_kind_name": null,
+      "size": [
+        1,
+        3
+      ],
+      "build_cost": {
+        "gold": 25,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 4.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "castle": {
+      "id": 20311,
+      "record": 364,
+      "menu_section": "MILITAR",
+      "production_kind": 15,
+      "production_kind_name": "military",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 600,
+        "tools_t": 4.0,
+        "wood_t": 3.0,
+        "bricks_t": 10.0
+      },
+      "running_cost_gold_per_min": 55,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 15,
+      "workers": 4,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "large_castle": {
+      "id": 20313,
+      "record": 365,
+      "menu_section": "MILITAR",
+      "production_kind": 15,
+      "production_kind_name": "military",
+      "size": [
+        3,
+        3
+      ],
+      "build_cost": {
+        "gold": 1300,
+        "tools_t": 8.0,
+        "wood_t": 5.0,
+        "bricks_t": 18.0
+      },
+      "running_cost_gold_per_min": 90,
+      "idle_cost_gold_per_min": 25,
+      "radius_tiles": 15,
+      "workers": 6,
+      "unlock_level": 30,
+      "unlock_level_name": "level_4b",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 400
+      }
+    },
+    "fortress": {
+      "id": 20315,
+      "record": 366,
+      "menu_section": "MILITAR",
+      "production_kind": 15,
+      "production_kind_name": "military",
+      "size": [
+        5,
+        5
+      ],
+      "build_cost": {
+        "gold": 2500,
+        "tools_t": 12.0,
+        "wood_t": 8.0,
+        "bricks_t": 25.0
+      },
+      "running_cost_gold_per_min": 130,
+      "idle_cost_gold_per_min": 40,
+      "radius_tiles": 15,
+      "workers": 8,
+      "unlock_level": 32,
+      "unlock_level_name": "level_5b",
+      "unlock_requires": {
+        "class": "aristocrats",
+        "min_inhabitants_of_class_or_higher": 600
+      }
+    },
+    "dirt_road": {
+      "id": 20411,
+      "record": 371,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "paved_road": {
+      "id": 20401,
+      "record": 367,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 1.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 16,
+      "unlock_level_name": "level_2a",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 15
+      }
+    },
+    "wooden_bridge": {
+      "id": 21601,
+      "record": 375,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 10,
+        "tools_t": 0.0,
+        "wood_t": 2.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "stone_bridge": {
+      "id": 21603,
+      "record": 376,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 15,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 2.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 16,
+      "unlock_level_name": "level_2a",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 15
+      }
+    },
+    "square_1": {
+      "id": 20421,
+      "record": 377,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 1.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "square_2": {
+      "id": 20422,
+      "record": 378,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 1.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 29,
+      "unlock_level_name": "level_4a",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 250
+      }
+    },
+    "square_3": {
+      "id": 20423,
+      "record": 379,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 1.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 29,
+      "unlock_level_name": "level_4a",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 250
+      }
+    },
+    "ornamental_tree": {
+      "id": 20424,
+      "record": 380,
+      "menu_section": "STRASSE",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 1.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 29,
+      "unlock_level_name": "level_4a",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 250
+      }
+    },
+    "quarry": {
+      "id": 22407,
+      "record": 396,
+      "menu_section": "BERGWERK",
+      "production_kind": 11,
+      "production_kind_name": "quarry",
+      "size": [
+        1,
+        2
+      ],
+      "build_cost": {
+        "gold": 150,
+        "tools_t": 6.0,
+        "wood_t": 2.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 16,
+      "unlock_level_name": "level_2a",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 15
+      },
+      "resource_site": {
+        "ware": "stone",
+        "harvested_by": "stonemason",
+        "note": "the stonemason's worker takes 1 t of stone per visit; quarries never run out"
+      }
+    },
+    "ore_mine": {
+      "id": 22401,
+      "record": 397,
+      "menu_section": "BERGWERK",
+      "production_kind": 3,
+      "production_kind_name": "mine",
+      "size": [
+        1,
+        2
+      ],
+      "build_cost": {
+        "gold": 1000,
+        "tools_t": 10.0,
+        "wood_t": 20.0,
+        "bricks_t": 5.0
+      },
+      "running_cost_gold_per_min": 60,
+      "idle_cost_gold_per_min": 20,
+      "radius_tiles": 1,
+      "workers": 8,
+      "unlock_level": 21,
+      "unlock_level_name": "level_2f",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 120
+      },
+      "production": {
+        "ware": "ore",
+        "ware_id": 2,
+        "t_per_cycle": 1.0,
+        "raw": [],
+        "interval_s": 40,
+        "cycle_s_at_full_speed": 40,
+        "t_per_min_at_full_speed": 1.5,
+        "max_stock_t": 5.0,
+        "worker_figure": null,
+        "cod_figuranz": 0
+      }
+    },
+    "deep_ore_mine": {
+      "id": 22403,
+      "record": 398,
+      "menu_section": "BERGWERK",
+      "production_kind": 3,
+      "production_kind_name": "mine",
+      "size": [
+        1,
+        2
+      ],
+      "build_cost": {
+        "gold": 1800,
+        "tools_t": 15.0,
+        "wood_t": 30.0,
+        "bricks_t": 7.0
+      },
+      "running_cost_gold_per_min": 60,
+      "idle_cost_gold_per_min": 20,
+      "radius_tiles": 1,
+      "workers": 10,
+      "unlock_level": 28,
+      "unlock_level_name": "level_3f",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 450
+      },
+      "production": {
+        "ware": "ore",
+        "ware_id": 2,
+        "t_per_cycle": 1.0,
+        "raw": [],
+        "interval_s": 40,
+        "cycle_s_at_full_speed": 40,
+        "t_per_min_at_full_speed": 1.5,
+        "max_stock_t": 5.0,
+        "worker_figure": null,
+        "cod_figuranz": 0
+      }
+    },
+    "gold_mine": {
+      "id": 22405,
+      "record": 399,
+      "menu_section": "BERGWERK",
+      "production_kind": 3,
+      "production_kind_name": "mine",
+      "size": [
+        1,
+        2
+      ],
+      "build_cost": {
+        "gold": 1000,
+        "tools_t": 10.0,
+        "wood_t": 20.0,
+        "bricks_t": 5.0
+      },
+      "running_cost_gold_per_min": 60,
+      "idle_cost_gold_per_min": 20,
+      "radius_tiles": 1,
+      "workers": 10,
+      "unlock_level": 24,
+      "unlock_level_name": "level_3b",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 150
+      },
+      "production": {
+        "ware": "gold",
+        "ware_id": 3,
+        "t_per_cycle": 1.0,
+        "raw": [],
+        "interval_s": 80,
+        "cycle_s_at_full_speed": 80,
+        "t_per_min_at_full_speed": 0.75,
+        "max_stock_t": 4.0,
+        "worker_figure": null,
+        "cod_figuranz": 0
+      }
+    },
+    "weaving_hut": {
+      "id": 20507,
+      "record": 387,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 3.0,
+        "wood_t": 6.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 10,
+      "idle_cost_gold_per_min": 5,
+      "radius_tiles": 15,
+      "workers": 2,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null,
+      "production": {
+        "ware": "cloth",
+        "ware_id": 19,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "wool",
+            "ware_id": 4,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 4.0
+          }
+        ],
+        "interval_s": 30,
+        "cycle_s_at_full_speed": 30,
+        "t_per_min_at_full_speed": 2.0,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "butcher": {
+      "id": 20511,
+      "record": 385,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 150,
+        "tools_t": 3.0,
+        "wood_t": 6.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 10,
+      "workers": 2,
+      "unlock_level": 15,
+      "unlock_level_name": "level_1a",
+      "unlock_requires": {
+        "class": "pioneers",
+        "min_inhabitants_of_class_or_higher": 30
+      },
+      "production": {
+        "ware": "food",
+        "ware_id": 14,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "cattle",
+            "ware_id": 7,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 4.8
+          }
+        ],
+        "interval_s": 25,
+        "cycle_s_at_full_speed": 25,
+        "t_per_min_at_full_speed": 2.4,
+        "max_stock_t": 4.0,
+        "worker_figure": "butcher",
+        "cod_figuranz": 1
+      }
+    },
+    "grain_mill": {
+      "id": 20501,
+      "record": 381,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 3.0,
+        "wood_t": 6.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 10,
+      "workers": 2,
+      "unlock_level": 19,
+      "unlock_level_name": "level_2d",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 75
+      },
+      "production": {
+        "ware": "flour",
+        "ware_id": 9,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "grain",
+            "ware_id": 8,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 6.666667
+          }
+        ],
+        "interval_s": 18,
+        "cycle_s_at_full_speed": 18,
+        "t_per_min_at_full_speed": 3.333333,
+        "max_stock_t": 6.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "bakery": {
+      "id": 20503,
+      "record": 384,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 150,
+        "tools_t": 2.0,
+        "wood_t": 6.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 15,
+      "workers": 2,
+      "unlock_level": 19,
+      "unlock_level_name": "level_2d",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 75
+      },
+      "production": {
+        "ware": "food",
+        "ware_id": 14,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "flour",
+            "ware_id": 9,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 6.315789
+          }
+        ],
+        "interval_s": 19,
+        "cycle_s_at_full_speed": 19,
+        "t_per_min_at_full_speed": 3.157895,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "tobacco_products": {
+      "id": 20525,
+      "record": 390,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 3.0,
+        "wood_t": 2.0,
+        "bricks_t": 5.0
+      },
+      "running_cost_gold_per_min": 20,
+      "idle_cost_gold_per_min": 10,
+      "radius_tiles": 12,
+      "workers": 2,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      },
+      "production": {
+        "ware": "tobacco_goods",
+        "ware_id": 15,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "tobacco",
+            "ware_id": 6,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 4.0
+          }
+        ],
+        "interval_s": 30,
+        "cycle_s_at_full_speed": 30,
+        "t_per_min_at_full_speed": 2.0,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "rum_distillery": {
+      "id": 20519,
+      "record": 389,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 3.0,
+        "wood_t": 2.0,
+        "bricks_t": 5.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 7,
+      "radius_tiles": 12,
+      "workers": 3,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      },
+      "production": {
+        "ware": "alcohol",
+        "ware_id": 18,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "sugar",
+            "ware_id": 5,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 5.217391
+          }
+        ],
+        "interval_s": 23,
+        "cycle_s_at_full_speed": 23,
+        "t_per_min_at_full_speed": 2.608696,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "tailor": {
+      "id": 20505,
+      "record": 386,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 150,
+        "tools_t": 3.0,
+        "wood_t": 6.0,
+        "bricks_t": 2.0
+      },
+      "running_cost_gold_per_min": 10,
+      "idle_cost_gold_per_min": 5,
+      "radius_tiles": 15,
+      "workers": 3,
+      "unlock_level": 25,
+      "unlock_level_name": "level_3c",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 200
+      },
+      "production": {
+        "ware": "clothes",
+        "ware_id": 20,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "cloth",
+            "ware_id": 19,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 2.0
+          }
+        ],
+        "interval_s": 30,
+        "cycle_s_at_full_speed": 30,
+        "t_per_min_at_full_speed": 2.0,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "weaving_mill": {
+      "id": 20531,
+      "record": 388,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 4.0,
+        "wood_t": 3.0,
+        "bricks_t": 7.0
+      },
+      "running_cost_gold_per_min": 20,
+      "idle_cost_gold_per_min": 10,
+      "radius_tiles": 15,
+      "workers": 4,
+      "unlock_level": 25,
+      "unlock_level_name": "level_3c",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 200
+      },
+      "production": {
+        "ware": "cloth",
+        "ware_id": 19,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "wool",
+            "ware_id": 4,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 7.058824
+          }
+        ],
+        "interval_s": 17,
+        "cycle_s_at_full_speed": 17,
+        "t_per_min_at_full_speed": 3.529412,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "stonemason": {
+      "id": 20513,
+      "record": 400,
+      "menu_section": "HANDWERK",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 5.0,
+        "wood_t": 5.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 7,
+      "workers": 2,
+      "unlock_level": 16,
+      "unlock_level_name": "level_2a",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 15
+      },
+      "production": {
+        "ware": "bricks",
+        "ware_id": 24,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "stone",
+            "ware_id": 54,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 3.0
+          }
+        ],
+        "interval_s": 8,
+        "cycle_s_at_full_speed": 20,
+        "t_per_min_at_full_speed": 3.0,
+        "max_stock_t": 8.0,
+        "worker_figure": "stonecutter",
+        "cod_figuranz": 1,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=50, speed=220, worktime_ms=8000"
+      }
+    },
+    "water_mill": {
+      "id": 20509,
+      "record": 382,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 3.0,
+        "wood_t": 6.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 10,
+      "workers": 2,
+      "unlock_level": 19,
+      "unlock_level_name": "level_2d",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 75
+      },
+      "production": {
+        "ware": "flour",
+        "ware_id": 9,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "grain",
+            "ware_id": 8,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 6.666667
+          }
+        ],
+        "interval_s": 18,
+        "cycle_s_at_full_speed": 18,
+        "t_per_min_at_full_speed": 3.333333,
+        "max_stock_t": 6.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "ore_smelter": {
+      "id": 20521,
+      "record": 383,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 3.0,
+        "wood_t": 1.0,
+        "bricks_t": 4.0
+      },
+      "running_cost_gold_per_min": 25,
+      "idle_cost_gold_per_min": 10,
+      "radius_tiles": 10,
+      "workers": 3,
+      "unlock_level": 21,
+      "unlock_level_name": "level_2f",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 120
+      },
+      "production": {
+        "ware": "iron",
+        "ware_id": 10,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "ore",
+            "ware_id": 2,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 2.068966
+          },
+          {
+            "ware": "wood",
+            "ware_id": 23,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 2.068966
+          }
+        ],
+        "interval_s": 29,
+        "cycle_s_at_full_speed": 29,
+        "t_per_min_at_full_speed": 2.068966,
+        "max_stock_t": 5.0,
+        "worker_figure": "pack_donkey",
+        "cod_figuranz": 1
+      }
+    },
+    "toolmaker": {
+      "id": 20515,
+      "record": 392,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 150,
+        "tools_t": 3.0,
+        "wood_t": 2.0,
+        "bricks_t": 5.0
+      },
+      "running_cost_gold_per_min": 25,
+      "idle_cost_gold_per_min": 10,
+      "radius_tiles": 15,
+      "workers": 3,
+      "unlock_level": 20,
+      "unlock_level_name": "level_2e",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 100
+      },
+      "production": {
+        "ware": "tools",
+        "ware_id": 22,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "iron",
+            "ware_id": 10,
+            "t_per_cycle": 0.5,
+            "t_per_min_at_full_speed": 0.857143
+          }
+        ],
+        "interval_s": 35,
+        "cycle_s_at_full_speed": 35,
+        "t_per_min_at_full_speed": 1.714286,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "goldsmith": {
+      "id": 20533,
+      "record": 391,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 1500,
+        "tools_t": 7.0,
+        "wood_t": 2.0,
+        "bricks_t": 10.0
+      },
+      "running_cost_gold_per_min": 45,
+      "idle_cost_gold_per_min": 20,
+      "radius_tiles": 12,
+      "workers": 3,
+      "unlock_level": 29,
+      "unlock_level_name": "level_4a",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 250
+      },
+      "production": {
+        "ware": "jewellery",
+        "ware_id": 21,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "gold",
+            "ware_id": 3,
+            "t_per_cycle": 0.5,
+            "t_per_min_at_full_speed": 0.6
+          }
+        ],
+        "interval_s": 50,
+        "cycle_s_at_full_speed": 50,
+        "t_per_min_at_full_speed": 1.2,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "swordsmith": {
+      "id": 20517,
+      "record": 395,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 450,
+        "tools_t": 5.0,
+        "wood_t": 4.0,
+        "bricks_t": 10.0
+      },
+      "running_cost_gold_per_min": 30,
+      "idle_cost_gold_per_min": 14,
+      "radius_tiles": 15,
+      "workers": 3,
+      "unlock_level": 23,
+      "unlock_level_name": "level_2g",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 200
+      },
+      "production": {
+        "ware": "swords",
+        "ware_id": 11,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "iron",
+            "ware_id": 10,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 1.2
+          }
+        ],
+        "interval_s": 50,
+        "cycle_s_at_full_speed": 50,
+        "t_per_min_at_full_speed": 1.2,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "musket_maker": {
+      "id": 20529,
+      "record": 393,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 600,
+        "tools_t": 9.0,
+        "wood_t": 4.0,
+        "bricks_t": 10.0
+      },
+      "running_cost_gold_per_min": 45,
+      "idle_cost_gold_per_min": 20,
+      "radius_tiles": 15,
+      "workers": 4,
+      "unlock_level": 30,
+      "unlock_level_name": "level_4b",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 400
+      },
+      "production": {
+        "ware": "muskets",
+        "ware_id": 12,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "iron",
+            "ware_id": 10,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 1.2
+          },
+          {
+            "ware": "wood",
+            "ware_id": 23,
+            "t_per_cycle": 0.5,
+            "t_per_min_at_full_speed": 0.6
+          }
+        ],
+        "interval_s": 50,
+        "cycle_s_at_full_speed": 50,
+        "t_per_min_at_full_speed": 1.2,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "cannon_foundry": {
+      "id": 20527,
+      "record": 394,
+      "menu_section": "HANDWERK",
+      "production_kind": 1,
+      "production_kind_name": "workshop",
+      "size": [
+        3,
+        3
+      ],
+      "build_cost": {
+        "gold": 750,
+        "tools_t": 6.0,
+        "wood_t": 5.0,
+        "bricks_t": 15.0
+      },
+      "running_cost_gold_per_min": 60,
+      "idle_cost_gold_per_min": 25,
+      "radius_tiles": 15,
+      "workers": 5,
+      "unlock_level": 27,
+      "unlock_level_name": "level_3e",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 400
+      },
+      "production": {
+        "ware": "cannons",
+        "ware_id": 13,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "iron",
+            "ware_id": 10,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 1.2
+          },
+          {
+            "ware": "wood",
+            "ware_id": 23,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 1.2
+          }
+        ],
+        "interval_s": 50,
+        "cycle_s_at_full_speed": 50,
+        "t_per_min_at_full_speed": 1.2,
+        "max_stock_t": 4.0,
+        "worker_figure": "carrier",
+        "cod_figuranz": 1
+      }
+    },
+    "hunters_hut": {
+      "id": 22003,
+      "record": 402,
+      "menu_section": "FARM",
+      "production_kind": 5,
+      "production_kind_name": "hunter",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 50,
+        "tools_t": 2.0,
+        "wood_t": 2.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 8,
+      "workers": 1,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null,
+      "production": {
+        "ware": "food",
+        "ware_id": 14,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "game",
+            "ware_id": 56,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 2.857143
+          }
+        ],
+        "interval_s": 15,
+        "cycle_s_at_full_speed": 21,
+        "t_per_min_at_full_speed": 2.857143,
+        "max_stock_t": 3.0,
+        "worker_figure": "hunter",
+        "cod_figuranz": 1,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=50, speed=220, worktime_ms=2000"
+      }
+    },
+    "forester": {
+      "id": 22001,
+      "record": 401,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 50,
+        "tools_t": 2.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 3,
+      "workers": 1,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null,
+      "production": {
+        "ware": "wood",
+        "ware_id": 23,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "tree",
+            "ware_id": 53,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 3.157895
+          }
+        ],
+        "interval_s": 8,
+        "cycle_s_at_full_speed": 19,
+        "t_per_min_at_full_speed": 3.157895,
+        "max_stock_t": 10.0,
+        "worker_figure": "woodcutter",
+        "cod_figuranz": 1,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=40, speed=220, worktime_ms=8000"
+      },
+      "fields": {
+        "field_building": "forest",
+        "field_terrain": null,
+        "field_building_id": 21303,
+        "crop_ware": "tree",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 20,
+        "stage_s": 180.0,
+        "regrow_s_avg": 810.0,
+        "regrow_s_max": 900.0,
+        "fields_for_full_speed": 43,
+        "fields_for_full_speed_worst_case": 48,
+        "t_per_min_per_field": 0.074074,
+        "catchment_tiles_excluding_building": 48,
+        "computer_player_plants": 14
+      }
+    },
+    "forest": {
+      "id": 21303,
+      "record": 102,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "grain_farm": {
+      "id": 21503,
+      "record": 403,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 2.0,
+        "wood_t": 5.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 1,
+      "workers": 2,
+      "unlock_level": 19,
+      "unlock_level_name": "level_2d",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 75
+      },
+      "production": {
+        "ware": "grain",
+        "ware_id": 8,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "grain_crop",
+            "ware_id": 45,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 3.333333
+          }
+        ],
+        "interval_s": 8,
+        "cycle_s_at_full_speed": 18,
+        "t_per_min_at_full_speed": 3.333333,
+        "max_stock_t": 6.0,
+        "worker_figure": "harvester",
+        "cod_figuranz": 1,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=22, speed=220, worktime_ms=8000"
+      },
+      "fields": {
+        "field_building": "grain_field",
+        "field_terrain": null,
+        "field_building_id": 21301,
+        "crop_ware": "grain_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 0,
+        "stage_s": 40.0,
+        "regrow_s_avg": 180.0,
+        "regrow_s_max": 200.0,
+        "fields_for_full_speed": 10,
+        "fields_for_full_speed_worst_case": 12,
+        "t_per_min_per_field": 0.333333,
+        "catchment_tiles_excluding_building": 12,
+        "computer_player_plants": 7
+      }
+    },
+    "grain_field": {
+      "id": 21301,
+      "record": 81,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 19,
+      "unlock_level_name": "level_2d",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 75
+      }
+    },
+    "sheep_farm": {
+      "id": 21515,
+      "record": 411,
+      "menu_section": "FARM",
+      "production_kind": 4,
+      "production_kind_name": "pasture",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 2.0,
+        "wood_t": 4.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 3,
+      "workers": 2,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null,
+      "production": {
+        "ware": "wool",
+        "ware_id": 4,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "grass",
+            "ware_id": 52,
+            "t_per_cycle": 4.0,
+            "t_per_min_at_full_speed": 8.0
+          }
+        ],
+        "interval_s": 30,
+        "cycle_s_at_full_speed": 30,
+        "t_per_min_at_full_speed": 2.0,
+        "max_stock_t": 8.0,
+        "worker_figure": "sheep_animal",
+        "cod_figuranz": 3,
+        "workers_out": 3,
+        "animal_max_carry_t": 4
+      },
+      "fields": {
+        "field_building": null,
+        "field_terrain": "meadow (natural grass ground)",
+        "field_building_id": 22701,
+        "crop_ware": "grass",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 1,
+        "growth_class": 31,
+        "stage_s": 257.0,
+        "regrow_s_avg": 128.5,
+        "regrow_s_max": 257.0,
+        "fields_for_full_speed": 18,
+        "fields_for_full_speed_worst_case": 35,
+        "t_per_min_per_field": 0.466926,
+        "catchment_tiles_excluding_building": 48,
+        "computer_player_plants": 14
+      }
+    },
+    "cattle_farm": {
+      "id": 21513,
+      "record": 410,
+      "menu_section": "FARM",
+      "production_kind": 4,
+      "production_kind_name": "pasture",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 1.0,
+        "wood_t": 4.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 2,
+      "workers": 2,
+      "unlock_level": 15,
+      "unlock_level_name": "level_1a",
+      "unlock_requires": {
+        "class": "pioneers",
+        "min_inhabitants_of_class_or_higher": 30
+      },
+      "production": {
+        "ware": "cattle",
+        "ware_id": 7,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "grass",
+            "ware_id": 52,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 4.8
+          }
+        ],
+        "interval_s": 25,
+        "cycle_s_at_full_speed": 25,
+        "t_per_min_at_full_speed": 2.4,
+        "max_stock_t": 4.0,
+        "worker_figure": "cattle_animal",
+        "cod_figuranz": 2,
+        "workers_out": 2,
+        "animal_max_carry_t": 3
+      },
+      "fields": {
+        "field_building": null,
+        "field_terrain": "meadow (natural grass ground)",
+        "field_building_id": 22701,
+        "crop_ware": "grass",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 1,
+        "growth_class": 31,
+        "stage_s": 257.0,
+        "regrow_s_avg": 128.5,
+        "regrow_s_max": 257.0,
+        "fields_for_full_speed": 11,
+        "fields_for_full_speed_worst_case": 21,
+        "t_per_min_per_field": 0.466926,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "tobacco_plantation": {
+      "id": 21507,
+      "record": 405,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 2.0,
+        "wood_t": 3.0,
+        "bricks_t": 8.0
+      },
+      "running_cost_gold_per_min": 35,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 2,
+      "workers": 4,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      },
+      "production": {
+        "ware": "tobacco",
+        "ware_id": 6,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "tobacco_crop",
+            "ware_id": 46,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 4.137931
+          }
+        ],
+        "interval_s": 15,
+        "cycle_s_at_full_speed": 29,
+        "t_per_min_at_full_speed": 2.068966,
+        "max_stock_t": 6.0,
+        "worker_figure": "picker",
+        "cod_figuranz": 0,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=30, speed=220, worktime_ms=4500"
+      },
+      "fields": {
+        "field_building": "tobacco_field",
+        "field_terrain": null,
+        "field_building_id": 21335,
+        "crop_ware": "tobacco_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 3,
+        "stage_s": 61.0,
+        "regrow_s_avg": 274.5,
+        "regrow_s_max": 305.0,
+        "fields_for_full_speed": 19,
+        "fields_for_full_speed_worst_case": 22,
+        "t_per_min_per_field": 0.218579,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "tobacco_field": {
+      "id": 21335,
+      "record": 87,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      }
+    },
+    "spice_plantation": {
+      "id": 21501,
+      "record": 409,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 2.0,
+        "wood_t": 3.0,
+        "bricks_t": 8.0
+      },
+      "running_cost_gold_per_min": 35,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 2,
+      "workers": 4,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      },
+      "production": {
+        "ware": "spices",
+        "ware_id": 16,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "spice_crop",
+            "ware_id": 47,
+            "t_per_cycle": 3.0,
+            "t_per_min_at_full_speed": 5.0
+          }
+        ],
+        "interval_s": 15,
+        "cycle_s_at_full_speed": 36,
+        "t_per_min_at_full_speed": 1.666667,
+        "max_stock_t": 4.0,
+        "worker_figure": "picker",
+        "cod_figuranz": 0,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=30, speed=220, worktime_ms=4500"
+      },
+      "fields": {
+        "field_building": "spice_field",
+        "field_terrain": null,
+        "field_building_id": 21341,
+        "crop_ware": "spice_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 3,
+        "stage_s": 61.0,
+        "regrow_s_avg": 274.5,
+        "regrow_s_max": 305.0,
+        "fields_for_full_speed": 23,
+        "fields_for_full_speed_worst_case": 26,
+        "t_per_min_per_field": 0.218579,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "spice_field": {
+      "id": 21341,
+      "record": 96,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      }
+    },
+    "winery": {
+      "id": 21517,
+      "record": 408,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 2.0,
+        "wood_t": 3.0,
+        "bricks_t": 8.0
+      },
+      "running_cost_gold_per_min": 35,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 2,
+      "workers": 4,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      },
+      "production": {
+        "ware": "alcohol",
+        "ware_id": 18,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "grapes_crop",
+            "ware_id": 50,
+            "t_per_cycle": 4.0,
+            "t_per_min_at_full_speed": 5.581395
+          }
+        ],
+        "interval_s": 15,
+        "cycle_s_at_full_speed": 43,
+        "t_per_min_at_full_speed": 1.395349,
+        "max_stock_t": 6.0,
+        "worker_figure": "picker",
+        "cod_figuranz": 0,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=30, speed=220, worktime_ms=4500"
+      },
+      "fields": {
+        "field_building": "vines",
+        "field_terrain": null,
+        "field_building_id": 21343,
+        "crop_ware": "grapes_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 3,
+        "stage_s": 61.0,
+        "regrow_s_avg": 274.5,
+        "regrow_s_max": 305.0,
+        "fields_for_full_speed": 26,
+        "fields_for_full_speed_worst_case": 29,
+        "t_per_min_per_field": 0.218579,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "vines": {
+      "id": 21343,
+      "record": 99,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      }
+    },
+    "sugarcane_plantation": {
+      "id": 21511,
+      "record": 407,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 2.0,
+        "wood_t": 3.0,
+        "bricks_t": 8.0
+      },
+      "running_cost_gold_per_min": 25,
+      "idle_cost_gold_per_min": 10,
+      "radius_tiles": 2,
+      "workers": 4,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      },
+      "production": {
+        "ware": "sugar",
+        "ware_id": 5,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "sugarcane_crop",
+            "ware_id": 48,
+            "t_per_cycle": 2.0,
+            "t_per_min_at_full_speed": 5.454545
+          }
+        ],
+        "interval_s": 8,
+        "cycle_s_at_full_speed": 22,
+        "t_per_min_at_full_speed": 2.727273,
+        "max_stock_t": 6.0,
+        "worker_figure": "picker",
+        "cod_figuranz": 0,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=30, speed=220, worktime_ms=4500"
+      },
+      "fields": {
+        "field_building": "sugarcane_field",
+        "field_terrain": null,
+        "field_building_id": 21339,
+        "crop_ware": "sugarcane_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 2,
+        "stage_s": 54.0,
+        "regrow_s_avg": 243.0,
+        "regrow_s_max": 270.0,
+        "fields_for_full_speed": 23,
+        "fields_for_full_speed_worst_case": 25,
+        "t_per_min_per_field": 0.246914,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "sugarcane_field": {
+      "id": 21339,
+      "record": 93,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 18,
+      "unlock_level_name": "level_2c",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 40
+      }
+    },
+    "cotton_plantation": {
+      "id": 21505,
+      "record": 404,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 2.0,
+        "wood_t": 3.0,
+        "bricks_t": 6.0
+      },
+      "running_cost_gold_per_min": 25,
+      "idle_cost_gold_per_min": 10,
+      "radius_tiles": 2,
+      "workers": 4,
+      "unlock_level": 25,
+      "unlock_level_name": "level_3c",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 200
+      },
+      "production": {
+        "ware": "wool",
+        "ware_id": 4,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "cotton_crop",
+            "ware_id": 49,
+            "t_per_cycle": 1.0,
+            "t_per_min_at_full_speed": 3.529412
+          }
+        ],
+        "interval_s": 10,
+        "cycle_s_at_full_speed": 17,
+        "t_per_min_at_full_speed": 3.529412,
+        "max_stock_t": 9.0,
+        "worker_figure": "picker",
+        "cod_figuranz": 0,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=30, speed=220, worktime_ms=4500"
+      },
+      "fields": {
+        "field_building": "cotton_field",
+        "field_terrain": null,
+        "field_building_id": 21331,
+        "crop_ware": "cotton_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 3,
+        "stage_s": 61.0,
+        "regrow_s_avg": 274.5,
+        "regrow_s_max": 305.0,
+        "fields_for_full_speed": 17,
+        "fields_for_full_speed_worst_case": 18,
+        "t_per_min_per_field": 0.218579,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "cotton_field": {
+      "id": 21331,
+      "record": 84,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 25,
+      "unlock_level_name": "level_3c",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "cocoa_plantation": {
+      "id": 21509,
+      "record": 406,
+      "menu_section": "FARM",
+      "production_kind": 2,
+      "production_kind_name": "farm",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 2.0,
+        "wood_t": 3.0,
+        "bricks_t": 8.0
+      },
+      "running_cost_gold_per_min": 35,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 2,
+      "workers": 4,
+      "unlock_level": 25,
+      "unlock_level_name": "level_3c",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 200
+      },
+      "production": {
+        "ware": "cocoa",
+        "ware_id": 17,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "cocoa_crop",
+            "ware_id": 51,
+            "t_per_cycle": 3.0,
+            "t_per_min_at_full_speed": 5.0
+          }
+        ],
+        "interval_s": 15,
+        "cycle_s_at_full_speed": 36,
+        "t_per_min_at_full_speed": 1.666667,
+        "max_stock_t": 6.0,
+        "worker_figure": "picker",
+        "cod_figuranz": 0,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=30, speed=220, worktime_ms=4500"
+      },
+      "fields": {
+        "field_building": "cocoa_field",
+        "field_terrain": null,
+        "field_building_id": 21337,
+        "crop_ware": "cocoa_crop",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 5,
+        "growth_class": 3,
+        "stage_s": 61.0,
+        "regrow_s_avg": 274.5,
+        "regrow_s_max": 305.0,
+        "fields_for_full_speed": 23,
+        "fields_for_full_speed_worst_case": 26,
+        "t_per_min_per_field": 0.218579,
+        "catchment_tiles_excluding_building": 28,
+        "computer_player_plants": 14
+      }
+    },
+    "cocoa_field": {
+      "id": 21337,
+      "record": 90,
+      "menu_section": "FARM",
+      "production_kind": 10,
+      "production_kind_name": "growing_crop",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 5,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 25,
+      "unlock_level_name": "level_3c",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 200
+      }
+    },
+    "warehouse_1": {
+      "id": 22101,
+      "record": 270,
+      "menu_section": "HAFEN",
+      "production_kind": 8,
+      "production_kind_name": "warehouse",
+      "size": [
+        2,
+        3
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 3.0,
+        "wood_t": 6.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 16,
+      "workers": 2,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "warehouse_2": {
+      "id": 22103,
+      "record": 271,
+      "menu_section": "HAFEN",
+      "production_kind": 8,
+      "production_kind_name": "warehouse",
+      "size": [
+        2,
+        3
+      ],
+      "build_cost": {
+        "gold": 180,
+        "tools_t": 3.0,
+        "wood_t": 7.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 16,
+      "workers": 3,
+      "unlock_level": 17,
+      "unlock_level_name": "level_2b",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 30
+      }
+    },
+    "warehouse_3": {
+      "id": 22105,
+      "record": 272,
+      "menu_section": "HAFEN",
+      "production_kind": 8,
+      "production_kind_name": "warehouse",
+      "size": [
+        2,
+        3
+      ],
+      "build_cost": {
+        "gold": 250,
+        "tools_t": 4.0,
+        "wood_t": 4.0,
+        "bricks_t": 6.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 16,
+      "workers": 4,
+      "unlock_level": 22,
+      "unlock_level_name": "level_3a",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 100
+      }
+    },
+    "warehouse_4": {
+      "id": 22107,
+      "record": 273,
+      "menu_section": "HAFEN",
+      "production_kind": 8,
+      "production_kind_name": "warehouse",
+      "size": [
+        2,
+        3
+      ],
+      "build_cost": {
+        "gold": 250,
+        "tools_t": 5.0,
+        "wood_t": 4.0,
+        "bricks_t": 10.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 15,
+      "radius_tiles": 16,
+      "workers": 5,
+      "unlock_level": 29,
+      "unlock_level_name": "level_4a",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 250
+      }
+    },
+    "fishers_hut": {
+      "id": 21075,
+      "record": 269,
+      "menu_section": "HAFEN",
+      "production_kind": 6,
+      "production_kind_name": "fisher",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 3.0,
+        "wood_t": 5.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 5,
+      "workers": 1,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null,
+      "production": {
+        "ware": "food",
+        "ware_id": 14,
+        "t_per_cycle": 1.0,
+        "raw": [
+          {
+            "ware": "fish",
+            "ware_id": 57,
+            "t_per_cycle": 3.0,
+            "t_per_min_at_full_speed": 2.278481
+          }
+        ],
+        "interval_s": 28,
+        "cycle_s_at_full_speed": 79,
+        "t_per_min_at_full_speed": 0.759494,
+        "max_stock_t": 4.0,
+        "worker_figure": "fisherman",
+        "cod_figuranz": 1,
+        "workers_out": 1,
+        "cycle_formula": "interval + (walk_s * raw_units >> 5), walk_s = (reach*20000/speed + worktime_ms) // 1000, reach=50, speed=320, worktime_ms=14500"
+      },
+      "fields": {
+        "field_building": null,
+        "field_terrain": "open sea (fish)",
+        "field_building_id": 21251,
+        "crop_ware": "fish",
+        "t_per_harvested_tile": 1.0,
+        "growth_stages": 6,
+        "growth_class": 5,
+        "stage_s": 75.0,
+        "regrow_s_avg": 412.5,
+        "regrow_s_max": 450.0,
+        "fields_for_full_speed": 16,
+        "fields_for_full_speed_worst_case": 18,
+        "t_per_min_per_field": 0.145455,
+        "catchment_tiles_excluding_building": 96
+      }
+    },
+    "pier": {
+      "id": 21073,
+      "record": 268,
+      "menu_section": "HAFEN",
+      "production_kind": 0,
+      "production_kind_name": null,
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 15,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 2.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 5,
+      "workers": 0,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "small_shipyard": {
+      "id": 22115,
+      "record": 279,
+      "menu_section": "HAFEN",
+      "production_kind": 14,
+      "production_kind_name": "shipyard",
+      "size": [
+        3,
+        3
+      ],
+      "build_cost": {
+        "gold": 1100,
+        "tools_t": 8.0,
+        "wood_t": 12.0,
+        "bricks_t": 3.0
+      },
+      "running_cost_gold_per_min": 100,
+      "idle_cost_gold_per_min": 20,
+      "radius_tiles": 12,
+      "workers": 4,
+      "unlock_level": 21,
+      "unlock_level_name": "level_2f",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 120
+      }
+    },
+    "large_shipyard": {
+      "id": 22111,
+      "record": 278,
+      "menu_section": "HAFEN",
+      "production_kind": 14,
+      "production_kind_name": "shipyard",
+      "size": [
+        4,
+        4
+      ],
+      "build_cost": {
+        "gold": 2800,
+        "tools_t": 10.0,
+        "wood_t": 25.0,
+        "bricks_t": 6.0
+      },
+      "running_cost_gold_per_min": 150,
+      "idle_cost_gold_per_min": 30,
+      "radius_tiles": 15,
+      "workers": 6,
+      "unlock_level": 31,
+      "unlock_level_name": "level_5a",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 500
+      }
+    },
+    "house": {
+      "id": 20605,
+      "record": 413,
+      "menu_section": "DIVERS",
+      "production_kind": 13,
+      "production_kind_name": "house",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 0,
+        "tools_t": 0.0,
+        "wood_t": 3.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 6,
+      "workers": 0,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "marketplace": {
+      "id": 20809,
+      "record": 467,
+      "menu_section": "DIVERS",
+      "production_kind": 7,
+      "production_kind_name": "market",
+      "size": [
+        4,
+        3
+      ],
+      "build_cost": {
+        "gold": 200,
+        "tools_t": 4.0,
+        "wood_t": 10.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 10,
+      "idle_cost_gold_per_min": 5,
+      "radius_tiles": 16,
+      "workers": 3,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "chapel": {
+      "id": 20803,
+      "record": 462,
+      "menu_section": "DIVERS",
+      "production_kind": 18,
+      "production_kind_name": "chapel",
+      "size": [
+        2,
+        1
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 2.0,
+        "wood_t": 5.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 5,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 8,
+      "workers": 1,
+      "unlock_level": 0,
+      "unlock_level_name": "none",
+      "unlock_requires": null
+    },
+    "church": {
+      "id": 20805,
+      "record": 463,
+      "menu_section": "DIVERS",
+      "production_kind": 19,
+      "production_kind_name": "church",
+      "size": [
+        4,
+        3
+      ],
+      "build_cost": {
+        "gold": 1600,
+        "tools_t": 7.0,
+        "wood_t": 7.0,
+        "bricks_t": 25.0
+      },
+      "running_cost_gold_per_min": 50,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 21,
+      "workers": 3,
+      "unlock_level": 5,
+      "unlock_level_name": "church",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 150
+      }
+    },
+    "cathedral": {
+      "id": 20801,
+      "record": 461,
+      "menu_section": "DIVERS",
+      "production_kind": 19,
+      "production_kind_name": "church",
+      "size": [
+        6,
+        4
+      ],
+      "build_cost": {
+        "gold": 7500,
+        "tools_t": 25.0,
+        "wood_t": 25.0,
+        "bricks_t": 70.0
+      },
+      "running_cost_gold_per_min": 90,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 24,
+      "workers": 5,
+      "unlock_level": 12,
+      "unlock_level_name": "cathedral",
+      "unlock_requires": {
+        "class": "aristocrats",
+        "min_inhabitants_of_class_or_higher": 2500
+      }
+    },
+    "tavern": {
+      "id": 20807,
+      "record": 464,
+      "menu_section": "DIVERS",
+      "production_kind": 17,
+      "production_kind_name": "tavern",
+      "size": [
+        2,
+        3
+      ],
+      "build_cost": {
+        "gold": 250,
+        "tools_t": 3.0,
+        "wood_t": 4.0,
+        "bricks_t": 6.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 12,
+      "workers": 3,
+      "unlock_level": 4,
+      "unlock_level_name": "tavern",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 50
+      }
+    },
+    "doctor": {
+      "id": 20817,
+      "record": 469,
+      "menu_section": "DIVERS",
+      "production_kind": 22,
+      "production_kind_name": "doctor",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 450,
+        "tools_t": 4.0,
+        "wood_t": 4.0,
+        "bricks_t": 9.0
+      },
+      "running_cost_gold_per_min": 30,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 16,
+      "workers": 2,
+      "unlock_level": 9,
+      "unlock_level_name": "doctor",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 50
+      }
+    },
+    "school": {
+      "id": 20821,
+      "record": 471,
+      "menu_section": "DIVERS",
+      "production_kind": 23,
+      "production_kind_name": "school",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 300,
+        "tools_t": 4.0,
+        "wood_t": 5.0,
+        "bricks_t": 5.0
+      },
+      "running_cost_gold_per_min": 30,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 12,
+      "workers": 2,
+      "unlock_level": 3,
+      "unlock_level_name": "school",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 100
+      }
+    },
+    "college": {
+      "id": 20819,
+      "record": 470,
+      "menu_section": "DIVERS",
+      "production_kind": 24,
+      "production_kind_name": "college",
+      "size": [
+        3,
+        3
+      ],
+      "build_cost": {
+        "gold": 750,
+        "tools_t": 6.0,
+        "wood_t": 5.0,
+        "bricks_t": 19.0
+      },
+      "running_cost_gold_per_min": 60,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 15,
+      "workers": 5,
+      "unlock_level": 8,
+      "unlock_level_name": "college",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 250
+      }
+    },
+    "bathhouse": {
+      "id": 20813,
+      "record": 466,
+      "menu_section": "DIVERS",
+      "production_kind": 20,
+      "production_kind_name": "bathhouse",
+      "size": [
+        4,
+        3
+      ],
+      "build_cost": {
+        "gold": 1200,
+        "tools_t": 6.0,
+        "wood_t": 5.0,
+        "bricks_t": 19.0
+      },
+      "running_cost_gold_per_min": 60,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 20,
+      "workers": 5,
+      "unlock_level": 6,
+      "unlock_level_name": "bathhouse",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 210
+      }
+    },
+    "theatre": {
+      "id": 20815,
+      "record": 465,
+      "menu_section": "DIVERS",
+      "production_kind": 21,
+      "production_kind_name": "theatre",
+      "size": [
+        3,
+        3
+      ],
+      "build_cost": {
+        "gold": 1200,
+        "tools_t": 6.0,
+        "wood_t": 5.0,
+        "bricks_t": 19.0
+      },
+      "running_cost_gold_per_min": 80,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 20,
+      "workers": 5,
+      "unlock_level": 7,
+      "unlock_level_name": "theatre",
+      "unlock_requires": {
+        "class": "merchants",
+        "min_inhabitants_of_class_or_higher": 300
+      }
+    },
+    "fire_station": {
+      "id": 20811,
+      "record": 472,
+      "menu_section": "DIVERS",
+      "production_kind": 26,
+      "production_kind_name": "fire_station",
+      "size": [
+        2,
+        2
+      ],
+      "build_cost": {
+        "gold": 150,
+        "tools_t": 3.0,
+        "wood_t": 5.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 15,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 15,
+      "workers": 3,
+      "unlock_level": 16,
+      "unlock_level_name": "level_2a",
+      "unlock_requires": {
+        "class": "settlers",
+        "min_inhabitants_of_class_or_higher": 15
+      }
+    },
+    "palace": {
+      "id": 20831,
+      "record": 473,
+      "menu_section": "DIVERS",
+      "production_kind": 27,
+      "production_kind_name": "palace",
+      "size": [
+        5,
+        7
+      ],
+      "build_cost": {
+        "gold": 5000,
+        "tools_t": 15.0,
+        "wood_t": 20.0,
+        "bricks_t": 50.0
+      },
+      "running_cost_gold_per_min": 40,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 20,
+      "unlock_level": 11,
+      "unlock_level_name": "castle",
+      "unlock_requires": {
+        "class": "aristocrats",
+        "min_inhabitants_of_class_or_higher": 1500
+      }
+    },
+    "gallows": {
+      "id": 20841,
+      "record": 474,
+      "menu_section": "DIVERS",
+      "production_kind": 25,
+      "production_kind_name": "gallows",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 100,
+        "tools_t": 1.0,
+        "wood_t": 2.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 20,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 16,
+      "workers": 0,
+      "unlock_level": 10,
+      "unlock_level_name": "gallows",
+      "unlock_requires": {
+        "class": "citizens",
+        "min_inhabitants_of_class_or_higher": 100
+      }
+    },
+    "monument": {
+      "id": 20851,
+      "record": 475,
+      "menu_section": "DIVERS",
+      "production_kind": 28,
+      "production_kind_name": "monument",
+      "size": [
+        1,
+        1
+      ],
+      "build_cost": {
+        "gold": 0,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 14,
+      "unlock_level_name": "monument",
+      "unlock_requires": {
+        "class": "aristocrats",
+        "min_inhabitants_of_class_or_higher": 25000
+      }
+    },
+    "triumphal_arch": {
+      "id": 20853,
+      "record": 476,
+      "menu_section": "DIVERS",
+      "production_kind": 29,
+      "production_kind_name": "triumphal_arch",
+      "size": [
+        1,
+        3
+      ],
+      "build_cost": {
+        "gold": 0,
+        "tools_t": 0.0,
+        "wood_t": 0.0,
+        "bricks_t": 0.0
+      },
+      "running_cost_gold_per_min": 0,
+      "idle_cost_gold_per_min": 0,
+      "radius_tiles": 0,
+      "workers": 0,
+      "unlock_level": 13,
+      "unlock_level_name": "triumphal_arch",
+      "unlock_requires": {
+        "class": "aristocrats",
+        "min_inhabitants_of_class_or_higher": 25000
+      }
+    }
+  },
+  "wares": {
+    "ore": {
+      "id": 2,
+      "symbol": "EISENERZ",
+      "base_price": 90,
+      "trade_good": true
+    },
+    "gold": {
+      "id": 3,
+      "symbol": "GOLD",
+      "base_price": 700,
+      "trade_good": true
+    },
+    "wool": {
+      "id": 4,
+      "symbol": "WOLLE",
+      "base_price": 24,
+      "trade_good": true
+    },
+    "sugar": {
+      "id": 5,
+      "symbol": "ZUCKER",
+      "base_price": 30,
+      "trade_good": true
+    },
+    "tobacco": {
+      "id": 6,
+      "symbol": "TABAK",
+      "base_price": 35,
+      "trade_good": true
+    },
+    "cattle": {
+      "id": 7,
+      "symbol": "FLEISCH",
+      "base_price": 10,
+      "trade_good": true
+    },
+    "grain": {
+      "id": 8,
+      "symbol": "KORN",
+      "base_price": 5,
+      "trade_good": true
+    },
+    "flour": {
+      "id": 9,
+      "symbol": "MEHL",
+      "base_price": 10,
+      "trade_good": true
+    },
+    "iron": {
+      "id": 10,
+      "symbol": "EISEN",
+      "base_price": 130,
+      "trade_good": true
+    },
+    "swords": {
+      "id": 11,
+      "symbol": "SCHWERTER",
+      "base_price": 180,
+      "trade_good": true
+    },
+    "muskets": {
+      "id": 12,
+      "symbol": "MUSKETEN",
+      "base_price": 250,
+      "trade_good": true
+    },
+    "cannons": {
+      "id": 13,
+      "symbol": "KANONEN",
+      "base_price": 500,
+      "trade_good": true
+    },
+    "food": {
+      "id": 14,
+      "symbol": "NAHRUNG",
+      "base_price": 26,
+      "trade_good": true
+    },
+    "tobacco_goods": {
+      "id": 15,
+      "symbol": "TABAKWAREN",
+      "base_price": 100,
+      "trade_good": true
+    },
+    "spices": {
+      "id": 16,
+      "symbol": "GEWUERZE",
+      "base_price": 60,
+      "trade_good": true
+    },
+    "cocoa": {
+      "id": 17,
+      "symbol": "KAKAO",
+      "base_price": 50,
+      "trade_good": true
+    },
+    "alcohol": {
+      "id": 18,
+      "symbol": "ALKOHOL",
+      "base_price": 80,
+      "trade_good": true
+    },
+    "cloth": {
+      "id": 19,
+      "symbol": "STOFFE",
+      "base_price": 50,
+      "trade_good": true
+    },
+    "clothes": {
+      "id": 20,
+      "symbol": "KLEIDUNG",
+      "base_price": 200,
+      "trade_good": true
+    },
+    "jewellery": {
+      "id": 21,
+      "symbol": "SCHMUCK",
+      "base_price": 900,
+      "trade_good": true
+    },
+    "tools": {
+      "id": 22,
+      "symbol": "WERKZEUG",
+      "base_price": 140,
+      "trade_good": true
+    },
+    "wood": {
+      "id": 23,
+      "symbol": "HOLZ",
+      "base_price": 30,
+      "trade_good": true
+    },
+    "bricks": {
+      "id": 24,
+      "symbol": "ZIEGEL",
+      "base_price": 45,
+      "trade_good": true
+    },
+    "grain_crop": {
+      "id": 45,
+      "symbol": "GETREIDE",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "tobacco_crop": {
+      "id": 46,
+      "symbol": "TABAKBAUM",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "spice_crop": {
+      "id": 47,
+      "symbol": "GEWUERZBAUM",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "sugarcane_crop": {
+      "id": 48,
+      "symbol": "ZUCKERROHR",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "cotton_crop": {
+      "id": 49,
+      "symbol": "BAUMWOLLE",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "grapes_crop": {
+      "id": 50,
+      "symbol": "WEINTRAUBEN",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "cocoa_crop": {
+      "id": 51,
+      "symbol": "KAKAOBAUM",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "grass": {
+      "id": 52,
+      "symbol": "GRAS",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "tree": {
+      "id": 53,
+      "symbol": "BAUM",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "stone": {
+      "id": 54,
+      "symbol": "STEINE",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "ore_deposit": {
+      "id": 55,
+      "symbol": "ERZE",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "game": {
+      "id": 56,
+      "symbol": "WILD",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    },
+    "fish": {
+      "id": 57,
+      "symbol": "FISCHE",
+      "base_price": 0,
+      "trade_good": false,
+      "note": "raw resource on the map (field, tree, grass, rock, deposit, game, fish), harvested 1 t per ripe tile by the building's worker"
+    }
+  }
+}

@@ -4,6 +4,7 @@
 // the search on the local network, and the games the host makes from its lobby.
 #include <algorithm>
 #include <cstdio>
+#include <cstdlib>
 #include <ctime>
 #include <memory>
 #include <random>
@@ -41,6 +42,15 @@ void remembered_to_model(MultiplayerModel& model, const AppSettings& settings, c
 }
 
 }  // namespace
+
+std::uint64_t MapViewer::own_player_id() const {
+    if (const char* text = std::getenv("O1602_PLAYER_ID"); text != nullptr && *text != '\0') {
+        if (const auto id = parse_player_id(text); id && *id != 0) {
+            return *id;
+        }
+    }
+    return m_app_settings.player_id;
+}
 
 std::uint64_t MapViewer::content_fingerprint() const {
     return assets::content_fingerprint(m_game);
@@ -80,7 +90,7 @@ core::Status MapViewer::start_multiplayer() {
         }
         net::SessionConfig config;
         config.pack_wait_ms = kPackWaitMs;
-        config.player = m_app_settings.player_id;
+        config.player = own_player_id();
         m_session = std::make_unique<net::HostSession>(std::move(transport).value(), m_state->simulation, m_buildings,
                                                        m_local_player, name, content_fingerprint(), config);
         host_session()->share_packages(shared_packages());
@@ -159,6 +169,15 @@ void MapViewer::chat_line(const net::SessionEvent& e) {
             std::vector<sim::PlayerId> others = e.to;
             std::erase(others, me);
             line.to = others.empty() ? mp_text(MpText::ChatToYou) : mp_text(MpText::ChatToYouAnd, seat_names(others));
+        }
+    }
+    if (m_control && e.seat != me) {
+        // The agent at the control port reads the others' lines with 'chat' (the newest 50).
+        std::string text = core::cp1252_to_utf8(e.name) + (line.whisper ? " (to you): " : ": ") +
+                           core::cp1252_to_utf8(e.text);
+        m_control_chat.push_back(std::move(text));
+        if (m_control_chat.size() > 50) {
+            m_control_chat.erase(m_control_chat.begin());
         }
     }
     add_chat_line(m_hud ? &m_hud->multiplayer_model().chat : nullptr, std::move(line));
@@ -699,7 +718,7 @@ core::Status MapViewer::host_lobby(const HostSetup& setup) {
     // A savegame's host plays the slot it played before, if the game knows it.
     sim::PlayerId seat = sim::kNoPlayer;
     if (!setup.dedicated) {
-        const std::uint64_t own = net::player_verifier(m_app_settings.player_id);
+        const std::uint64_t own = net::player_verifier(own_player_id());
         auto open = std::find_if(lobby.seats.begin(), lobby.seats.end(), [own](const net::LobbySeat& s) {
             return s.kind == net::LobbySeat::Kind::Open && own != 0 && s.owner == own;
         });
@@ -718,7 +737,7 @@ core::Status MapViewer::host_lobby(const HostSetup& setup) {
     config.pack_wait_ms = kPackWaitMs;
     config.start_wait_ms = kStartWaitMs;
     config.password = setup.password;
-    config.player = m_app_settings.player_id;
+    config.player = own_player_id();
     config.join_running = setup.join_running;
     config.spectators = setup.spectators;
     config.spectators_chat = setup.spectators_chat;
@@ -908,7 +927,7 @@ core::Status MapViewer::join_game(const std::string& address, std::uint16_t port
     }
     hello.name = name.empty() ? ui::tr("menu.default_name") : name;
     hello.password = password;
-    hello.player = m_app_settings.player_id;  // the host knows the slot this person played before
+    hello.player = own_player_id();  // the host knows the slot this person played before
     if (m_rejoin && m_rejoin->address == address && m_rejoin->port == port) {
         // Back to the host this computer played at: its own slot, not the next free one (MS-4).
         hello.seat = m_rejoin->seat;
@@ -917,7 +936,7 @@ core::Status MapViewer::join_game(const std::string& address, std::uint16_t port
     m_local_player = sim::kNoPlayer;  // until the host sends the game
     net::SessionConfig config;
     config.pack_wait_ms = kPackWaitMs;  // for when this computer hosts next
-    config.player = m_app_settings.player_id;
+    config.player = own_player_id();
     auto client = std::make_unique<net::ClientSession>(
         std::move(transport).value(), hello,
         [this](std::span<const std::uint8_t> save) { return load_from_host(save); }, config);

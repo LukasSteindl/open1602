@@ -1,0 +1,19 @@
+4 sail True
+4 exploring the island the ship lies at (see 'islands' for the deposits found)
+18 sail True
+18 refused: the ship must lie still at an island that still hides something
+2 sail True
+2 exploring the island the ship lies at (see 'islands' for the deposits found)
+9 sail True
+9 exploring the island the ship lies at (see 'islands' for the deposits found)
+17 sail True
+17 exploring the island the ship lies at (see 'islands' for the deposits found)
+12 sail True
+12 exploring the island the ship lies at (see 'islands' for the deposits found)
+11 sail True
+11 refused: the ship must lie still at an island that still hides something
+1 sail True
+1 refused: the ship must lie still at an island that still hides something
+island 9: world 200,30 size 40x40, north, discovered, crops: grain tobacco(half) sugar(half) wine; cities of: 0(you); known deposits: ore at 12,8 (small)
+island 12: world 310,20 size 50x52, north, discovered, crops: grain tobacco(half) sugar wine(half); cities of: 0(you); known deposits: ore at 29,15 (small)
+island 17: world 220,80 size 70x60, north, discovered, crops: grain tobacco sugar(half) wine; cities of: 0(you); known deposits: ore at 42,17 (big)

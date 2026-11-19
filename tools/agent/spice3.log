@@ -1,0 +1,11 @@
+14 Kontor sites on island 3 (world position of tile 0,0: 170,210); nearest to the ship first (x y: result; ship_too_far: sail closer, within 16 tiles):
+  19 22: ok (world 189,232)
+  18 22: ok (world 188,232)
+  15 21: ok (world 185,231)
+  22 18: ok (world 192,228)
+  11 22: ok (world 181,232)
+  22 17: ok (world 192,227)
+  22 16: ok (world 192,226)
+  22 15: ok (world 192,225)
+  22 14: ok (world 192,2
+found 19 22 Kontor: built 1 of 1; paid gold 100 tools 3 t wood 6 t bricks 0 t
