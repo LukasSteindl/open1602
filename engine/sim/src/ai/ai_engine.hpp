@@ -73,6 +73,23 @@ struct StanceStep {
     bool held = false;     ///< kept in pressure by the latch only
 };
 
+/// What war_supplied's gold term and war_carried read.
+struct WarGold {
+    bool improved = false;  ///< not Rules::bugs.classic_ai
+    std::int64_t money = 0;
+    std::int64_t reserve = 0;  ///< kWarReserve x kWarSupplyReserve
+    bool pays_upkeep = true;
+    std::int32_t civil_income = 0;
+    std::int32_t military_cost = 0;
+    std::int32_t arming_budget = 0;
+};
+
+/// Whether its income carries the army at war (ai_strategy.cpp).
+[[nodiscard]] bool war_carried(const WarGold& g);
+/// Whether war_supplied's gold term passes: the reserve in hand, or (Open1602) an income that carries
+/// the war; the original's computers pass it always, as war_supplied does.
+[[nodiscard]] bool war_gold(const WarGold& g);
+
 /// The stance towards a rival (ai_strategy.cpp).
 [[nodiscard]] StanceStep stance_step(const StanceInput& in);
 
@@ -577,6 +594,7 @@ private:
     [[nodiscard]] bool war_supplied(AiPlayer& p);
     /// Open1602: whether its income carries the army at war (civil income, upkeep within arming_budget).
     [[nodiscard]] bool war_carried(const AiPlayer& p) const;
+    [[nodiscard]] WarGold war_gold_input(const AiPlayer& p) const;
     /// Improved computers: settlers in the home city want a good whose crop none of the computer's
     /// islands grows, and it may found a colony for it.
     [[nodiscard]] bool colony_crop_missing(AiPlayer& p);
