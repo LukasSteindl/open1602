@@ -722,7 +722,7 @@ income that carries the army at war (its cities earn more than they cost, and th
 within what a war may cost): a growing economy spends its income as it comes and kept its gold below
 the 5000 for hours. On its income it still needs the gold its first landing costs: 2000, below which
 a war ends as soon as its gold falls, and the price of the warship its yard builds unless an idle
-armed ship can carry the troops.
+armed ship can carry the troops, and its gold must not be falling.
 
 In debt, an improved computer locks the building material of a city (the city window's switch)
 while the city has less than 1 t of food, or of a good its citizens or higher classes want and

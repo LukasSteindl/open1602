@@ -3396,6 +3396,7 @@ TEST_CASE("ai: an improved computer goes to war below its gold reserve only on a
     g.civil_income = 40;
     g.military_cost = 20;
     g.arming_budget = 30;
+    g.net_income = 20;
     for (const bool improved : {false, true}) {
         g.improved = improved;
         // Carried: income above 0 and the upkeep within the arming budget.
@@ -3418,7 +3419,11 @@ TEST_CASE("ai: an improved computer goes to war below its gold reserve only on a
         CHECK(sim::ai::war_carried(g));
         CHECK(sim::ai::war_gold(g) == !improved);
         g.money = 3500;
-        g.civil_income = 40;
+        // Nor an income that falls: the broke test would end the war under the line.
+        g.net_income = -1;
+        CHECK(sim::ai::war_carried(g));
+        CHECK(sim::ai::war_gold(g) == !improved);
+        g.net_income = 20;
         // Without upkeep (Rules) the income test does not apply.
         g.pays_upkeep = false;
         g.military_cost = 99;

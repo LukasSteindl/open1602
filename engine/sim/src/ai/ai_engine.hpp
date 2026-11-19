@@ -86,6 +86,7 @@ struct WarGold {
     std::int32_t military_cost = 0;
     std::int32_t arming_budget = 0;
     std::int64_t floor = 0;  ///< below the reserve: the broke line and the first landing's ship
+    std::int32_t net_income = 0;
 };
 
 /// Whether its income carries the army at war (ai_strategy.cpp).

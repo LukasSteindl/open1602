@@ -646,11 +646,17 @@ bool Engine::war_supplied(AiPlayer& p) {
         return true;
     }
     if (!war_gold(g)) {
+        if (g.money < g.floor && g.net_income >= 0 && ai::war_carried(g)) {
+            log(p, "gold blocked by the floor only (cash %lld, floor %lld, net %d)", static_cast<long long>(g.money),
+                static_cast<long long>(g.floor), g.net_income);
+        }
         return false;
     }
-    log(p, "gold passes by income (cash %lld of %lld, floor %lld = broke line %d + ship %lld, upkeep %d, income %d)",
+    log(p,
+        "gold passes by income (cash %lld of %lld, floor %lld = broke line %d + ship %lld, upkeep %d, income %d, net "
+        "%d)",
         static_cast<long long>(g.money), static_cast<long long>(g.reserve), static_cast<long long>(g.floor), kBrokeCash,
-        static_cast<long long>(g.floor - kBrokeCash), g.military_cost, g.civil_income);
+        static_cast<long long>(g.floor - kBrokeCash), g.military_cost, g.civil_income, g.net_income);
     return true;
 }
 
@@ -663,6 +669,7 @@ WarGold Engine::war_gold_input(const AiPlayer& p) const {
     g.civil_income = civil_income(p);
     g.military_cost = military_cost(p);
     g.arming_budget = arming_budget(p);
+    g.net_income = net_income(p);
     // The floor: the broke line, at which a war ends as soon as its gold falls, and the ship of the
     // first landing when it has none to carry it.
     g.floor = g.reserve;
@@ -712,8 +719,9 @@ bool war_gold(const WarGold& g) {
     // it comes and kept the gold under the reserve for hours, while a player with an income that
     // pays the army does not wait for a pile of gold first. The same test war_plan makes before it
     // declares (war_carried), so a war passed here is carried there too.
-    // Open1602: with gold for the first landing above the line at which the war would end at once.
-    return !g.improved || g.money >= g.reserve || (g.money >= g.floor && war_carried(g));
+    // Open1602: with gold for the first landing above the line at which the war would end at once,
+    // and gold that does not fall: the broke test ends a war with its income below 0 under that line.
+    return !g.improved || g.money >= g.reserve || (g.money >= g.floor && g.net_income >= 0 && war_carried(g));
 }
 
 void Engine::start_war(AiPlayer& p, PlayerId target) {
