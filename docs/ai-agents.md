@@ -2,8 +2,10 @@
 
 This fork of [x4rd4s/open1602](https://github.com/x4rd4s/open1602) makes the game playable by AI
 agents: a language model (Claude Code, ChatGPT, a small local model) plays a slot as a human player
-would, by text commands, under the same rules and with the same information. Two or four agents
-can play one multiplayer game against each other, side by side on a stream.
+would, by text commands and under the same rules. Two or four agents can play one multiplayer game
+against each other, side by side on a stream; there each agent also sees only what the game shows
+its player (see "Multiplayer for agents"). In a game alone the port hides nothing: it answers
+about islands the player has not discovered yet.
 
 Everything below is additional. Nothing changes for a person who plays without `--control`.
 
@@ -41,11 +43,21 @@ bin\o1602-ctl.exe --port 7602 state               # time, money, balance, cities
 - **Same rules as a person.** Every order goes through the same path as the interface
   (`Simulation::execute` for the local player). It costs the same, and it is refused for the same
   reasons as a click would be.
-- **Time.** With `--control` the game starts paused. `advance N` runs N seconds of game time and
-  pauses again. `pause`, `resume` and `speed 1-8` work as in the game.
+- **Errors.** A command that fails answers `error: ...`, and `o1602-ctl` then exits with 1. A
+  refused build names the reason and the tiles. A `batch` with a failed part starts with
+  `error: N of M commands failed`.
+- **Time.** With `--control` the game starts paused. `advance N` lets N seconds of game time pass
+  and leaves the game as it was before, paused or running. It ends early at an urgent message
+  (fire, plague, attack, eruption) unless `nostop` is given, and `advance N until ship ID` also
+  ends when that ship has arrived. It answers after 100 s of real time at the latest, with a
+  first line that says the wait was partial. `pause`, `resume` and `speed 1-8` work as in the game.
+- **Messages.** The game's messages come with the `advance` answer, or from `events`; `state`
+  says when new ones wait. Each has the text the game shows and the place it happened.
 - **`o1602-ctl`** takes the port from `--port N`, else from `O1602_CONTROL_PORT`, else 7602. Exit
-  code 0 means an answer, 1 an answer that starts with `error`, 2 that no game is listening.
-  `batch CMD ; CMD ; ...` sends several commands in one connection.
+  code 0 means an answer, 1 an answer that starts with `error`, 2 that no game is listening, 3
+  that no answer came within `--timeout SECONDS` (default 130). `batch CMD ; CMD ; ...` sends
+  several commands in one connection; `o1602-ctl -` reads them from standard input instead, one
+  per line (empty lines and `#` lines skipped), as one batch (`advance` cannot be part of it).
 
 ### Commands
 
@@ -53,16 +65,20 @@ bin\o1602-ctl.exe --port 7602 state               # time, money, balance, cities
 
 | Group | Commands |
 |---|---|
-| Look | `state`, `islands`, `map`, `cities`, `ships`, `buildings`, `goods`, `production`, `houses`, `coverage`, `threats`, `units`, `screenshot` |
+| Look | `state`, `islands [mine]`, `map`, `cities`, `ships`, `buildings`, `goods`, `production [ISLAND] [idle]`, `houses ISLAND [problems]`, `coverage`, `threats`, `units`, `screenshot` |
 | Find places | `kontor-sites`, `find-site`, `sites` (scored by what the catchment holds), `house-sites` |
-| Diagnose | `alerts` (question marks with their likely cause, fires, missing roads, short supply …), `unconnected` |
-| Build | `found`, `build`, `build-many`, `road` (dirt or stone), `fix-roads`, `demolish` |
-| Ships and trade | `ship-move`, `ship-stop`, `load`, `unload`, `route` (trade routes), `trade` (Kontor offers), `explore` |
+| Diagnose | `alerts` (most urgent first: money, fire, plague, short supply, then question marks with their likely cause, missing roads …), `economy ISLAND CITY` (per good: stock, need, trend, minutes until empty), `unconnected`, `events` |
+| Build | `found`, `build`, `build NAME ISLAND auto` (best place, with a road), `build-many`, `road` (dirt or stone), `fix-roads`, `demolish` (a tile or a rectangle), `off`, `on` |
+| Ships and trade | `ship-move` (to a tile or to a city's Kontor), `ship-stop`, `load`, `unload` (a good or `all`), `route` (trade routes), `trade` (Kontor offers), `explore` |
 | Economy | `tax` |
 | Military | `shipyard`, `recruit`, `arm`, `attack`, `release`, `units-go`, `units-attack`, `board`, `units-land` |
 | Diplomacy | `diplomacy`, `tribute`, `gesture`, `chat` |
 | Game | `advance`, `pause`, `resume`, `speed`, `save`, `autoplay` |
 | For viewers | `camera`, `camera follow`, `camera hold`, `plan`, `say` |
+
+Answers stay in an agent's context for the rest of its session, so the short forms pay: `alerts`
+and `economy` first, `houses ISLAND problems` and `production ISLAND idle` instead of the full
+lists, a part of the `map` instead of the whole island, and several commands as one batch.
 
 `map ISLAND` draws the island as text, one character per tile. The legend is at the end of
 `help`: `~` sea, `.` free land, `:` your land, `=` road, uppercase letters are your buildings,
@@ -95,7 +111,8 @@ README has the walk-through ("Two agents against each other"). What differs from
 - **Orders in lockstep.** An order first runs on a copy of the game, which produces the usual
   answer. The order then goes to the session, so that every computer carries it out in the same
   tick. The answer waits until the shared game has done so (about 2.5 s of game time), so the next
-  command already sees the result.
+  command already sees the result. A `batch` waits once for all its orders, so an agent should
+  send the orders of one step together.
 - **No cheating.** A player learns only what the game shows them. Islands that player has not
   discovered come without crops and cities, `map` and the site searches refuse them, and other
   players' cities come without their number of inhabitants.

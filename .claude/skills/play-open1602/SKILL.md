@@ -5,10 +5,33 @@ description: Play a running Open1602 (Anno 1602) game as the human player throug
 
 # Playing Open1602 through the control port
 
-The game listens for text commands when started with `--control PORT`. This works in games
-played alone only, not in multiplayer games. You play the local
-player's slot with the same rules, costs and refusals a person has. The game starts **paused**;
-time only runs when you `advance` it, so you play in turns.
+The game listens for text commands when started with `--control PORT`, in a game alone and in a
+multiplayer game. You play the local player's slot with the same rules, costs and refusals a
+person has. A game alone starts **paused**; time only runs when you `advance` or `resume` it. A
+multiplayer game runs on while you think.
+
+## Few turns, short answers (read this first)
+
+Every answer stays in your context for the rest of the session, and every command is a turn.
+
+- **A failed command answers `error: ...`** (exit code 1). A refused build names the reason and the
+  tiles. Nothing else counts as failure.
+- **Send the commands of one step together.** Pipe them to `o1602-ctl -`, one per line (`#` lines
+  are comments); each answer comes under `### CMD`, and a failed part puts
+  `error: N of M commands failed` first. In a multiplayer game the whole batch waits once instead
+  of 2.5 s per order. `advance` cannot be part of a batch.
+- **Look with the short forms:** `alerts [I]` (most urgent first) and `economy I C` (per good:
+  stock, need, trend, minutes until empty) before anything else; `houses I problems`,
+  `production I idle`, `islands mine`; a part of the `map` (`map I X Y W H`), never the whole island.
+- **Let the game find the place:** `build NAME I auto` builds at the best place you can pay for
+  and lays the road; `build NAME I auto X Y` takes the nearest place to X Y.
+- **Ships:** `ship-move SHIP city I C` sails into reach of that Kontor, `advance N until ship SHIP`
+  waits until it has arrived, `unload SHIP all` empties it.
+- **Waiting:** `advance N` ends early at a fire, plague or attack and says why, so long advances
+  are safe. It leaves the game as it was, paused or running. `events` gives the messages since
+  the last one; `state` says when new ones wait.
+- `demolish I X1 Y1 X2 Y2` clears a rectangle (roads, fields, trees; houses and workshops stay
+  unless nothing else is in it).
 
 **No cheating (user rule).** Use only what a person playing could click or see. Never use:
 - `autoplay`, the editor, free builds or savegame edits;
@@ -219,9 +242,9 @@ Game 4 broke this once: a monitor capture showed the taskbar, and the VOD had to
 
 ## Other commands
 
-- **`advance` leaves the game paused.** After every `advance N`, run `resume` (or `speed 8`) at once.
-  Game 4: the game sat paused for a whole round after an advance, and the person watching saw nothing
-  move. The answer line `paused` in `advance` means this.
+- **`advance` keeps the run state.** A game that was paused stays paused after it, a running game keeps
+  running: `resume` (or `speed 8`) once and no `resume` is needed after each `advance`. Check `state`
+  (`paused` or `running`) if the person watching sees nothing move.
 - **`batch` takes each command as its own argument**, e.g. `batch say "text" ";" build X ISLAND X Y ";"
   state`. A single quoted string fails with "unknown command". `advance` cannot run inside a batch.
 - **Ship routes that worked (game 4):** `route SHIP clear`, then one `route SHIP stop N ISLAND CITY load|unload WARE TONS` per stop, then `route SHIP start`. Several stops in a row carry several goods (tobacco goods and alcohol on one ship). Load and unload only work within about 5 tiles of the Kontor: the Kontor's world position is the island's world position plus its tile (island 17 at 220,80 with Kontor 14,24 is 234,104), so `ship-move` to the sea tile next to it (e.g. 232,102) before unloading. An ordinary `ship-move` to the island's corner is too far.
