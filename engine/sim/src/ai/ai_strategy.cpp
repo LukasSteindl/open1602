@@ -52,6 +52,9 @@ constexpr std::int64_t kThreatRunwayMinutes = 90;
 constexpr std::int64_t kWarRunwayMinutes = 180;
 constexpr std::int64_t kArmingRunwayMinutes = 360;
 constexpr std::int64_t kWarDebt = -2000;
+// Below this, with its gold falling, a computer is broke: outside its war economy, which at war
+// holds only until the first look without progress, it ends its war here ("out of gold").
+constexpr std::int32_t kBrokeCash = 2000;
 
 const char* goal_name(std::uint8_t g) {
     switch (g) {
@@ -67,6 +70,41 @@ const char* goal_name(std::uint8_t g) {
 }
 
 }  // namespace
+
+namespace {
+
+/// Whether a computer of strength `own` presses a near rival of threat `theirs` at `mood`, up to `most`.
+bool presses_at(const StanceInput& in, std::uint32_t theirs, std::int32_t most) {
+    return in.near && in.mood <= most && theirs != 0 &&
+           std::uint64_t{in.own} * 100U >= std::uint64_t{theirs} * in.press;
+}
+
+}  // namespace
+
+StanceStep stance_step(const StanceInput& in) {
+    const auto presses = [&](std::int32_t most) { return presses_at(in, in.theirs, most); };
+    if (in.allied) {
+        return {stance::kPartner, "allied"};  // an ally is neither pressed nor fought
+    }
+    if (in.mood < kHostileMood) {
+        return {stance::kHostile, "hostile"};
+    }
+    if (in.mood > kPartnerMood || (in.trade_partner && in.mood >= 0)) {
+        return {stance::kPartner, "partner"};
+    }
+    if (presses(0)) {
+        // Only a rival it does not like: a friendly neighbour is left in peace.
+        return {stance::kPressure, "pressure"};
+    }
+    if (in.latch && in.previous == stance::kPressure && presses(kPartnerMood)) {
+        // Open1602: an improved computer keeps pressing a rival it does not like until it likes it
+        // (a partner's mood) or the rival is no longer near and weaker, as a player keeps his intent.
+        // Each sale at the other's Kontor lifts the mood a little above 0 for a while, so the
+        // pressure, and with it the war plan, came and went with the rhythm of the trade.
+        return {stance::kPressure, "pressure", true};
+    }
+    return {stance::kNeutral, in.near ? "not weaker" : "not near"};
+}
 
 std::uint32_t Engine::strength(PlayerId viewer, PlayerId owner) const {
     // The armies and the fleets' cannons, as stronger() compares them.
@@ -222,20 +260,23 @@ void Engine::plan_strategy(AiPlayer& p) {
         if (unseen && !near) {
             log(p, "player %u is near only by cities on islands it has not discovered", b);
         }
-        const auto presses = [&](std::uint32_t t) {
-            return near && mood <= 0 && t != 0 && std::uint64_t{own} * 100U >= std::uint64_t{t} * press;
-        };
-        std::uint8_t s = stance::kNeutral;
-        if (d.allied(p.player, b)) {
-            s = stance::kPartner;  // an ally is neither pressed nor fought
-        } else if (mood < kHostileMood) {
-            s = stance::kHostile;
-        } else if (mood > kPartnerMood ||
-                   (rel.trade == Treaty::Signed && mood >= 0 && st.character == character::kTrader)) {
-            s = stance::kPartner;
-        } else if (presses(theirs)) {
-            // Only a rival it does not like: a friendly neighbour is left in peace.
-            s = stance::kPressure;
+        StanceInput in;
+        in.allied = d.allied(p.player, b);
+        in.trade_partner = rel.trade == Treaty::Signed && st.character == character::kTrader;
+        in.mood = mood;
+        in.near = near;
+        in.own = own;
+        in.theirs = theirs;
+        in.press = press;
+        in.previous = st.stances[bi];
+        in.latch = rivals();
+        const StanceStep step = stance_step(in);
+        const std::uint8_t s = step.stance;
+        if (step.held) {
+            log(p, "keeps pressing player %u (mood %d, strength %u against %u)", b, mood, own, theirs);
+        } else if (in.latch && in.previous == stance::kPressure && s != stance::kPressure) {
+            log(p, "stops pressing player %u: %s (mood %d, near %d, strength %u against %u)", b, step.why, mood,
+                near ? 1 : 0, own, theirs);
         }
         if (s != st.stances[bi]) {
             log(p, "stance towards player %u: %u (mood %d, strength %u against %u)", b, s, mood, own, theirs);
@@ -245,7 +286,7 @@ void Engine::plan_strategy(AiPlayer& p) {
             // census would give (b's own view of itself is the whole).
             const std::uint32_t all = threat_of(b, b);
             const bool press_seen = s == stance::kPressure;
-            const bool press_all = (s == stance::kNeutral || s == stance::kPressure) && presses(all);
+            const bool press_all = (s == stance::kNeutral || s == stance::kPressure) && presses_at(in, all, 0);
             const bool threat_seen = (s == stance::kHostile || rel.peace == Treaty::None) && near && theirs > own;
             const bool threat_all = (s == stance::kHostile || rel.peace == Treaty::None) && near && all > own;
             if (all != theirs && (press_seen != press_all || threat_seen != threat_all)) {
@@ -295,7 +336,7 @@ void Engine::plan_strategy(AiPlayer& p) {
     }
     // In debt, or losing gold with little left. Open1602: a war that gets somewhere, or a threat,
     // is worth a deficit for a while and a small debt (war_economy).
-    const bool broke = war_economy(p) ? money < kWarDebt : money < 0 || (net_income(p) < 0 && money < 2000);
+    const bool broke = war_economy(p) ? money < kWarDebt : money < 0 || (net_income(p) < 0 && money < kBrokeCash);
     war_plan(p, broke);
     alliances(p, st.next_ms - now_ms(), broke);
     if (broke) {
@@ -576,9 +617,7 @@ void Engine::war_plan(AiPlayer& p, bool broke) {
         st.war_arming = true;
         return;
     }
-    // Open1602: only with an economy that carries the army at war: cities that earn more than they
-    // cost, and the army's upkeep within what the war may cost.
-    if (pays_upkeep(m_world, player(p)) && (civil_income(p) < 0 || military_cost(p) > arming_budget(p))) {
+    if (!war_carried(p)) {
         return;
     }
     log(p, "declares war on player %u (war plan, %u soldiers, strength %u against %u)", best, units, own,
@@ -599,8 +638,96 @@ bool Engine::war_supplied(AiPlayer& p) {
         return false;
     }
     const std::uint8_t food = m_buildings.food_ware();
-    return critical_short(p.player, ware::kAlcohol) == 0 && critical_short(p.player, ware::kCloth) == 0 &&
-           supply(*home, food) >= demand(*home, food) && player(p).money >= kWarReserve * kWarSupplyReserve;
+    if (critical_short(p.player, ware::kAlcohol) != 0 || critical_short(p.player, ware::kCloth) != 0 ||
+        supply(*home, food) < demand(*home, food)) {
+        return false;
+    }
+    const WarGold g = war_gold_input(p);
+    // Each time the floor alone starts to hold it back (only the log).
+    const bool floor_only = g.money < g.reserve && g.money < g.floor && g.net_income >= 0 && ai::war_carried(g);
+    if (m_floor_logged.size() <= p.player) {
+        m_floor_logged.resize(std::size_t{p.player} + 1, false);
+    }
+    if (floor_only && !m_floor_logged[p.player]) {
+        log(p, "gold blocked by the floor only (cash %lld, floor %lld, net %d)", static_cast<long long>(g.money),
+            static_cast<long long>(g.floor), g.net_income);
+    }
+    m_floor_logged[p.player] = floor_only;
+    if (g.money >= g.reserve) {
+        return true;
+    }
+    if (!war_gold(g)) {
+        return false;
+    }
+    log(p,
+        "gold passes by income (cash %lld of %lld, floor %lld = broke line %d + ship %lld, upkeep %d, income %d, net "
+        "%d)",
+        static_cast<long long>(g.money), static_cast<long long>(g.reserve), static_cast<long long>(g.floor), kBrokeCash,
+        static_cast<long long>(g.floor - kBrokeCash), g.military_cost, g.civil_income, g.net_income);
+    return true;
+}
+
+WarGold Engine::war_gold_input(const AiPlayer& p) const {
+    WarGold g;
+    g.improved = rivals();
+    g.money = player(p).money;
+    g.reserve = kWarReserve * kWarSupplyReserve;
+    g.pays_upkeep = pays_upkeep(m_world, player(p));
+    g.civil_income = civil_income(p);
+    g.military_cost = military_cost(p);
+    g.arming_budget = arming_budget(p);
+    g.net_income = net_income(p);
+    // The floor: the broke line, at which a war that has failed a look ends as soon as its gold
+    // falls, and the ship of the first landing when it has none to carry it.
+    g.floor = g.reserve;
+    const std::int64_t ship = landing_ship_cost(p);
+    if (ship >= 0) {
+        g.floor = std::min<std::int64_t>(g.reserve, kBrokeCash + ship);
+    }
+    return g;
+}
+
+std::int64_t Engine::landing_ship_cost(const AiPlayer& p) const {
+    // An idle armed ship that takes a landing party, by best_armed_ship's test: none to buy.
+    for (const Ship& s : m_world.ships()) {
+        if (s.owner != p.player || s.sinking || s.trader || s.cart()) {
+            continue;
+        }
+        ShipNote n;  // a ship without a note has no job
+        for (const ShipNote& x : p.ships) {
+            n = x.id == s.id ? x : n;
+        }
+        if (takes_landing(p, s, n)) {
+            return 0;
+        }
+    }
+    // Else the warship its yard builds, at its price; without a yard none (-1).
+    if (!p.yard_valid) {
+        return -1;
+    }
+    const bool small = small_yard(p);
+    const assets::FigureType* f = m_sim.m_figures->get(figure::ship_figure(figure::kFirstWarship + (small ? 0U : 1U)));
+    return f != nullptr ? static_cast<std::int64_t>(f->ship.price) : -1;
+}
+
+bool Engine::war_carried(const AiPlayer& p) const {
+    return ai::war_carried(war_gold_input(p));
+}
+
+bool war_carried(const WarGold& g) {
+    // Open1602: only with an economy that carries the army at war: cities that earn more than they
+    // cost, and the army's upkeep within what the war may cost.
+    return !g.pays_upkeep || (g.civil_income >= 0 && g.military_cost <= g.arming_budget);
+}
+
+bool war_gold(const WarGold& g) {
+    // Open1602: below the reserve, a war its income carries: a growing economy spends its income as
+    // it comes and kept the gold under the reserve for hours, while a player with an income that
+    // pays the army does not wait for a pile of gold first. The same test war_plan makes before it
+    // declares (war_carried), so a war passed here is carried there too.
+    // Open1602: with gold for the first landing above the line at which the war would end at once,
+    // and gold that does not fall: the broke test ends a war with its income below 0 under that line.
+    return !g.improved || g.money >= g.reserve || (g.money >= g.floor && g.net_income >= 0 && war_carried(g));
 }
 
 void Engine::start_war(AiPlayer& p, PlayerId target) {

@@ -609,7 +609,9 @@ Every minute on the easiest level, ten seconds sooner per level (`[computer_stra
 - **Stance.** Hostile when its mood towards the rival is below -60; a partner when it is above 20
   (a trader: from 0 on with a trade treaty); pressed when the rival is near (a city on its home
   island or within four minutes at sea), not liked (mood 0 or below) and so much weaker (`pressure_percent`); else neutral. A
-  computer offers no peace to one it presses or is hostile to. On the harder levels a human
+  rival it presses it keeps pressing while the mood stays up to a partner's, and while the rival is near and weaker: a
+  sale at the rival's Kontor lifts the mood a little above 0 for a while, and the pressure, with the war plan, came and
+  went with the trade. A computer offers no peace to one it presses or is hostile to. On the harder levels a human
   counts as stronger than its army (`human_threat_percent`).
 - **Goal.** The economy in debt or with a falling income; military against a stronger rival
   nearby that is hostile or at war with it, or as a conqueror that presses someone (a larger army,
@@ -715,7 +717,13 @@ half an hour. The budget is the computer's own; the army's shares and the debt m
 not yet part of it.
 
 An improved rival starts or joins a war only while none of
-its cities lacks alcohol or cloth, its home city makes the food it eats, and it has 5000 gold.
+its cities lacks alcohol or cloth, its home city makes the food it eats, and it has 5000 gold or an
+income that carries the army at war (its cities earn more than they cost, and the army's upkeep stays
+within what a war may cost): a growing economy spends its income as it comes and kept its gold below
+the 5000 for hours. On its income it still needs the gold its first landing costs: 2000, below which
+a war ends as soon as its gold falls once a look has found no progress (until then it may run to
+2000 in debt), and the price of the warship its yard builds unless an idle
+armed ship can carry the troops, and its gold must not be falling.
 
 In debt, an improved computer locks the building material of a city (the city window's switch)
 while the city has less than 1 t of food, or of a good its citizens or higher classes want and
@@ -744,6 +752,16 @@ class may rise, and the held gate asks for a colony that grows it: partners' Kon
 the class fell back. When all its ships patrol, the supply takes one under way, the one with the
 fewest cannons: a patrol never waits at the end of a leg long enough to be taken there. A supply ship goes to the home city while one of its goods
 lasts less than ten minutes there, before any colony.
+It tells a trade ship from a warship by its type, not by the cannons on board: the supply takes a trade
+ship before a warship, a patrol takes a warship first, and only a warship without a job guards the home
+island; an idle trade ship waits for the next supply run. Once its trade ships were armed, the
+supply passed them over for an unarmed one, and the guards lay on the Kontor's berth.
+
+An improved computer arms every warship that lies at one of its Kontors with the cannons that city
+has, all the places it can fill at once, as a player mounts them, but leaves in store what a stone
+tower or castle costs while the city may still build one. The original arms only the ship
+that gets the supply job at the home Kontor, one cannon each time: its warships on patrol or supply
+runs carried a tenth of their cannons, while the cannons piled up in store.
 
 An improved computer's home city is the one the original would choose (the last with ten citizens,
 unless a later one has more free land), but only among its cities where 50 people live, once it has

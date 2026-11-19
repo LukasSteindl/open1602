@@ -1423,6 +1423,11 @@ std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const
     return std::pair{bx, by};
 }
 
+bool Engine::takes_landing(const AiPlayer& p, const Ship& s, const ShipNote& n) const {
+    return s.id != p.settle.ship && !s.held && n.mission == 0 && !n.supply && s.cannons != 0 &&
+           free_holds(s) + soldiers_aboard(s) >= kLandingHolds;
+}
+
 Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_same) {
     // An armed ship with room, healthy and well armed.
     (void)max_same;
@@ -1435,11 +1440,7 @@ Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_
     Ship* best = nullptr;
     std::uint32_t best_score = 8;
     for (Ship* s : own_ships(p)) {
-        const ShipNote& n = note(p, s->id);
-        if (s->id == p.settle.ship || s->held || n.mission != 0 || n.supply || s->cannons == 0) {
-            continue;
-        }
-        if (free_holds(*s) + soldiers_aboard(*s) < 3) {
+        if (!takes_landing(p, *s, note(p, s->id))) {
             continue;
         }
         const std::uint32_t score = ship_strength(health128(*s), s->cannons);

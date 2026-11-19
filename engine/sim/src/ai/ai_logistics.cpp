@@ -126,13 +126,73 @@ void Engine::stop_ship(AiPlayer& p, Ship& s) {
     n.counter = 0;
 }
 
-void Engine::arm_one(City& c, Ship& s) {
-    // One cannon from the city's stock onto the ship.
+std::uint32_t Engine::cannons_kept(AiPlayer& p, const City& c) {
+    // What a stone tower or castle costs in cannons, while the city may still build one: the tower
+    // and the castle wait until the city holds their cost (affordable), and ships took it first.
+    const CityPlan& r = plan_of(p, c.island, c.index);
+    std::uint32_t keep = 0;
+    const auto add = [&](std::uint32_t id, std::uint8_t slot) {
+        const assets::BuildingType* b = by_id(id);
+        if (b != nullptr && unlocked(p, *b) && r.slots[slot].attempts < 2) {
+            keep = std::max(keep, b->build_cost.cannons);
+        }
+    };
+    add(id::kStoneTower, kSlotStoneTower);
+    for (const std::uint32_t id : {id::kCastle3, id::kCastle2, id::kCastle1}) {
+        add(id, kSlotCastle);
+    }
+    return keep;
+}
+
+void Engine::arm_one(AiPlayer& p, City& c, Ship& s) {
+    // One cannon from the city's stock onto the ship. Open1602: an improved computer fills every
+    // place the stock allows, as a player mounts them all at once, and leaves the cannons for the
+    // towers and castles the city may still build.
     const assets::FigureType* t = ship_type(s);
     const std::uint8_t cannons = m_buildings.materials().cannons;
-    if (t != nullptr && s.cannons < t->ship.max_cannons && c.stock(cannons) > kTon) {
+    const std::uint32_t keep = rivals() ? cannons_kept(p, c) : 0;
+    const std::uint32_t before = s.cannons;
+    while (t != nullptr && s.cannons < t->ship.max_cannons && c.stock(cannons) > kTon + keep) {
         ++s.cannons;
         remove_goods(c, cannons, kTon);
+        if (!rivals()) {
+            break;
+        }
+    }
+    // The log names what the arming took, and when cannons are kept for towers and castles while
+    // a place on the ship is free (the hold, written once per ship until it ends), for traces.
+    if (rivals() && logging() && t != nullptr) {
+        const bool held = s.cannons < t->ship.max_cannons && c.stock(cannons) > kTon;
+        const auto it = std::ranges::find_if(m_cannon_holds, [&](const auto& e) { return e.first == s.id; });
+        const bool was = it != m_cannon_holds.end() && it->second;
+        if (it != m_cannon_holds.end()) {
+            it->second = held;
+        } else {
+            m_cannon_holds.emplace_back(s.id, held);
+        }
+        if (s.cannons != before || (held && !was)) {
+            log(p, "arm: ship %u at city %u/%u takes %u cannons (now %u of %u)%s, keeps %u t for towers", s.id,
+                c.island, c.index, s.cannons - before, s.cannons, t->ship.max_cannons, held ? ", holds" : "",
+                keep / kTon);
+        }
+    }
+}
+
+void Engine::arm_at_kontors(AiPlayer& p) {
+    // Open1602: the original arms only the ship that gets the supply job at the home Kontor, one
+    // cannon at a time, so warships on patrol or supply runs stayed almost unarmed (0 to 15% of
+    // their cannons, with the cannons piling up in stock). Every warship that lies at one of the
+    // computer's Kontors takes what that city has.
+    for (Ship* s : own_ships(p)) {
+        if (s->sinking || ship_moving(*s) || !warship(s->figure)) {
+            continue;
+        }
+        for (const City& c : m_world.cities()) {
+            if (c.owner == p.player && ship_at_city(*s, c)) {
+                arm_one(p, *m_world.city(c.island, c.index), *s);
+                break;
+            }
+        }
     }
 }
 
@@ -236,7 +296,7 @@ void Engine::logistics(AiPlayer& p) {
                 }
             } else if (ship_at_city(*s, *home)) {
                 unload_at(*home, *s, false, false);  // the original throws away what does not fit (S-097)
-                arm_one(*home, *s);
+                arm_one(p, *home, *s);
             } else {
                 send_to_city(p, *s, *home);
             }
@@ -244,6 +304,9 @@ void Engine::logistics(AiPlayer& p) {
         // G4b: the plan of a colony holds while its budget carries it and its crop is still wanted.
         if (rivals() && !p.pirates) {
             colony_plan(p, false);
+        }
+        if (rivals()) {
+            arm_at_kontors(p);
         }
         update_fleet_target(p);
         // Open1602: an improved computer orders no further ship while one of its own lies idle.
@@ -301,8 +364,10 @@ void Engine::guard_idle_ship(AiPlayer& p, bool healthy) {
     }
     for (Ship* s : own_ships(p)) {
         const ShipNote& n = note(p, s->id);
+        // Open1602: only a warship guards; an idle trade ship waits for the next supply run, as a
+        // guard on the home patrol it lay on the Kontor's berth and kept the trade ships out of reach.
         if (ship_idle(p, *s) && n.cooldown == 0 && !s->for_sale && !carries_goods(*s) &&
-            (!healthy || health128(*s) > kHealthy)) {
+            (!healthy || health128(*s) > kHealthy) && warship(s->figure)) {
             log(p, "ship %u has no job: guards island %u", s->id, home->island);
             patrol_route(p, *s, home->island);
             return;
@@ -434,7 +499,7 @@ bool Engine::yard_service(AiPlayer& p) {
             if (!ship_at_city(*s, *home)) {
                 send_to_city(p, *s, *home);
             }
-            arm_one(*home, *s);
+            arm_one(p, *home, *s);
         }
     }
     // The weakest ship that needs it comes to the yard.
@@ -466,8 +531,20 @@ bool Engine::yard_service(AiPlayer& p) {
 Ship* Engine::pick_logistics_ship(AiPlayer& p, bool healthy) {
     // An idle ship with the fewest cannons, else the patrol with the fewest stops left
     // that lies at the end of a leg; a ship under way is never taken.
+    // Open1602: an improved computer tells a trade ship from a warship by its type, as a player
+    // does, not by the cannons on board: once trade ships were armed, the fewest-cannons pick passed
+    // them over for an unarmed one that could not reach the Kontor, and the supply stopped.
     Ship* best = nullptr;
     std::uint32_t best_cannons = 50;
+    const auto fewer = [&](const Ship& s) {
+        if (best == nullptr) {
+            return true;
+        }
+        if (rivals() && warship(s.figure) != warship(best->figure)) {
+            return !warship(s.figure);
+        }
+        return s.cannons < best_cannons;
+    };
     for (Ship* s : own_ships(p)) {
         ShipNote& n = note(p, s->id);
         if (!ship_idle(p, *s)) {
@@ -480,7 +557,7 @@ Ship* Engine::pick_logistics_ship(AiPlayer& p, bool healthy) {
         if (healthy && health128(*s) <= kHealthy) {
             continue;
         }
-        if (s->cannons < best_cannons) {
+        if (fewer(*s)) {
             best = s;
             best_cannons = s->cannons;
         }
@@ -513,7 +590,7 @@ Ship* Engine::pick_logistics_ship(AiPlayer& p, bool healthy) {
         if (!n.patrol || !s->route.active || (healthy && health128(*s) <= kHealthy)) {
             continue;
         }
-        if (s->cannons < best_cannons) {
+        if (fewer(*s)) {
             best = s;
             best_cannons = s->cannons;
         }
@@ -554,7 +631,9 @@ Ship* Engine::pick_patrol_ship(AiPlayer& p, bool healthy) {
         if (ships.size() == 1 && (home == nullptr ? carries_goods(*s) : carries_goods_for(*s, *home))) {
             continue;
         }
-        if (static_cast<std::int32_t>(s->cannons) > best_cannons) {
+        // Open1602: an improved computer sends its warships on patrol first, by type.
+        const bool by_type = rivals() && best != nullptr && warship(s->figure) != warship(best->figure);
+        if (by_type ? warship(s->figure) : static_cast<std::int32_t>(s->cannons) > best_cannons) {
             best = s;
             best_cannons = s->cannons;
         }
@@ -1574,8 +1653,7 @@ void Engine::order_ship(AiPlayer& p) {
         log_yard(p, YardWait::Waiting);
     }
     if (yard->order == CostBuilding::kNoOrder && at_yard == nullptr) {
-        const Tile t = tile(p.yard_island, p.yard_x, p.yard_y);
-        const bool small = !t.valid() || t.type->size_x <= 3;
+        const bool small = small_yard(p);
         const auto type = static_cast<std::uint8_t>((rng().next() & 1U) * 2U + (small ? 0U : 1U));
         // Open1602: a ship of a package of that type is built as often as the original's
         // (docs/modding/own-figures.md#ships); the original's computers know only theirs.
@@ -1637,6 +1715,12 @@ void Engine::order_ship(AiPlayer& p) {
     execute(offer);
     note(p, at_yard->id).cooldown = 4;
     log(p, "ship %u offered for sale", at_yard->id);
+}
+
+bool Engine::small_yard(const AiPlayer& p) const {
+    // A yard of three tiles across builds the small ships (types 0 and 2), a larger one the large.
+    const Tile t = tile(p.yard_island, p.yard_x, p.yard_y);
+    return !t.valid() || t.type->size_x <= 3;
 }
 
 void Engine::buy_first_ship(AiPlayer& p) {
