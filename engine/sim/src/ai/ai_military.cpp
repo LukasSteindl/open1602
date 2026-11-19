@@ -2756,7 +2756,10 @@ std::vector<Engine::BuildingCount> Engine::buildings_of(std::uint16_t island, Pl
     for (std::int32_t y = 0; y < static_cast<std::int32_t>(map.height()); ++y) {
         for (std::int32_t x = 0; x < static_cast<std::int32_t>(map.width()); ++x) {
             const Tile t = tile(island, x, y);
-            if (!t.valid() || !t.origin || t.owner != owner) {
+            // Buildings only: not the trees, fields and ground a city's land carries (woodcutters
+            // and farms take those all the time), nor ruins.
+            if (!t.valid() || !t.origin || t.owner != owner || t.kind == kind::kForest || t.kind == kind::kGround ||
+                t.kind == kind::kRuin || t.kind == kind::kBeachRuin) {
                 continue;
             }
             const std::uint64_t value = build_value(t.type->build_cost);
