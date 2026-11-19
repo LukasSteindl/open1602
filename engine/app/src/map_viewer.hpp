@@ -153,6 +153,9 @@ private:
     /// The control port (--control, control_server.hpp): carries out the commands that came in
     /// since the last frame and answers a running `advance` once its game time has passed.
     void serve_control();
+    /// Where no game runs for this frame (a menu, a full-screen video of a game alone): answers every waiting
+    /// command with an error, so that it does not hang until the client gives up.
+    void control_refuse_waiting();
     /// One command of the control port; the answer as text. `request` stays open for answers
     /// given later (advance), in which case the result is empty.
     std::string control_command(const std::vector<std::string>& args,
@@ -161,11 +164,19 @@ private:
     std::string control_state() const;
     std::string control_ships() const;
     std::string control_cities(const std::vector<std::string>& args) const;
-    std::string control_islands() const;
+    std::string control_islands(bool mine) const;
     std::string control_map(const std::vector<std::string>& args) const;
     std::string control_buildings(const std::vector<std::string>& args) const;
     std::string control_goods() const;
-    std::string control_build(const std::vector<std::string>& args);
+    /// A place the searches (sites, house-sites, find-site) rank, for `build NAME ISLAND auto`.
+    struct ControlSite {
+        std::int32_t x = 0;
+        std::int32_t y = 0;
+        std::uint8_t rotation = 0;
+        sim::BuildRefusal refusal = sim::BuildRefusal::None;  ///< None: can be built and paid now
+    };
+    std::string control_build(const std::vector<std::string>& args, std::vector<ControlSite>* found = nullptr);
+    std::string control_build_auto(const std::vector<std::string>& args);
     std::string control_found(const std::vector<std::string>& args);
     std::string control_road(const std::vector<std::string>& args);
     std::string control_demolish(const std::vector<std::string>& args);
@@ -191,14 +202,27 @@ private:
     /// Turns the camera to what a command is about (island tile, Kontor, ship) when following.
     void control_look_for(const std::vector<std::string>& args);
     std::string control_unconnected(std::uint16_t island, bool fix);
+    /// A dirt road from a free tile beside the footprint at x, y (w x h) to the nearest road within `reach`
+    /// tiles (with `to_market`: also to a tile beside a market or Kontor): the tiles laid, of how many, and
+    /// where it ends; none when no way was found.
+    struct ControlRoadLink {
+        std::size_t placed = 0;
+        std::size_t wanted = 0;
+        sim::TilePos to;
+    };
+    std::optional<ControlRoadLink> control_link_road(std::uint16_t island, std::int32_t x, std::int32_t y,
+                                                     std::uint32_t w, std::uint32_t h, std::int32_t reach,
+                                                     bool to_market);
     std::string control_alerts(std::optional<std::uint16_t> only) const;
+    std::string control_economy(std::uint16_t island, std::uint8_t city) const;
     // Where the control port last turned the camera, and when (a far jump waits 1.5 s).
     std::uint64_t m_control_look_ms = 0;
     std::int64_t m_control_look_x = 0;
     std::int64_t m_control_look_y = 0;
-    std::string control_houses(std::uint16_t island) const;
-    std::string control_house_sites(std::uint16_t island, std::size_t max) const;
-    std::string control_sites(const std::vector<std::string>& args) const;
+    std::string control_houses(std::uint16_t island, bool problems, std::size_t max) const;
+    std::string control_house_sites(std::uint16_t island, std::size_t max,
+                                    std::vector<ControlSite>* found = nullptr) const;
+    std::string control_sites(const std::vector<std::string>& args, std::vector<ControlSite>* found = nullptr) const;
     void control_look_at_world(std::int64_t wx, std::int64_t wy);
     bool m_control_follow = true;
     bool m_camera_held = false;  ///< the person holds the camera: the control port leaves it alone
@@ -1032,12 +1056,16 @@ private:
     bool m_show_owners = false;              ///< ownership overlay (key O)
     bool m_autoplay = false;                 ///< the computer plays m_local_player (Ctrl+Shift+A)
     std::unique_ptr<ControlServer> m_control;  ///< --control: text commands from 127.0.0.1
-    /// A running `advance`: answered when the game time reaches until_ms, then the game pauses.
+    /// A running `advance`: answered when the game time reaches until_ms, or earlier (see serve_control).
     struct ControlAdvance {
         std::shared_ptr<ControlServer::Request> request;
         std::uint64_t until_ms = 0;
         std::uint64_t from_ms = 0;
-        std::uint64_t real_from_ms = 0;  ///< SDL_GetTicks() at the start (a shared game's wait ends by 2 min)
+        std::uint64_t real_from_ms = 0;  ///< SDL_GetTicks() at the start (the answer comes after 100 s at most)
+        bool was_paused = false;         ///< a game alone: it was paused at the start and pauses again
+        bool stop_on_message = true;     ///< ends at the first message that asks for normal speed
+        std::optional<std::uint32_t> until_ship;  ///< ends when this ship of the player is idle
+        std::string urgent;                       ///< that first message
     };
     std::optional<ControlAdvance> m_control_advance;
     /// A multiplayer game: an answer that waits until the session carried out its orders.
@@ -1055,7 +1083,13 @@ private:
     /// map's top left corner so a person watching can follow it.
     std::vector<std::string> m_agent_plan;
     std::vector<std::string> m_agent_steps;  ///< the last few, newest last
-    std::vector<std::string> m_control_messages;  ///< the game's messages since the last `advance` answer
+    std::vector<std::string> m_control_messages;  ///< the newest 40 messages since the last `advance` or `events`
+    std::size_t m_control_dropped = 0;            ///< older ones that did not fit
+    std::string control_events();                 ///< those messages as a block of lines, and forgets them
+    /// One message as the control port tells it: the text the game shows for it (the status bar's), else
+    /// 'message N', and where it happened in the coordinates of the commands.
+    std::string control_message_line(MessageId message, std::string_view text,
+                                     std::optional<std::pair<double, double>> tile) const;
     std::string control_route(const std::vector<std::string>& args);
     std::string control_coverage(std::uint16_t island, std::int32_t x, std::int32_t y, std::int32_t w,
                                  std::int32_t h) const;

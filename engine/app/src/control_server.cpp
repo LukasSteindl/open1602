@@ -2,6 +2,7 @@
 #include "control_server.hpp"
 
 #include <chrono>
+#include <cstring>
 #include <utility>
 
 #ifdef _WIN32
@@ -54,31 +55,59 @@ bool readable(Socket s, int ms) {
 #endif
 }
 
-/// The command line of a connection: up to the first line break, at most 64 KiB, within 10 s.
-std::optional<std::string> read_line(Socket s) {
+constexpr std::size_t kMaxLine = 65536;
+
+/// Reads and drops what follows up to the end of the line (or the client's close, or 5 s): a socket closed with
+/// unread data resets the connection, and the client would never see the answer.
+void drop_rest_of_line(Socket s) {
+    const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    char buffer[4096];
+    while (std::chrono::steady_clock::now() < until) {
+        if (!readable(s, 200)) {
+            continue;
+        }
+        const auto n = ::recv(s, buffer, static_cast<int>(sizeof buffer), 0);
+        if (n <= 0 || std::memchr(buffer, '\n', static_cast<std::size_t>(n)) != nullptr) {
+            return;
+        }
+    }
+}
+
+/// The command line of a connection: up to the first line break, at most 64 KiB, within 10 s. `bad` is set (and
+/// no line returned) for a line over the limit or one that was not complete in time: it is not carried out.
+std::optional<std::string> read_line(Socket s, bool& bad) {
+    bad = false;
     std::string line;
     const auto until = std::chrono::steady_clock::now() + std::chrono::seconds(10);
     char buffer[4096];
-    while (line.size() < 65536 && std::chrono::steady_clock::now() < until) {
+    while (std::chrono::steady_clock::now() < until) {
         if (!readable(s, 200)) {
             continue;
         }
         const auto n = ::recv(s, buffer, static_cast<int>(sizeof buffer), 0);
         if (n <= 0) {
-            break;
+            // The client closed its side after the command.
+            return line.empty() ? std::nullopt : std::optional<std::string>(line);
         }
         line.append(buffer, static_cast<std::size_t>(n));
         if (const auto end = line.find('\n'); end != std::string::npos) {
+            bad = end > kMaxLine;
+            if (bad) {
+                return std::nullopt;
+            }
             line.resize(end);
             if (!line.empty() && line.back() == '\r') {
                 line.pop_back();
             }
             return line;
         }
+        if (line.size() > kMaxLine) {
+            drop_rest_of_line(s);
+            bad = true;
+            return std::nullopt;
+        }
     }
-    if (!line.empty()) {
-        return line;  // the client closed its side after the command
-    }
+    bad = !line.empty();
     return std::nullopt;
 }
 
@@ -184,7 +213,8 @@ void ControlServer::run() {
         }
         // One command at a time: the next connection waits until this one has its answer, so
         // the commands of one agent are carried out in the order it gives them.
-        if (auto line = read_line(client)) {
+        bool bad = false;
+        if (auto line = read_line(client, bad)) {
             auto request = std::make_shared<Request>(std::move(*line));
             {
                 const std::lock_guard lock(m_mutex);
@@ -192,6 +222,8 @@ void ControlServer::run() {
             }
             const auto text = request->wait(m_stopping);
             write_all(client, text ? *text : std::string("error: the game ended\n"));
+        } else if (bad) {
+            write_all(client, "error: line too long or incomplete\n");
         }
         close_socket(client);
     }

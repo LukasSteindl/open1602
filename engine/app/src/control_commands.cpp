@@ -21,6 +21,7 @@
 #include <SDL3/SDL.h>
 
 #include "map_viewer.hpp"
+#include "panel_common.hpp"
 #include "production_utilisation.hpp"
 #include "o1602/assets/game_data.hpp"
 #include "o1602/assets/original_names.hpp"
@@ -31,8 +32,10 @@
 #include "o1602/sim/pathfinding.hpp"
 #include "o1602/sim/production.hpp"
 #include "o1602/sim/diplomacy.hpp"
+#include "o1602/sim/goods_statistics.hpp"
 #include "o1602/core/file.hpp"
 #include "o1602/core/text.hpp"
+#include "o1602/ui/localization.hpp"
 #include "o1602/sim/mission.hpp"
 #include "o1602/sim/save_game.hpp"
 #include "o1602/sim/ships.hpp"
@@ -231,6 +234,32 @@ char tile_char(const assets::BuildingType* b, bool mine, bool foreign) {
     }
 }
 
+/// Whether the ship moves or turns, as `ships` and `state` print it (else it is idle).
+bool ship_moving(const sim::Ship& s) {
+    return !s.target.empty() || s.motion.phase == sim::ShipMotion::Phase::Run ||
+           s.motion.phase == sim::ShipMotion::Phase::Turn;
+}
+
+/// The player's ship with that id, or null (also for a foreign or sinking ship).
+const sim::Ship* own_ship(const sim::World& world, sim::PlayerId player, std::uint32_t id) {
+    for (const sim::Ship& s : world.ships()) {
+        if (s.id == id && s.owner == player && !s.sinking) {
+            return &s;
+        }
+    }
+    return nullptr;
+}
+
+/// A road, bridge or square on the island tile: what a house must touch to be connected.
+bool is_road_tile(const sim::IslandMap& map, const assets::BuildingTable& buildings, std::int32_t x, std::int32_t y) {
+    if (x < 0 || y < 0 || !map.contains(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y))) {
+        return false;
+    }
+    const sim::MapCell& c = map.top(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
+    const assets::BuildingType* b = c.empty() ? nullptr : buildings.by_sprite(c.sprite);
+    return b != nullptr && (b->kind == kind::kRoad || b->kind == kind::kBridge || b->kind == kind::kSquare);
+}
+
 }  // namespace
 
 void MapViewer::control_pause(bool paused) {
@@ -359,6 +388,44 @@ void MapViewer::control_look_at(std::uint16_t island, std::int32_t x, std::int32
     }
 }
 
+std::string MapViewer::control_message_line(MessageId message, std::string_view text,
+                                            std::optional<std::pair<double, double>> tile) const {
+    // The text a player reads for it: a package's own, else the MELDUNG text of Text.cod (the status bar).
+    std::string shown(text.empty() ? m_messages.text(message, ui::current_language()) : text);
+    if (shown.empty() && m_hud && m_hud->texts() != nullptr) {
+        const MessageDefinition* def = m_messages.get(message);
+        const std::vector<std::string> meldung = m_hud->texts()->section("MELDUNG");
+        if (def != nullptr && def->meldung && *def->meldung < meldung.size()) {
+            shown = meldung[*def->meldung];
+        }
+    }
+    shown = shown.empty() ? "message " + std::to_string(static_cast<int>(message))
+                          : (core::is_utf8(shown) ? shown : core::cp1252_to_utf8(shown));
+    const sim::World& world = m_state->world;
+    if (tile && tile->first >= 0 && tile->second >= 0 && tile->first < world.width() && tile->second < world.height()) {
+        const auto x = static_cast<std::uint32_t>(tile->first);
+        const auto y = static_cast<std::uint32_t>(tile->second);
+        const sim::World::Cell& cell = world.cell(x, y);
+        shown += cell.island == sim::World::kSea
+                     ? fmt(" (world %u,%u)", x, y)
+                     : fmt(" (island %u at %u,%u)", cell.island, cell.local_x, cell.local_y);
+    }
+    return shown;
+}
+
+std::string MapViewer::control_events() {
+    std::string out;
+    if (m_control_dropped != 0) {
+        out += fmt("  (%zu older messages dropped)\n", m_control_dropped);
+    }
+    for (const std::string& m : m_control_messages) {
+        out += "  " + m + "\n";
+    }
+    m_control_messages.clear();
+    m_control_dropped = 0;
+    return out.empty() ? out : "messages:\n" + out;
+}
+
 void MapViewer::serve_control() {
     if (!m_control) {
         return;
@@ -385,25 +452,44 @@ void MapViewer::serve_control() {
         request->answer(gone ? std::string("error: the game is not running (menu or loading)\n") : std::move(answer));
     }
     if (m_control_advance) {
+        const ControlAdvance& adv = *m_control_advance;
         const std::uint64_t now = m_state->world.time_ms();
-        // A game alone ends the wait when someone pauses it; a shared game waits out the referee's
-        // pause too (at most 2 minutes of real time, so an agent's call does not hang for ever).
-        const bool ended = m_session ? SDL_GetTicks() >= m_control_advance->real_from_ms + 120000
-                                     : m_state->simulation.paused();
-        if (now >= m_control_advance->until_ms || ended) {
-            if (!m_session) {
-                control_pause(true);  // a shared game runs on: advance only waits there
+        const bool partial = SDL_GetTicks() >= adv.real_from_ms + 100000;
+        // Why the wait ends before its time is over (empty: it goes on). A shared game waits out the
+        // referee's pause too; the real-time cap ends every wait, so an agent's call does not hang.
+        std::string why;
+        if (now >= adv.until_ms) {
+            why = "done";
+        } else if (!adv.urgent.empty()) {
+            why = "stopped early: " + adv.urgent;
+        } else if (adv.until_ship) {
+            const sim::Ship* ship = own_ship(m_state->world, m_local_player, *adv.until_ship);
+            if (ship == nullptr) {
+                why = fmt("ship %u is gone", *adv.until_ship);
+            } else if (!ship_moving(*ship)) {
+                why = fmt("ship %u is idle", *adv.until_ship);
+            }
+        }
+        if (why.empty() && !m_session && m_state->simulation.paused()) {
+            why = "the game was paused";  // a person paused it: its time stands, nothing more happens
+        }
+        if (!why.empty() || partial) {
+            if (!m_session && adv.was_paused && !m_state->simulation.paused()) {
+                control_pause(true);  // as it was; a shared game runs on, advance only waits there
             }
             const auto request = std::move(m_control_advance->request);
-            const std::uint64_t from = m_control_advance->from_ms;
-            m_control_advance.reset();
-            std::string messages;
-            for (const std::string& m : m_control_messages) {
-                messages += "  " + m + "\n";
+            const double passed = static_cast<double>(now - adv.from_ms) / 1000.0;
+            const std::uint64_t planned = (adv.until_ms - adv.from_ms) / 1000;
+            std::string first = fmt("advanced %.1f s of game time", passed);
+            if (why.empty()) {
+                first = fmt("advanced %.1f of %llu s of game time (partial: call advance again)", passed,
+                            static_cast<unsigned long long>(planned));
+            } else if (why != "done") {
+                first += " (" + why + ")";
             }
-            m_control_messages.clear();
-            request->answer(fmt("advanced %.1f s of game time\n", static_cast<double>(now - from) / 1000.0) +
-                            control_state() + (messages.empty() ? std::string() : "messages:\n" + messages));
+            m_control_advance.reset();
+            const std::string messages = control_events();
+            request->answer(first + "\n" + control_state() + messages);
         }
         return;  // the next commands wait until the game stands again
     }
@@ -428,6 +514,16 @@ void MapViewer::serve_control() {
     }
 }
 
+void MapViewer::control_refuse_waiting() {
+    while (m_control) {
+        const auto request = m_control->next();
+        if (!request) {
+            break;
+        }
+        request->answer("error: the game is not running (menu, loading or a video)\n");
+    }
+}
+
 namespace {
 
 /// Commands that only read the game (or change only this computer's view): in a multiplayer game
@@ -438,7 +534,8 @@ bool control_reads_only(const std::vector<std::string>& args) {
         "help",   "state", "ships",      "cities",  "city",         "islands", "map",      "buildings",
         "goods",  "find-site", "kontor-sites", "threats", "units", "screenshot", "houses", "house-sites",
         "sites",  "alerts", "unconnected", "camera", "coverage", "production", "plan",     "say",
-        "save",   "advance", "pause",     "resume",  "speed",      "autoplay", "chat"};
+        "save",   "advance", "pause",     "resume",  "speed",      "autoplay", "chat",
+        "events", "economy"};
     const std::string& cmd = args[0];
     return kReading.contains(cmd) || (cmd == "diplomacy" && args.size() == 1);
 }
@@ -474,7 +571,9 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
     // A multiplayer game: no look at an island this player has not discovered (its land, the
     // others' buildings), as the game shows them none.
     if (m_session) {
-        const std::size_t at = cmd == "map" ? 1 : (cmd == "kontor-sites" || cmd == "sites" || cmd == "find-site") ? 2 : 0;
+        const bool auto_build = cmd == "build" && args.size() > 3 && args[3] == "auto";
+        const std::size_t at =
+            cmd == "map" ? 1 : (cmd == "kontor-sites" || cmd == "sites" || cmd == "find-site" || auto_build) ? 2 : 0;
         std::int64_t island = 0;
         if (at != 0 && number(args, at, island) && island >= 0 && island <= 0xFFFF &&
             control_hides(static_cast<std::uint16_t>(island))) {
@@ -495,7 +594,19 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         return control_cities(args);
     }
     if (cmd == "islands") {
-        return control_islands();
+        if (args.size() > 2 || (args.size() == 2 && args[1] != "mine")) {
+            return "error: islands [mine]\n";
+        }
+        return control_islands(args.size() == 2);
+    }
+    if (cmd == "economy") {
+        std::int64_t island = 0;
+        std::int64_t city = 0;
+        if (args.size() != 3 || !number(args, 1, island) || !number(args, 2, city) || island < 0 || city < 0 ||
+            island > 0xFFFF || city > 0xFF) {
+            return "error: economy ISLAND CITY\n";
+        }
+        return control_economy(static_cast<std::uint16_t>(island), static_cast<std::uint8_t>(city));
     }
     if (cmd == "map") {
         return control_map(args);
@@ -505,6 +616,9 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
     }
     if (cmd == "goods") {
         return control_goods();
+    }
+    if (cmd == "build" && args.size() > 3 && args[3] == "auto") {
+        return control_build_auto(args);
     }
     if (cmd == "build" || cmd == "build-many" || cmd == "find-site") {
         return control_build(args);
@@ -546,17 +660,44 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         return fmt("speed x%lld\n", static_cast<long long>(s));
     }
     if (cmd == "advance") {
+        const char* usage = "error: advance SECONDS [nostop] [until ship ID] (1 to 3600 seconds of game time)\n";
         std::int64_t seconds = 0;
         if (!number(args, 1, seconds) || seconds < 1 || seconds > 3600) {
-            return "error: advance SECONDS (1 to 3600 seconds of game time)\n";
+            return usage;
         }
         const std::uint64_t now = m_state->world.time_ms();
-        m_control_advance =
-            ControlAdvance{request, now + static_cast<std::uint64_t>(seconds) * 1000ULL, now, SDL_GetTicks()};
+        ControlAdvance advance{request, now + static_cast<std::uint64_t>(seconds) * 1000ULL, now, SDL_GetTicks()};
+        for (std::size_t i = 2; i < args.size(); ++i) {
+            std::int64_t id = 0;
+            if (args[i] == "nostop") {
+                advance.stop_on_message = false;
+            } else if (args[i] == "until" && i + 2 < args.size() && args[i + 1] == "ship" &&
+                       number(args, i + 2, id) && id >= 0) {
+                advance.until_ship = static_cast<std::uint32_t>(id);
+                i += 2;
+            } else {
+                return usage;
+            }
+        }
+        if (advance.until_ship) {
+            const sim::Ship* ship = own_ship(m_state->world, m_local_player, *advance.until_ship);
+            if (ship == nullptr) {
+                return fmt("error: no ship %u of yours (see: ships)\n", *advance.until_ship);
+            }
+            if (!ship_moving(*ship)) {
+                return fmt("advanced 0.0 s of game time (ship %u is idle)\n", *advance.until_ship) + control_state();
+            }
+        }
+        advance.was_paused = m_state->simulation.paused();
+        m_control_advance = std::move(advance);
         if (!m_session) {
             control_pause(false);  // a shared game runs anyway (or the host has paused it)
         }
         return {};  // answered by serve_control() when the time has passed
+    }
+    if (cmd == "events") {
+        const std::string messages = control_events();
+        return messages.empty() ? "no new events\n" : messages;
     }
     if (cmd == "route") {
         return control_route(args);
@@ -585,6 +726,8 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         // under a "### command" line. advance (it waits for game time) cannot be part of a batch.
         std::string out;
         std::vector<std::string> part;
+        std::size_t total = 0;
+        std::size_t failed = 0;
         const auto flush = [&] {
             if (part.empty()) {
                 return;
@@ -594,9 +737,12 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
                 line += (line.empty() ? "" : " ") + w;
             }
             out += "### " + line + "\n";
-            out += (part[0] == "advance" || part[0] == "batch")
-                       ? "error: " + part[0] + " cannot run inside a batch\n"
-                       : control_command(part, request);
+            const std::string answer = (part[0] == "advance" || part[0] == "batch")
+                                           ? "error: " + part[0] + " cannot run inside a batch\n"
+                                           : control_command(part, request);
+            out += answer;
+            ++total;
+            failed += answer.rfind("error", 0) == 0 ? 1 : 0;
             part.clear();
         };
         for (std::size_t i = 1; i < args.size(); ++i) {
@@ -607,7 +753,11 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             }
         }
         flush();
-        return out.empty() ? "error: batch CMD ; CMD ; ...\n" : out;
+        if (out.empty()) {
+            return "error: batch CMD ; CMD ; ...\n";
+        }
+        // The first word decides success for a client (exit code): one line up front when any part failed.
+        return failed == 0 ? out : fmt("error: %zu of %zu commands failed\n", failed, total) + out;
     }
     if (cmd == "shipyard") {
         // The shipyard panel: build a ship (it takes the yard's time and the city's goods).
@@ -634,10 +784,15 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             order.op = sim::ShipyardOrder::Op::Build;
             order.ship_type = static_cast<std::uint8_t>(it - kTypes.begin());
         }
-        const auto before = m_state->world.ships().size();
-        (void)control_execute(order);
-        return fmt("shipyard order given (%s); ships now %zu, a new ship appears when the yard has finished it\n",
-                   args[4].c_str(), m_state->world.ships().size() - before + before);
+        if (!control_execute(order).accepted) {
+            return order.op == sim::ShipyardOrder::Op::Cancel
+                       ? "error: refused (no shipyard of yours with its origin at that tile, or it builds no ship)\n"
+                       : "error: refused (no shipyard of yours with its origin at that tile, it builds a ship "
+                         "already, a small yard cannot build war ships, or the fleet is full)\n";
+        }
+        const bool build = order.op == sim::ShipyardOrder::Op::Build;
+        return fmt("shipyard order given (%s)%s\n", args[4].c_str(),
+                   build ? "; a new ship appears when the yard has finished it" : "");
     }
     if (cmd == "recruit") {
         // The castle panel's "recruit": a unit trains in the castle (weapons from its store, the
@@ -669,9 +824,9 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             }
             ++done;
         }
-        return fmt("%lld of %lld %s recruited in the castle at %lld,%lld (no castle, no free place or the army is "
+        return fmt("%s%lld of %lld %s recruited in the castle at %lld,%lld (no castle, no free place or the army is "
                    "full when fewer)\n",
-                   static_cast<long long>(done), static_cast<long long>(n), args[4].c_str(),
+                   done == 0 ? "error: " : "", static_cast<long long>(done), static_cast<long long>(n), args[4].c_str(),
                    static_cast<long long>(x), static_cast<long long>(y));
     }
     if (cmd == "release") {
@@ -695,7 +850,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
                                             static_cast<std::uint32_t>(std::int64_t{isl.y} + y + 3));
         const bool ok = control_execute(order).accepted;
         return ok ? "trained units leave the castle (see: units)\n"
-                  : "refused: no castle of yours there, or no trained unit in it\n";
+                  : "error: refused: no castle of yours there, or no trained unit in it\n";
     }
     if (cmd == "explore") {
         // The ship panel's "Insel erkunden": the ship explores the crops and the ore and gold
@@ -709,7 +864,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         order.ship = static_cast<std::uint32_t>(id);
         const bool ok = control_execute(order).accepted;
         return ok ? "exploring the island the ship lies at (see 'islands' for the deposits found)\n"
-                  : "refused: the ship must lie still at an island that still hides something\n";
+                  : "error: refused: the ship must lie still at an island that still hides something\n";
     }
     if (cmd == "attack") {
         // The military mode's right click with a ship on a building: the ship sails there and
@@ -728,7 +883,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             order.target = sim::Target::other_ship(static_cast<std::uint32_t>(other));
             order.attack = true;
             return control_execute(order).accepted ? "attacking the ship\n"
-                                                               : "refused: no ship of yours, or no such ship\n";
+                                                               : "error: refused: no ship of yours, or no such ship\n";
         }
         if (!number(args, 1, id) || !number(args, 2, island) || !number(args, 3, x) || !number(args, 4, y) || id < 0 ||
             island < 0 || static_cast<std::size_t>(island) >= m_state->world.islands().size() || x < 0 || y < 0) {
@@ -743,7 +898,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         const auto at = sim::building_at(m_state->world, m_buildings, static_cast<std::uint16_t>(island),
                                          sim::TilePos{static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)});
         if (!at) {
-            return "refused: no building at that tile\n";
+            return "error: refused: no building at that tile\n";
         }
         order.target = sim::Target::building(static_cast<std::uint16_t>(island), static_cast<std::uint32_t>(at->origin.x),
                                              static_cast<std::uint32_t>(at->origin.y));
@@ -753,7 +908,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             control_look_at_world(std::int64_t{isl.x} + x, std::int64_t{isl.y} + y);
         }
         return ok ? "attacking: the ship sails there and fires once in range\n"
-                  : "refused: no ship of yours, or nothing to attack there\n";
+                  : "error: refused: no ship of yours, or nothing to attack there\n";
     }
     if (cmd == "threats") {
         // What a player sees coming: foreign soldiers on islands with a city of yours, armed
@@ -857,7 +1012,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
                 const auto at = sim::building_at(m_state->world, m_buildings, static_cast<std::uint16_t>(island),
                                                  sim::TilePos{static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)});
                 if (!at) {
-                    return "refused: no building at that tile\n";
+                    return "error: refused: no building at that tile\n";
                 }
                 order.target = sim::Target::building(static_cast<std::uint16_t>(island),
                                                      static_cast<std::uint32_t>(at->origin.x),
@@ -870,7 +1025,8 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             control_look_at_world(wx, wy);
         }
         const bool ok = control_execute(order).accepted;
-        return ok ? cmd + ": ordered\n" : cmd + ": refused (unknown units, not yours, or no target there)\n";
+        return ok ? cmd + ": ordered\n"
+                  : "error: " + cmd + ": refused (unknown units, not yours, or no target there)\n";
     }
     if (cmd == "units-land") {
         // Soldiers from the ship's holds onto land within 6 tiles.
@@ -882,7 +1038,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         order.player = m_local_player;
         order.ship = static_cast<std::uint32_t>(id);
         const bool ok = control_execute(order).accepted;
-        return ok ? "units landing\n" : "refused: no soldiers on board or no land within 6 tiles\n";
+        return ok ? "units landing\n" : "error: refused: no soldiers on board or no land within 6 tiles\n";
     }
     if (cmd == "arm") {
         // The ship panel's cannons: the cannons in the holds go onto the ship's free places.
@@ -897,8 +1053,9 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         order.count = sim::ShipCommand::kAllCannons;
         const bool ok = control_execute(order).accepted;
         const sim::Ship* ship = m_state->world.ship(static_cast<std::uint32_t>(id));
-        return fmt("%s; ship %lld has %u cannons\n", ok ? "cannons mounted" : "nothing mounted (no cannons in the holds "
-                   "or no free place)", static_cast<long long>(id), ship != nullptr ? ship->cannons : 0U);
+        return fmt("%s; ship %lld has %u cannons\n",
+                   ok ? "cannons mounted" : "error: nothing mounted (no cannons in the holds or no free place)",
+                   static_cast<long long>(id), ship != nullptr ? ship->cannons : 0U);
     }
     if (cmd == "diplomacy" || cmd == "tribute" || cmd == "gesture") {
         // The diplomacy panel: treaties and mood towards every other player, and its actions.
@@ -957,8 +1114,20 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
                           : args[3] == "accept" ? sim::Treaty::Signed
                                                 : sim::Treaty::None;
         }
-        (void)control_execute(order);
+        const bool accepted = control_execute(order).accepted;
         const sim::Relation& r = world.diplomacy().relation(m_local_player, order.partner);
+        if (!accepted) {
+            if (cmd == "tribute") {
+                return "error: refused: not enough gold, or that player takes no tribute\n";
+            }
+            if (cmd == "gesture") {
+                return "error: refused: that player is neutral or makes no gestures\n";
+            }
+            return fmt("error: refused: %s with player %lld is '%s' now (offer needs none, accept needs 'they offer', "
+                       "cancel needs 'you offered' or signed), or that player makes no treaties\n",
+                       args[2].c_str(), static_cast<long long>(partner),
+                       treaty(args[2] == "trade" ? r.trade : r.peace));
+        }
         return fmt("done; with player %lld now: peace %s, trade %s\n", static_cast<long long>(partner), treaty(r.peace),
                    treaty(r.trade));
     }
@@ -987,11 +1156,16 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
     if (cmd == "houses" || cmd == "house-sites") {
         std::int64_t island = 0;
         std::int64_t max = 30;
+        const bool problems = cmd == "houses" && args.size() > 2 && args[2] == "problems";
+        const std::size_t max_at = problems ? 3 : 2;
         if (!number(args, 1, island) || island < 0 || static_cast<std::size_t>(island) >= m_state->world.islands().size() ||
-            (args.size() > 2 && (!number(args, 2, max) || max < 1 || max > 200))) {
-            return "error: " + cmd + " ISLAND" + (cmd == "house-sites" ? " [MAX]" : "") + "\n";
+            (args.size() > max_at && (!number(args, max_at, max) || max < 1 || max > 200)) ||
+            args.size() > max_at + 1) {
+            return "error: " + cmd + " ISLAND" + (cmd == "house-sites" ? " [MAX]" : " [problems] [MAX]") + "\n";
         }
-        return cmd == "houses" ? control_houses(static_cast<std::uint16_t>(island))
+        // houses lists every house unless a MAX is given; house-sites lists 30 by default.
+        return cmd == "houses" ? control_houses(static_cast<std::uint16_t>(island), problems,
+                                                args.size() > max_at ? static_cast<std::size_t>(max) : 0)
                                : control_house_sites(static_cast<std::uint16_t>(island), static_cast<std::size_t>(max));
     }
     if (cmd == "sites") {
@@ -1057,28 +1231,59 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         std::int64_t city = 0;
         std::int64_t cls = 0;
         std::int64_t rate = 0;
-        if (!number(args, 1, island) || !number(args, 2, city) || !number(args, 3, cls) || !number(args, 4, rate) ||
-            cls < 0 || cls > 4 || rate < sim::CityOrder::kMinTax || rate > sim::CityOrder::kMaxTax) {
-            return "error: tax ISLAND CITY CLASS RATE (class 0 pioneers .. 4 aristocrats; rate 64..192, 128 normal)\n";
+        // The class by name ("settlers") or number.
+        const auto named = args.size() > 3 ? assets::find_original_name(assets::original_class_names(), args[3])
+                                           : nullptr;
+        if (named != nullptr) {
+            cls = named->first;
         }
+        const bool class_ok = named != nullptr || (number(args, 3, cls) && cls >= 0 && cls <= 4);
+        if (!number(args, 1, island) || !number(args, 2, city) || !class_ok || !number(args, 4, rate)) {
+            return "error: tax ISLAND CITY CLASS RATE (class pioneers|settlers|citizens|merchants|aristocrats or "
+                   "0-4; rate 64..192, 128 normal)\n";
+        }
+        const bool in_range = island >= 0 && island <= 0xFFFF && city >= 0 && city <= 0xFF;
+        const sim::City* c = in_range ? m_state->world.city(static_cast<std::uint16_t>(island),
+                                                            static_cast<std::uint8_t>(city))
+                                      : nullptr;
+        if (c == nullptr || c->owner != m_local_player) {
+            return fmt("error: island %lld city %lld is not a city of yours (see: state)\n",
+                       static_cast<long long>(island), static_cast<long long>(city));
+        }
+        const std::int64_t set = std::clamp<std::int64_t>(rate, sim::CityOrder::kMinTax, sim::CityOrder::kMaxTax);
         sim::CityOrder order;
         order.player = m_local_player;
         order.island = static_cast<std::uint16_t>(island);
         order.city = static_cast<std::uint8_t>(city);
         order.op = sim::CityOrder::Op::TaxRate;
         order.resident_class = static_cast<std::uint8_t>(cls);
-        order.rate = static_cast<std::uint8_t>(rate);
-        return control_execute(order).accepted
-                   ? fmt("tax of %s set to %lld (128 normal)\n", class_key(static_cast<std::uint32_t>(cls)).c_str(),
-                         static_cast<long long>(rate))
-                   : "error: refused (your city?)\n";
+        order.rate = static_cast<std::uint8_t>(set);
+        if (!control_execute(order).accepted) {
+            return "error: refused (this class does not exist in the game)\n";
+        }
+        const std::string clamped =
+            set != rate ? fmt(" - %lld was outside 64..192, clamped", static_cast<long long>(rate)) : std::string();
+        return fmt("tax of %s set to %lld (128 normal)%s\n", class_key(static_cast<std::uint32_t>(cls)).c_str(),
+                   static_cast<long long>(set), clamped.c_str());
     }
     if (cmd == "production") {
         // Every own production building: is it working, how well, what waits in it.
+        // `production [ISLAND] [idle]`: one island only, and only those that need attention.
         const sim::World& world = m_state->world;
+        std::int64_t only = -1;
+        const bool idle_only = args.size() > 1 && args.back() == "idle";
+        if (args.size() > (idle_only ? 2U : 1U) &&
+            (!number(args, 1, only) || only < 0 || static_cast<std::size_t>(only) >= world.islands().size() ||
+             args.size() > (idle_only ? 3U : 2U))) {
+            return "error: production [ISLAND] [idle]\n";
+        }
+        const bool filtered = args.size() > 1;
         std::string out = "building at x,y (island): state, utilisation, stock waiting for carriers, raw material\n";
+        std::string lines;
+        std::size_t total = 0;
+        std::size_t listed = 0;
         for (const sim::Production& p : world.productions()) {
-            if (!p.used || p.island >= world.islands().size()) {
+            if (!p.used || p.island >= world.islands().size() || (only >= 0 && p.island != only)) {
                 continue;
             }
             const sim::IslandMap& map = world.islands()[p.island].map;
@@ -1090,11 +1295,20 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
             if (b == nullptr || top.owner != m_local_player) {
                 continue;
             }
-            out += fmt("%s at %u,%u (%u): %s, %lld%%, stock %.1f t, raw %.1f t\n", building_key(b->id).c_str(), p.x,
-                       p.y, p.island, !p.enabled ? "switched off" : (p.working() ? "working" : "idle"),
-                       static_cast<long long>(production_utilisation(p, *b, m_figures)), tons(p.stock), tons(p.raw));
+            ++total;
+            const std::int64_t utilisation = production_utilisation(p, *b, m_figures);
+            // Needs attention: off, not working, under half used, or full with nobody collecting. Buildings
+            // that make no goods (markets, warehouses, public buildings) never work and are left out.
+            const bool full = b->max_stock > 0 && p.stock >= b->max_stock;
+            if (idle_only && (!sim::is_producer(*b) || (p.enabled && p.working() && utilisation >= 50 && !full))) {
+                continue;
+            }
+            ++listed;
+            lines += fmt("%s at %u,%u (%u): %s, %lld%%, stock %.1f t, raw %.1f t\n", building_key(b->id).c_str(), p.x,
+                         p.y, p.island, !p.enabled ? "switched off" : (p.working() ? "working" : "idle"),
+                         static_cast<long long>(utilisation), tons(p.stock), tons(p.raw));
         }
-        return out;
+        return (filtered ? fmt("%zu buildings, %zu listed\n", total, listed) : out) + lines;
     }
     if (cmd == "trade") {
         // What the Kontor buys from or sells to ships that call (the free trader, other players).
@@ -1115,13 +1329,26 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         order.mode = mode == "buy"    ? sim::TradeSetting::Mode::Buy
                      : mode == "sell" ? sim::TradeSetting::Mode::Sell
                                       : sim::TradeSetting::Mode::None;
+        // A TONS or PRICE the order cannot take is said, not dropped; the price is then clamped to the
+        // range the game allows (below).
+        std::string note;
         std::int64_t tons_limit = 0;
-        if (number(args, 5, tons_limit) && tons_limit >= 0 && tons_limit <= 1000) {
-            order.amount = static_cast<std::uint32_t>(tons_limit) * 32U;
+        if (args.size() > 5) {
+            if (mode == "none") {
+                note = "; TONS and PRICE ignored for none";
+            } else if (number(args, 5, tons_limit) && tons_limit >= 0 && tons_limit <= 1000) {
+                order.amount = static_cast<std::uint32_t>(tons_limit) * 32U;
+            } else {
+                note = "; TONS ignored (0..1000)";
+            }
         }
         std::int64_t price = 0;
-        if (number(args, 6, price) && price > 0 && price < 10000) {
-            order.price = static_cast<std::uint16_t>(price);
+        if (args.size() > 6 && mode != "none") {
+            if (number(args, 6, price) && price > 0 && price < 10000) {
+                order.price = static_cast<std::uint16_t>(price);
+            } else {
+                note += "; PRICE ignored (1..9999)";
+            }
         }
         if (!control_execute(order).accepted) {
             return "error: refused (your city? a trade good? or the Kontor's buy/sell slots are all used: set "
@@ -1130,11 +1357,17 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         const sim::City* c = m_state->world.city(order.island, order.city);
         if (c != nullptr && *ware < c->trade.size()) {
             const auto& t = c->trade[*ware];
-            return fmt("%s: %s%s, buy price %u, sell price %u, buy up to %.0f t, sell above %.0f t\n",
+            const unsigned in_force = t.buy ? t.buy_price : t.sell_price;
+            if (order.price && *order.price != in_force) {
+                const sim::TradePriceRange range = sim::trade_price_range(m_state->world, *ware);
+                note += fmt("; PRICE %lld clamped to %u (the game allows %u..%u)", static_cast<long long>(price),
+                            in_force, range.min, range.max);
+            }
+            return fmt("%s: %s%s, buy price %u, sell price %u, buy up to %.0f t, sell above %.0f t%s\n",
                        ware_key(*ware).c_str(), t.buy ? "buying " : "", t.sell ? "selling" : "", t.buy_price,
-                       t.sell_price, tons(t.limit), tons(t.keep));
+                       t.sell_price, tons(t.limit), tons(t.keep), note.c_str());
         }
-        return "set\n";
+        return "set" + note + "\n";
     }
     if (cmd == "chat") {
         // A multiplayer game's chat (ADR 0011): what the agent writes appears in every player's
@@ -1257,17 +1490,20 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
 
 std::string MapViewer::control_help() const {
     return "Open1602 control commands (coordinates: X Y are tiles of the island, from its top left;\n"
-           "ship positions are world tiles; amounts of goods in tons):\n"
-           "  state                         time, money, balance, your cities and ships\n"
-           "  islands                       every island: number, world position, size, climate, crops, owners\n"
+           "ship positions are world tiles; amounts of goods in tons). A failed command answers 'error: ...':\n"
+           "  state                         time, money, balance (taxes, costs, trade), your cities and ships\n"
+           "  islands [mine]                every island (mine: where you have a city): position, size, crops, owners\n"
            "  map ISLAND [X Y W H]          the island as text (legend below), default the whole island\n"
-           "  cities [ISLAND CITY]          your cities; with ISLAND CITY: stock, inhabitants, needs\n"
+           "  cities|city [ISLAND CITY]     your cities; with ISLAND CITY: stock, inhabitants, needs\n"
            "  ships                         your ships: id, position, cargo, moving or idle\n"
            "  buildings [all]               the buildings you may build now (all: also locked), size, costs\n"
            "  goods                         the names of the goods\n"
-           "  production                    your production buildings: working or idle, utilisation, stock\n"
+           "  production [ISLAND] [idle]    your production buildings: working or idle, utilisation, stock\n"
+           "                                (idle: only producers off, idle, under 50 % or full)\n"
+           "  economy ISLAND CITY           per good: stock/room, need per minute, trend, minutes until empty\n"
            "  coverage ISLAND X Y           which of your markets and public buildings reach a 2x2 house at X Y\n"
            "  batch CMD ; CMD ; ...         several commands in one connection, each answer under '### CMD'\n"
+           "                                (a failed part: first line 'error: N of M commands failed')\n"
            "  screenshot [ISLAND X Y]       a PNG of what the player sees (after turning the camera there)\n"
            "  diplomacy [PLAYER trade|peace offer|accept|cancel]  treaties and mood, or a treaty action\n"
            "  shipyard ISLAND X Y build trade1|trade2|war1|war2 | cancel   a ship from your shipyard at X Y\n"
@@ -1275,35 +1511,48 @@ std::string MapViewer::control_help() const {
            "  arm SHIP                      mount the cannons in the ship's holds (load SHIP cannons N first)\n"
            "  explore SHIP                  explore the island the ship lies at (crops, ore and gold deposits)\n"
            "  tribute PLAYER GOLD | gesture PLAYER friendly|rude  make a player friendlier\n"
-           "  houses ISLAND                 every own house: road, market, public buildings in reach, what the\n"
-           "                                next class still lacks (as the house panel shows it)\n"
+           "  houses ISLAND [problems] [MAX]  every own house: road, market, public buildings in reach, what the\n"
+           "                                next class lacks (problems: only houses lacking something; MAX lines)\n"
            "  house-sites ISLAND [MAX]      every free house place with a road at its side and a market in reach\n"
            "  sites NAME ISLAND [MAX]       the best places on the whole island, scored by what the catchment\n"
            "                                holds: trees (forester, hunter), meadow (sheep, cattle), water\n"
            "                                (fisher), free field land (plantations, farms), quarry (stonemason)\n"
            "  alerts [ISLAND]               everything wrong at once: question marks (with the likely cause),\n"
            "                                fires, full buildings, missing roads, houses without market or the\n"
-           "                                next class's public buildings, short supply, full storage, money\n"
+           "                                next class's public buildings, short supply, full storage, money;\n"
+           "                                60 at most, most urgent first (money, fire, plague, supply)\n"
            "  unconnected ISLAND            houses no road touches (doctor, fire brigade, carriers cannot reach)\n"
            "  fix-roads ISLAND              lay roads from those houses to the nearest road\n"
            "  road ISLAND X1 Y1 X2 Y2 stone  paved road (faster; 1 t bricks a tile), also over dirt road\n"
            "  route SHIP show|start|stop|clear\n"
-           "  route SHIP stop N ISLAND CITY [load|unload WARE TONS]...  stop N (0-7) at that Kontor:\n"
-           "                                load until TONS are on board, unload up to TONS; then 'route SHIP start'\n"
-           "  tax ISLAND CITY CLASS RATE    tax of a class (0 pioneers..4 aristocrats), 64..192, 128 normal;\n"
-           "                                higher pays more but lowers satisfaction\n"
+           "  route SHIP stop N ISLAND CITY [load|unload WARE TONS]...  stop N (0-7) at that Kontor; checked first,\n"
+           "                                an error changes nothing; then 'route SHIP start' runs it\n"
+           "                                (load until TONS are on board, unload up to TONS)\n"
+           "  tax ISLAND CITY CLASS RATE    tax of a class (pioneers|settlers|citizens|merchants|aristocrats or 0-4),\n"
+           "                                64..192 (outside: clamped), 128 normal; higher pays more, less satisfied\n"
+           "  off|on ISLAND X Y             switch the production building at X Y off (idle) or on\n"
            "  kontor-sites SHIP ISLAND      where SHIP can found a Kontor (warehouse) on ISLAND\n"
-           "  found SHIP ISLAND X Y         found a city: Kontor from SHIP's cargo at X Y (rotation automatic)\n"
-           "  find-site NAME ISLAND X Y [R] free places for a building near X Y (radius R, default 8)\n"
+           "  found SHIP ISLAND X Y         found a city: Kontor from SHIP's cargo at X Y (rotation automatic); the\n"
+           "                                answer names the city and says if SHIP lies in reach for unload SHIP all\n"
+           "  find-site NAME ISLAND X Y [R] free places for a building near X Y (radius R, default 8); with sites and\n"
+           "                                house-sites: '(short: wood)' = you cannot pay for that place now\n"
            "  build NAME ISLAND X Y [ROT]   one building, X Y its top left tile, ROT 0-3\n"
+           "  build NAME ISLAND auto [X Y]  the best place you can pay for (as sites, house-sites; near X Y as\n"
+           "                                find-site), built, with a road to the nearest road unless one touches it\n"
            "  build-many NAME ISLAND X1 Y1 X2 Y2 [ROT]  fill a rectangle (fields, houses, trees)\n"
            "  road ISLAND X1 Y1 X2 Y2       a dirt road along the shortest path\n"
-           "  demolish ISLAND X Y           tear down what stands on the tile\n"
-           "  ship-move SHIP X Y | ship-stop SHIP\n"
-           "  load SHIP WARE TONS | unload SHIP WARE TONS   at your Kontor (within 5 tiles)\n"
-           "  trade ISLAND CITY WARE buy|sell|none [TONS] [PRICE]  the Kontor buys from / sells to ships\n"
-           "                                that call (the free trader): buy up to TONS, sell above TONS\n"
-           "  advance SECONDS              let the game run that much game time, then pause again\n"
+           "  demolish ISLAND X Y [X2 Y2]   tear down the tile's building, or a rectangle (up to 32 x 32; it leaves\n"
+           "                                houses and workshops standing unless nothing else is in it)\n"
+           "  ship-move SHIP X Y | ship-move SHIP city ISLAND CITY | ship-stop SHIP   (city: sail within reach of\n"
+           "                                that Kontor, yours or a foreign one you trade at)\n"
+           "  load SHIP WARE TONS | unload SHIP WARE TONS|all   at a Kontor within 5 tiles (all: every good on board)\n"
+           "  trade ISLAND CITY WARE buy|sell|none [TONS] [PRICE]  the Kontor buys from / sells to ships that call\n"
+           "                                (the free trader): buy up to TONS, sell above TONS; the answer shows the\n"
+           "                                values in force (a PRICE outside the game's range is clamped)\n"
+           "  advance SECONDS [nostop] [until ship ID]  pass that much game time and keep the run state; ends\n"
+           "                                early at a fire/plague/attack message (nostop: not) or when the ship\n"
+           "                                is idle; after 100 s real time at most ('partial': call it again)\n"
+           "  events                        the game's messages since the last advance or events\n"
            "  pause | resume | speed 1-8    the game starts paused when --control is given\n"
            "  autoplay on|off               the built-in computer plays your slot\n"
            "  save NAME                     save the game (savegame folder, NAME.o1602)\n"
@@ -1337,9 +1586,10 @@ std::string MapViewer::control_state() const {
                           static_cast<unsigned long long>(t / 60 % 60), static_cast<unsigned long long>(t % 60),
                           m_state->simulation.paused() ? "paused" : "running", m_state->simulation.speed());
     out += fmt("you: player %u \"%s\", money %d, per minute: taxes %lld, running costs %lld, military %lld, "
-               "balance %lld; inhabitants %u\n",
+               "sales %lld, purchases %lld, balance %lld; inhabitants %u\n",
                static_cast<unsigned>(m_local_player), me.name.c_str(), me.money, static_cast<long long>(figures.taxes),
                static_cast<long long>(figures.running_costs), static_cast<long long>(figures.military),
+               static_cast<long long>(figures.sales), static_cast<long long>(figures.purchases),
                static_cast<long long>(figures.balance), figures.inhabitants);
     // The next unlock level not reached yet.
     const auto& levels = m_buildings.infra_levels();
@@ -1362,14 +1612,15 @@ std::string MapViewer::control_state() const {
     }
     for (const sim::Ship& s : world.ships()) {
         if (s.owner == m_local_player && !s.sinking) {
-            const bool moving = !s.target.empty() || s.motion.phase == sim::ShipMotion::Phase::Run ||
-                                s.motion.phase == sim::ShipMotion::Phase::Turn;
             out += fmt("ship %u \"%s\" at %u,%u %s, cargo %.1f t\n", s.id, s.name.c_str(), s.x, s.y,
-                       moving ? "moving" : "idle", tons(s.total_load()));
+                       ship_moving(s) ? "moving" : "idle", tons(s.total_load()));
         }
     }
     if (!m_control_chat.empty()) {
         out += fmt("chat: %zu new lines from the other players (read them with: chat)\n", m_control_chat.size());
+    }
+    if (!m_control_messages.empty()) {
+        out += fmt("events: %zu new (read them with: events)\n", m_control_messages.size() + m_control_dropped);
     }
     return out;
 }
@@ -1380,10 +1631,8 @@ std::string MapViewer::control_ships() const {
         if (s.owner != m_local_player || s.sinking) {
             continue;
         }
-        const bool moving = !s.target.empty() || s.motion.phase == sim::ShipMotion::Phase::Run ||
-                            s.motion.phase == sim::ShipMotion::Phase::Turn;
         out += fmt("ship %u \"%s\" figure %u at world %u,%u %s, health %u, cannons %u\n", s.id, s.name.c_str(),
-                   s.figure, s.x, s.y, moving ? "moving" : "idle", s.health, s.cannons);
+                   s.figure, s.x, s.y, ship_moving(s) ? "moving" : "idle", s.health, s.cannons);
         if (const auto at = sim::kontor_in_reach(m_state->world, m_buildings, s.x, s.y)) {
             const sim::City& c = m_state->world.cities()[*at];
             out += fmt("  lies at the Kontor of island %u city %u (%s)\n", c.island, c.index,
@@ -1533,11 +1782,16 @@ std::string MapViewer::control_cities(const std::vector<std::string>& args) cons
     return out;
 }
 
-std::string MapViewer::control_islands() const {
+std::string MapViewer::control_islands(bool mine) const {
     const sim::World& world = m_state->world;
     std::string out = fmt("world %ux%u tiles, %zu islands\n", world.width(), world.height(), world.islands().size());
     for (std::size_t i = 0; i < world.islands().size(); ++i) {
         const sim::WorldIsland& isl = world.islands()[i];
+        if (mine && !std::any_of(world.cities().begin(), world.cities().end(), [&](const sim::City& c) {
+                return c.island == i && c.owner == m_local_player;
+            })) {
+            continue;
+        }
         if (control_hides(static_cast<std::uint16_t>(i))) {
             // A multiplayer game: what a player sees of an island no ship of theirs has seen yet.
             out += fmt("island %zu: world %u,%u size %ux%u, %s, not discovered, crops: unknown; cities of: unknown\n",
@@ -1662,18 +1916,39 @@ std::string MapViewer::control_goods() const {
 
 namespace {
 
+/// What a place the player cannot pay for right now lacks, as a mark for a list of places ("" when it is payable).
+std::string short_mark(sim::BuildRefusal refusal) {
+    switch (refusal) {
+        case sim::BuildRefusal::Money: return " (short: gold)";
+        case sim::BuildRefusal::Tools: return " (short: tools)";
+        case sim::BuildRefusal::Wood: return " (short: wood)";
+        case sim::BuildRefusal::Bricks: return " (short: bricks)";
+        case sim::BuildRefusal::Cannons: return " (short: cannons)";
+        default: return "";
+    }
+}
+
 std::string plan_text(const sim::BuildPlan& plan) {
-    std::map<std::string, std::size_t> refused;
+    // Per reason: how many items and the first few tiles (island tiles), so that the agent sees where.
+    struct Refused {
+        std::size_t count = 0;
+        std::string tiles;
+    };
+    constexpr std::size_t kExamples = 6;
+    std::map<std::string, Refused> refused;
     for (const sim::PlannedBuild& item : plan.items) {
         if (!item.ok()) {
-            ++refused[sim::refusal_name(item.refusal)];
+            Refused& r = refused[sim::refusal_name(item.refusal)];
+            if (r.count++ < kExamples) {
+                r.tiles += fmt("%s%d,%d", r.tiles.empty() ? "" : " ", item.x, item.y);
+            }
         }
     }
     std::string out = fmt("built %zu of %zu", plan.placed, plan.items.size());
     if (!refused.empty()) {
         out += ", refused:";
-        for (const auto& [why, n] : refused) {
-            out += fmt(" %s x%zu", why.c_str(), n);
+        for (const auto& [why, r] : refused) {
+            out += fmt(" %s x%zu (%s%s)", why.c_str(), r.count, r.tiles.c_str(), r.count > kExamples ? " ..." : "");
         }
     }
     out += fmt("; paid gold %d tools %g t wood %g t bricks %g t\n", plan.bill.money, tons(plan.bill.tools),
@@ -1683,7 +1958,7 @@ std::string plan_text(const sim::BuildPlan& plan) {
 
 }  // namespace
 
-std::string MapViewer::control_build(const std::vector<std::string>& args) {
+std::string MapViewer::control_build(const std::vector<std::string>& args, std::vector<ControlSite>* found) {
     const std::string& cmd = args[0];
     const sim::World& world = m_state->world;
     std::int64_t island = 0;
@@ -1710,6 +1985,7 @@ std::string MapViewer::control_build(const std::vector<std::string>& args) {
             std::int64_t x, y;
             int rotation;
             std::int64_t d2;
+            sim::BuildRefusal refusal;
         };
         std::vector<Site> sites;
         const int rotations = type.rotate > 0 ? 4 : 1;
@@ -1720,7 +1996,8 @@ std::string MapViewer::control_build(const std::vector<std::string>& args) {
                                                   static_cast<std::uint8_t>(r), 0}};
                     const sim::BuildPlan plan = sim::plan_build(world, m_buildings, order);
                     if (!plan.items.empty() && (plan.items.front().ok() || sim::short_of_means(plan.items.front().refusal))) {
-                        sites.push_back(Site{sx, sy, r, (sx - x) * (sx - x) + (sy - y) * (sy - y)});
+                        sites.push_back(Site{sx, sy, r, (sx - x) * (sx - x) + (sy - y) * (sy - y),
+                                             plan.items.front().refusal});
                         break;  // one rotation per place is enough
                     }
                 }
@@ -1772,13 +2049,17 @@ std::string MapViewer::control_build(const std::vector<std::string>& args) {
                               house ? ", what reaches it" : "");
         for (std::size_t i = 0; i < ranked.size() && i < 12; ++i) {
             const Site& s = ranked[i].second;
+            if (found != nullptr) {
+                found->push_back(ControlSite{static_cast<std::int32_t>(s.x), static_cast<std::int32_t>(s.y),
+                                             static_cast<std::uint8_t>(s.rotation), s.refusal});
+            }
             out += fmt("  %lld %lld %d %s", static_cast<long long>(s.x), static_cast<long long>(s.y), s.rotation,
                        ranked[i].first ? "road" : "no-road");
             if (house) {
                 out += " " + control_coverage(static_cast<std::uint16_t>(island), static_cast<std::int32_t>(s.x),
                                               static_cast<std::int32_t>(s.y), 2, 2);
             }
-            out += "\n";
+            out += short_mark(s.refusal) + "\n";
         }
         return out;
     }
@@ -1816,7 +2097,7 @@ std::string MapViewer::control_build(const std::vector<std::string>& args) {
     }
     const sim::CommandResult result = control_execute(order);
     if (!result.build) {
-        return "error: refused\n";
+        return "error: refused (the game did not accept the order: is your player still in the game?)\n";
     }
     if (result.build->placed > 0) {
         control_look_at(order.island, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y));
@@ -1889,13 +2170,36 @@ std::string MapViewer::control_found(const std::vector<std::string>& args) {
     order.items = {sim::BuildItem{kontor, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y), 0, 0}};
     const sim::CommandResult result = control_execute(order);
     if (!result.build) {
-        return "error: refused\n";
+        return "error: refused (the game did not accept the order: is your player still in the game?)\n";
     }
     if (result.build->placed > 0) {
         control_look_at(order.island, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y));
     }
     std::string out = "Kontor: " + plan_text(*result.build);
-    return result.build->placed == 0 ? "error: " + out : out;
+    if (result.build->placed == 0) {
+        return "error: " + out;
+    }
+    // Where the new city is and whether the ship lies within reach of its Kontor already.
+    const sim::WorldIsland& isl = world.islands()[static_cast<std::size_t>(island)];
+    const std::uint8_t city_no = isl.map.contains(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y))
+                                    ? isl.map.top(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)).city
+                                    : sim::MapCell::kNoCity;
+    const sim::City* city =
+        city_no == sim::MapCell::kNoCity ? nullptr : world.city(static_cast<std::uint16_t>(island), city_no);
+    const sim::Ship* now = own_ship(world, m_local_player, ship->id);
+    if (city != nullptr && city->warehouse_x && city->warehouse_y && now != nullptr) {
+        const std::int64_t far = std::max(std::abs(isl.x + *city->warehouse_x - std::int64_t{now->x}),
+                                          std::abs(isl.y + *city->warehouse_y - std::int64_t{now->y}));
+        out += sim::building_in_reach(world, m_buildings, city->island, *city->warehouse_x, *city->warehouse_y, now->x,
+                                      now->y)
+                   ? fmt("new city: island %u city %u; ship %u lies in reach: unload %u all works now\n", city->island,
+                         city->index, now->id, now->id)
+                   : fmt("new city: island %u city %u; ship %u is %lld tiles from its Kontor (reach 5): ship-move %u "
+                         "city %u %u first\n",
+                         city->island, city->index, now->id, static_cast<long long>(far), now->id, city->island,
+                         city->index);
+    }
+    return out;
 }
 
 std::string MapViewer::control_road(const std::vector<std::string>& args) {
@@ -1947,7 +2251,7 @@ std::string MapViewer::control_road(const std::vector<std::string>& args) {
     }
     const sim::CommandResult result = control_execute(order);
     if (!result.build) {
-        return "error: refused\n";
+        return "error: refused (the game did not accept the order: is your player still in the game?)\n";
     }
     if (result.build->placed > 0) {
         control_look_at(order.island, static_cast<std::int32_t>((x1 + x2) / 2), static_cast<std::int32_t>((y1 + y2) / 2));
@@ -1962,14 +2266,7 @@ std::string MapViewer::control_unconnected(std::uint16_t island, bool fix) {
     // laid from a free tile at the building to the nearest road.
     const sim::World& world = m_state->world;
     const sim::IslandMap& map = world.islands()[island].map;
-    const auto is_road = [&](std::int32_t x, std::int32_t y) {
-        if (x < 0 || y < 0 || !map.contains(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y))) {
-            return false;
-        }
-        const sim::MapCell& c = map.top(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
-        const assets::BuildingType* b = c.empty() ? nullptr : m_buildings.by_sprite(c.sprite);
-        return b != nullptr && (b->kind == kind::kRoad || b->kind == kind::kBridge || b->kind == kind::kSquare);
-    };
+    const auto is_road = [&](std::int32_t x, std::int32_t y) { return is_road_tile(map, m_buildings, x, y); };
     struct Spot {
         std::int32_t x, y;
         std::uint32_t w, h;
@@ -2007,59 +2304,103 @@ std::string MapViewer::control_unconnected(std::uint16_t island, bool fix) {
         if (fixed >= 12) {
             break;
         }
-        // Candidate tiles beside the house, then the nearest road within 7 tiles.
-        bool done = false;
-        for (std::int32_t cy = s.y - 1; cy <= s.y + 2 && !done; ++cy) {
-            for (std::int32_t cx = s.x - 1; cx <= s.x + 2 && !done; ++cx) {
-                const bool inside = cx >= s.x && cx < s.x + 2 && cy >= s.y && cy < s.y + 2;
-                const bool corner = (cx == s.x - 1 || cx == s.x + 2) && (cy == s.y - 1 || cy == s.y + 2);
-                if (inside || corner) {
-                    continue;
-                }
-                std::int32_t best_d = 99;
-                sim::TilePos best{};
-                for (std::int32_t ry = cy - 7; ry <= cy + 7; ++ry) {
-                    for (std::int32_t rx = cx - 7; rx <= cx + 7; ++rx) {
-                        if (is_road(rx, ry) && std::abs(rx - cx) + std::abs(ry - cy) < best_d) {
-                            best_d = std::abs(rx - cx) + std::abs(ry - cy);
-                            best = sim::TilePos{rx, ry};
-                        }
-                    }
-                }
-                if (best_d == 99) {
-                    continue;
-                }
-                const auto steps = sim::drag_path(world, m_buildings, island, sim::DragLine::Road,
-                                                  sim::TilePos{cx, cy}, best, 0);
-                if (steps.size() < 1 || (steps.size() == 1 && best_d > 0)) {
-                    continue;
-                }
-                sim::BuildOrder order;
-                order.player = m_local_player;
-                order.island = island;
-                order.skip_unpaid = true;
-                for (const sim::DragStep& st : steps) {
-                    if (!is_road(st.x, st.y)) {
-                        order.items.push_back(sim::BuildItem{assets::id::kRoadDirt, st.x, st.y, st.rotation, 0});
-                    }
-                }
-                if (order.items.empty()) {
-                    continue;
-                }
-                const sim::CommandResult r = control_execute(order);
-                if (r.build && r.build->placed > 0) {
-                    control_look_at(island, s.x, s.y);
-                    out += fmt("  house at %d,%d: road of %zu tiles\n", s.x, s.y, r.build->placed);
-                    done = true;
-                    ++fixed;
-                }
-            }
-        }
-        if (!done) {
+        // The nearest road within 7 tiles.
+        const auto link = control_link_road(island, s.x, s.y, s.w, s.h, 7, false);
+        if (link) {
+            control_look_at(island, s.x, s.y);
+            out += fmt("  house at %d,%d: road of %zu tiles\n", s.x, s.y, link->placed);
+            ++fixed;
+        } else {
             out += fmt("  house at %d,%d: no way to a road found\n", s.x, s.y);
         }
     }
     return out;
+}
+
+std::optional<MapViewer::ControlRoadLink> MapViewer::control_link_road(std::uint16_t island, std::int32_t x,
+                                                                      std::int32_t y, std::uint32_t w, std::uint32_t h,
+                                                                      std::int32_t reach, bool to_market) {
+    // A dirt road from a free tile beside the footprint to the nearest road tile within `reach` tiles; with
+    // `to_market` a free tile beside one of the player's markets or Kontors counts as the end too (the carriers
+    // reach the building from there, and a new colony has no road yet).
+    const sim::World& world = m_state->world;
+    const sim::IslandMap& map = world.islands()[island].map;
+    const auto side_tiles = [](std::int32_t bx, std::int32_t by, std::uint32_t bw, std::uint32_t bh, auto&& visit) {
+        const auto bwi = static_cast<std::int32_t>(bw);
+        const auto bhi = static_cast<std::int32_t>(bh);
+        for (std::int32_t ty = by - 1; ty <= by + bhi; ++ty) {
+            for (std::int32_t tx = bx - 1; tx <= bx + bwi; ++tx) {
+                const bool inside = tx >= bx && tx < bx + bwi && ty >= by && ty < by + bhi;
+                const bool corner = (tx == bx - 1 || tx == bx + bwi) && (ty == by - 1 || ty == by + bhi);
+                if (!inside && !corner) {
+                    visit(tx, ty);
+                }
+            }
+        }
+    };
+    std::set<std::pair<std::int32_t, std::int32_t>> market_sides;
+    if (to_market) {
+        for (const sim::Production& p : world.productions()) {
+            if (!p.used || p.island != island || !map.contains(p.x, p.y)) {
+                continue;
+            }
+            const sim::MapCell& cell = map.top(p.x, p.y);
+            const assets::BuildingType* b = cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
+            if (b != nullptr && cell.owner == m_local_player &&
+                (b->prod_kind == prod::kMarket || b->prod_kind == prod::kKontor)) {
+                std::uint32_t bw = 1;
+                std::uint32_t bh = 1;
+                sim::rotated_size(*b, cell.rotation, bw, bh);
+                side_tiles(static_cast<std::int32_t>(p.x), static_cast<std::int32_t>(p.y), bw, bh,
+                           [&](std::int32_t tx, std::int32_t ty) { market_sides.insert({tx, ty}); });
+            }
+        }
+    }
+    const auto is_end = [&](std::int32_t tx, std::int32_t ty) {
+        return is_road_tile(map, m_buildings, tx, ty) || market_sides.contains({tx, ty});
+    };
+    std::optional<ControlRoadLink> link;
+    side_tiles(x, y, w, h, [&](std::int32_t cx, std::int32_t cy) {
+        if (link) {
+            return;
+        }
+        const std::int32_t none = reach * 2 + 1;
+        std::int32_t best_d = none;
+        sim::TilePos best{};
+        for (std::int32_t ry = cy - reach; ry <= cy + reach; ++ry) {
+            for (std::int32_t rx = cx - reach; rx <= cx + reach; ++rx) {
+                if (is_end(rx, ry) && std::abs(rx - cx) + std::abs(ry - cy) < best_d) {
+                    best_d = std::abs(rx - cx) + std::abs(ry - cy);
+                    best = sim::TilePos{rx, ry};
+                }
+            }
+        }
+        if (best_d == none) {
+            return;
+        }
+        const auto steps =
+            sim::drag_path(world, m_buildings, island, sim::DragLine::Road, sim::TilePos{cx, cy}, best, 0);
+        if (steps.size() < 1 || (steps.size() == 1 && best_d > 0)) {
+            return;
+        }
+        sim::BuildOrder order;
+        order.player = m_local_player;
+        order.island = island;
+        order.skip_unpaid = true;
+        for (const sim::DragStep& st : steps) {
+            if (!is_road_tile(map, m_buildings, st.x, st.y)) {
+                order.items.push_back(sim::BuildItem{assets::id::kRoadDirt, st.x, st.y, st.rotation, 0});
+            }
+        }
+        if (order.items.empty()) {
+            return;
+        }
+        const sim::CommandResult r = control_execute(order);
+        if (r.build && r.build->placed > 0) {
+            link = ControlRoadLink{r.build->placed, order.items.size(), best};
+        }
+    });
+    return link;
 }
 
 std::string MapViewer::control_alerts(std::optional<std::uint16_t> only) const {
@@ -2069,11 +2410,7 @@ std::string MapViewer::control_alerts(std::optional<std::uint16_t> only) const {
     // full storage, low building materials and money.
     const sim::World& world = m_state->world;
     std::vector<std::string> lines;
-    const auto add = [&](const std::string& s) {
-        if (lines.size() < 60) {
-            lines.push_back(s);
-        }
-    };
+    const auto add = [&](const std::string& s) { lines.push_back(s); };
     const auto count_kind = [&](const sim::IslandMap& map, std::int32_t x, std::int32_t y, std::uint32_t w,
                                 std::uint32_t h, std::int32_t r, auto pred) {
         std::int32_t n = 0;
@@ -2270,42 +2607,155 @@ std::string MapViewer::control_alerts(std::optional<std::uint16_t> only) const {
     if (me.money < 1000) {
         add(fmt("[MONEY] only %d gold left (bankrupt below -1000)", me.money));
     }
-    std::string out = fmt("%zu alerts\n", lines.size());
-    for (const std::string& l : lines) {
-        out += l + "\n";
+    // Money first, then fire, plague, hunger and short supply; the rest keeps its order. Then the cut.
+    const auto urgency = [](const std::string& line) {
+        constexpr std::array<std::string_view, 4> kUrgent = {"[MONEY]", "[FIRE]", "[PLAGUE]", "[SUPPLY]"};
+        for (std::size_t i = 0; i < kUrgent.size(); ++i) {
+            if (line.starts_with(kUrgent[i])) {
+                return i;
+            }
+        }
+        return kUrgent.size();
+    };
+    std::stable_sort(lines.begin(), lines.end(), [&](const std::string& a, const std::string& b) {
+        return urgency(a) < urgency(b);
+    });
+    constexpr std::size_t kShown = 60;
+    std::string out = lines.size() > kShown ? fmt("%zu alerts (%zu shown, most urgent first)\n", lines.size(), kShown)
+                                            : fmt("%zu alerts\n", lines.size());
+    for (std::size_t i = 0; i < lines.size() && i < kShown; ++i) {
+        out += lines[i] + "\n";
     }
     return out;
+}
+
+std::string MapViewer::control_economy(std::uint16_t island, std::uint8_t city) const {
+    // Per good of an own city: stock and room, what the inhabitants use, the trend the Kontor panel shows
+    // (the city's goods ledger over panel_detail::StockList::kTrendMinutes) and how long the stock lasts at the balance
+    // of the goods window (sim::minutes_left).
+    const sim::World& world = m_state->world;
+    const sim::City* c = world.city(island, city);
+    if (c == nullptr) {
+        return "error: no such city\n";
+    }
+    if (c->owner != m_local_player) {
+        return "error: not your city (economy shows only your own, see: cities)\n";
+    }
+    // The inhabitants' use per 10-s tick is demand / 256 units; a minute has six ticks (consumption.cpp).
+    std::vector<std::uint64_t> demand(256);
+    const auto& classes = m_buildings.resident_classes();
+    for (std::size_t k = 0; k < c->inhabitants.size() && k < classes.size(); ++k) {
+        for (const auto& need : classes[k].needs) {
+            demand[need.ware] += std::uint64_t{need.amount} * c->inhabitants[k];
+        }
+        demand[m_buildings.food_ware()] += std::uint64_t{m_buildings.food_need()} * c->inhabitants[k];
+    }
+    struct Row {
+        std::uint64_t soonest = UINT64_MAX;  // minutes until empty, the sort key
+        std::string text;
+    };
+    std::vector<Row> rows;
+    std::string full;
+    for (const std::uint8_t w : world.goods().trade_wares()) {
+        const sim::FlowTotals t = c->ledger.totals(w, panel_detail::StockList::kTrendMinutes);
+        const std::uint32_t stock = c->stock(w);
+        const std::uint64_t use = demand[w] * 6 / 256;
+        if (c->capacity > 0 && stock + 32 >= c->capacity) {
+            full += (full.empty() ? " " : ", ") + ware_key(w);
+        }
+        if (stock == 0 && use == 0 && t.in() == 0 && t.out() == 0) {
+            continue;
+        }
+        Row row;
+        const std::optional<std::uint32_t> left = sim::minutes_left(stock, t);
+        row.soonest = stock == 0 ? (use > 0 ? 0 : UINT64_MAX) : (left ? *left : UINT64_MAX);
+        const std::string trend = panel_detail::StockList::trend_text(*c, w);
+        row.text = fmt("%s %.1f/%.0f t, need %.1f/min, trend %s", ware_key(w).c_str(), tons(stock), tons(c->capacity),
+                       tons(static_cast<std::uint32_t>(use)),
+                       t.minutes == 0 ? "?" : (trend.empty() ? "0" : trend.c_str()));
+        row.text += stock == 0 ? (use > 0 ? ", empty" : "") : (left ? fmt(", empty in %u min", *left) : std::string());
+        rows.push_back(std::move(row));
+    }
+    std::stable_sort(rows.begin(), rows.end(), [](const Row& a, const Row& b) { return a.soonest < b.soonest; });
+    std::string out = fmt("economy island %u city %u: stock/room, the inhabitants' need, trend over the last %u min "
+                          "(t per minute, as the Kontor panel)\n",
+                          island, city, panel_detail::StockList::kTrendMinutes);
+    for (const Row& r : rows) {
+        out += r.text + "\n";
+    }
+    return out + (full.empty() ? "none at the room limit\n" : "at the room limit (producers stop):" + full + "\n");
 }
 
 std::string MapViewer::control_demolish(const std::vector<std::string>& args) {
     std::int64_t island = 0;
     std::int64_t x = 0;
     std::int64_t y = 0;
+    std::int64_t x2 = 0;
+    std::int64_t y2 = 0;
+    const bool rectangle = args.size() == 6;
     if (!number(args, 1, island) || !number(args, 2, x) || !number(args, 3, y) || island < 0 ||
-        static_cast<std::size_t>(island) >= m_state->world.islands().size()) {
-        return "error: demolish ISLAND X Y\n";
+        static_cast<std::size_t>(island) >= m_state->world.islands().size() ||
+        (args.size() != 4 && !(rectangle && number(args, 4, x2) && number(args, 5, y2)))) {
+        return "error: demolish ISLAND X Y | demolish ISLAND X1 Y1 X2 Y2\n";
+    }
+    if (!rectangle) {
+        x2 = x;
+        y2 = y;
+    }
+    constexpr std::int64_t kMaxSide = 32;
+    if (std::abs(x2 - x) >= kMaxSide || std::abs(y2 - y) >= kMaxSide) {
+        return "error: the rectangle is larger than 32 x 32 tiles\n";
     }
     sim::DemolishOrder order;
     order.player = m_local_player;
     order.island = static_cast<std::uint16_t>(island);
     order.from = sim::TilePos{static_cast<std::int32_t>(x), static_cast<std::int32_t>(y)};
-    order.to = order.from;
+    order.to = sim::TilePos{static_cast<std::int32_t>(x2), static_cast<std::int32_t>(y2)};
     const auto n = control_execute(order).demolished;
     if (n > 0) {
-        control_look_at(order.island, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y));
+        control_look_at(order.island, static_cast<std::int32_t>((x + x2) / 2), static_cast<std::int32_t>((y + y2) / 2));
     }
-    return n > 0 ? fmt("demolished %zu\n", n) : "error: nothing of yours to demolish there\n";
+    if (n == 0) {
+        return "error: nothing of yours to demolish there\n";
+    }
+    // A rectangle leaves houses and workshops standing unless nothing else is in it (as the game's drag does).
+    return rectangle ? fmt("demolished %zu in %lld x %lld tiles (houses and workshops in it stay unless it holds "
+                           "nothing else)\n",
+                           n, static_cast<long long>(std::abs(x2 - x) + 1),
+                           static_cast<long long>(std::abs(y2 - y) + 1))
+                     : fmt("demolished %zu\n", n);
 }
 
 std::string MapViewer::control_ship_move(const std::vector<std::string>& args) {
     std::int64_t id = 0;
     if (!number(args, 1, id)) {
-        return "error: ship-move SHIP X Y | ship-stop SHIP\n";
+        return "error: ship-move SHIP X Y | ship-move SHIP city ISLAND CITY | ship-stop SHIP\n";
     }
     sim::ShipOrder order;
     order.player = m_local_player;
     order.ship = static_cast<std::uint32_t>(id);
-    if (args[0] == "ship-move") {
+    std::string where = "sailing\n";
+    if (args[0] == "ship-move" && args.size() > 2 && args[2] == "city") {
+        // As a trade route's stop: the ship sails until it lies within reach of that city's Kontor.
+        const sim::World& world = m_state->world;
+        std::int64_t island = 0;
+        std::int64_t city = 0;
+        if (args.size() != 5 || !number(args, 3, island) || !number(args, 4, city) || island < 0 || island > 0xFFFF ||
+            city < 0 || city > 0xFF) {
+            return "error: ship-move SHIP city ISLAND CITY\n";
+        }
+        const sim::City* kontor = world.city(static_cast<std::uint16_t>(island), static_cast<std::uint8_t>(city));
+        if (kontor == nullptr || !kontor->warehouse_x || !kontor->warehouse_y ||
+            control_hides(static_cast<std::uint16_t>(island))) {
+            return "error: no city with a Kontor there (see: cities, or islands for the numbers)\n";
+        }
+        const sim::WorldIsland& isl = world.islands()[kontor->island];
+        order.target = sim::Target::city_of(kontor->island, kontor->index);
+        where = fmt("sailing to the Kontor of island %lld city %lld (world tile %u,%u); it stops within 5 tiles of "
+                    "it, then load and unload work\n",
+                    static_cast<long long>(island), static_cast<long long>(city), isl.x + *kontor->warehouse_x,
+                    isl.y + *kontor->warehouse_y);
+    } else if (args[0] == "ship-move") {
         std::int64_t x = 0;
         std::int64_t y = 0;
         if (!number(args, 2, x) || !number(args, 3, y) || x < 0 || y < 0 || x >= m_state->world.width() ||
@@ -2322,36 +2772,68 @@ std::string MapViewer::control_ship_move(const std::vector<std::string>& args) {
             }
         }
     }
-    return ok ? (args[0] == "ship-move" ? "sailing\n" : "stopped\n") : "error: refused (your ship? sea tile?)\n";
+    return ok ? (args[0] == "ship-move" ? where : "stopped\n") : "error: refused (your ship? sea tile?)\n";
 }
 
 std::string MapViewer::control_cargo(const std::vector<std::string>& args, bool to_ship) {
     std::int64_t id = 0;
     std::int64_t amount = 0;
+    const bool all = !to_ship && args.size() == 3 && args[2] == "all";
     const auto ware = args.size() > 2 ? ware_arg(args[2]) : std::nullopt;
-    if (!number(args, 1, id) || !ware || !number(args, 3, amount) || amount < 1 || amount > 10000) {
-        return "error: " + args[0] + " SHIP WARE TONS (see: goods)\n";
+    if (!number(args, 1, id) || (!all && (!ware || !number(args, 3, amount) || amount < 1 || amount > 10000))) {
+        return "error: " + args[0] + " SHIP WARE TONS" + (to_ship ? "" : " | unload SHIP all") + " (see: goods)\n";
     }
-    sim::CargoTransfer order;
-    order.player = m_local_player;
-    order.ship = static_cast<std::uint32_t>(id);
-    order.ware = *ware;
-    order.to_ship = to_ship;
-    order.amount = static_cast<std::uint32_t>(amount) * 32U;
     const sim::Player* me = m_state->world.player(m_local_player);
-    const std::int64_t money_before = me != nullptr ? me->money : 0;
-    const auto result = control_execute(order);
-    if (result.moved == 0) {
-        return "error: nothing moved (at your Kontor, or a foreign one with a trade treaty that buys or sells it; "
-               "within 5 tiles? room? stock? money?)\n";
+    // One transfer of `units` (1/32 t) of a ware: the line saying what moved, empty when nothing did.
+    const auto transfer = [&](std::uint8_t w, std::uint32_t units) {
+        sim::CargoTransfer order;
+        order.player = m_local_player;
+        order.ship = static_cast<std::uint32_t>(id);
+        order.ware = w;
+        order.to_ship = to_ship;
+        order.amount = units;
+        const std::int64_t money_before = me != nullptr ? me->money : 0;
+        const auto result = control_execute(order);
+        if (result.moved == 0) {
+            return std::string();
+        }
+        // At another player's Kontor (trade treaty) the goods are bought or sold at its prices.
+        const std::int64_t paid = (me != nullptr ? me->money : 0) - money_before;
+        const std::string money = paid > 0   ? fmt(", sold for %lld gold", static_cast<long long>(paid))
+                                  : paid < 0 ? fmt(", bought for %lld gold", static_cast<long long>(-paid))
+                                             : std::string();
+        std::string line = fmt("%s %.1f t of %s%s", to_ship ? "loaded" : "unloaded", tons(result.moved),
+                               ware_key(w).c_str(), money.c_str());
+        if (all && result.moved < units) {
+            line += fmt(" (%.1f t stay on board: Kontor room or money)", tons(units - result.moved));
+        }
+        return line + "\n";
+    };
+    const char* nothing = "error: nothing moved (at your Kontor, or a foreign one with a trade treaty that buys or "
+                          "sells it; within 5 tiles? room? stock? money?)\n";
+    if (!all) {
+        const std::string line = transfer(*ware, static_cast<std::uint32_t>(amount) * 32U);
+        return line.empty() ? nothing : line;
     }
-    // At another player's Kontor (trade treaty) the goods are bought or sold at its prices.
-    const std::int64_t paid = (me != nullptr ? me->money : 0) - money_before;
-    const std::string money = paid > 0   ? fmt(", sold for %lld gold", static_cast<long long>(paid))
-                              : paid < 0 ? fmt(", bought for %lld gold", static_cast<long long>(-paid))
-                                         : std::string();
-    return fmt("%s %.1f t of %s%s\n", to_ship ? "loaded" : "unloaded", tons(result.moved), ware_key(*ware).c_str(),
-               money.c_str());
+    // Everything on board, one ware at a time (the holds counted before the first order).
+    const sim::Ship* ship = own_ship(m_state->world, m_local_player, static_cast<std::uint32_t>(id));
+    if (ship == nullptr) {
+        return "error: no such ship of yours\n";
+    }
+    std::map<std::uint8_t, std::uint32_t> board;
+    for (const sim::CargoSlot& slot : ship->cargo) {
+        if (slot.ware != 0 && slot.amount > 0 && m_state->world.goods().is_trade(slot.ware)) {
+            board[slot.ware] += slot.amount;
+        }
+    }
+    if (board.empty()) {
+        return "error: nothing on board that a Kontor takes (see: ships)\n";
+    }
+    std::string out;
+    for (const auto& [w, units] : board) {
+        out += transfer(w, units);
+    }
+    return out.empty() ? nothing : out;
 }
 
 namespace {
@@ -2464,13 +2946,15 @@ std::string panel_names(std::uint32_t bits) {
 
 }  // namespace
 
-std::string MapViewer::control_houses(std::uint16_t island) const {
+std::string MapViewer::control_houses(std::uint16_t island, bool problems, std::size_t max) const {
     // Every own house of the island in one answer (as the house panel shows it): road at its side,
     // market in reach, the public buildings that reach it and those the next class still lacks.
     const sim::World& world = m_state->world;
     const sim::IslandMap& map = world.islands()[island].map;
     std::string rows;
     std::size_t n = 0;
+    std::size_t with_problems = 0;
+    std::size_t listed = 0;
     std::size_t no_road = 0;
     std::size_t no_market = 0;
     std::map<std::string, std::size_t> lacking;
@@ -2490,20 +2974,31 @@ std::string MapViewer::control_houses(std::uint16_t island) const {
             ++lacking[panel_names(lacks)];
         }
         const auto disaster = hs.services & sim::house_service::kDisasterMask;
+        const bool problem = !road || !hs.market || lacks != 0 || disaster != 0;
+        with_problems += problem ? 1 : 0;
+        if ((problems && !problem) || (max != 0 && listed >= max)) {
+            continue;
+        }
+        ++listed;
         rows += fmt("  %u %u %s %u %s %s have:%s lacks:%s%s\n", hs.x, hs.y, class_key(hs.resident_class).c_str(),
                     hs.inhabitants(), road ? "road" : "no-road", hs.market ? "market" : "no-market",
                     panel_names(have).c_str(), lacks ? panel_names(lacks).c_str() : "-",
                     disaster == 2 ? " BURNING" : (disaster == 1 ? " PLAGUE" : ""));
     }
-    std::string out = fmt("%zu houses on island %u: %zu without road, %zu without market", n, island, no_road,
-                          no_market);
+    std::string out = fmt("%zu houses on island %u", n, island);
+    out += problems ? fmt(", %zu with problems", with_problems) : std::string();
+    out += fmt(": %zu without road, %zu without market", no_road, no_market);
     for (const auto& [names, count] : lacking) {
         out += fmt("; %zu lack %s for the next class", count, names.c_str());
     }
-    return out + "\n  (x y class inhabitants road market have: lacks:)\n" + rows;
+    const std::size_t matching = problems ? with_problems : n;
+    out += "\n  (x y class inhabitants road market have: lacks:)\n";
+    out += matching > listed ? fmt("  (%zu more not listed)\n", matching - listed) : std::string();
+    return out + rows;
 }
 
-std::string MapViewer::control_house_sites(std::uint16_t island, std::size_t max) const {
+std::string MapViewer::control_house_sites(std::uint16_t island, std::size_t max,
+                                           std::vector<ControlSite>* found) const {
     // Every place on the island where a house fits, has a road at its side and a market or Kontor
     // in reach (the placing preview shows the same): one answer instead of a find-site per street.
     const sim::World& world = m_state->world;
@@ -2533,6 +3028,7 @@ std::string MapViewer::control_house_sites(std::uint16_t island, std::size_t max
     }
     struct Site {
         std::int32_t x, y, gap;
+        sim::BuildRefusal refusal;
     };
     std::vector<Site> sites;
     sim::BuildOrder order;
@@ -2561,7 +3057,7 @@ std::string MapViewer::control_house_sites(std::uint16_t island, std::size_t max
             order.items = {sim::BuildItem{*house_id, sx, sy, 0, 0}};
             const sim::BuildPlan plan = sim::plan_build(world, m_buildings, order);
             if (!plan.items.empty() && (plan.items.front().ok() || sim::short_of_means(plan.items.front().refusal))) {
-                sites.push_back(Site{sx, sy, best});
+                sites.push_back(Site{sx, sy, best, plan.items.front().refusal});
             }
         }
     }
@@ -2583,12 +3079,16 @@ std::string MapViewer::control_house_sites(std::uint16_t island, std::size_t max
                           "distance-to-market):\n",
                           sites.size(), island, picked.size());
     for (const Site& s : picked) {
-        out += fmt("  %d %d %d\n", s.x, s.y, s.gap);
+        if (found != nullptr) {
+            found->push_back(ControlSite{s.x, s.y, 0, s.refusal});
+        }
+        out += fmt("  %d %d %d%s\n", s.x, s.y, s.gap, short_mark(s.refusal).c_str());
     }
     return out;
 }
 
-std::string MapViewer::control_sites(const std::vector<std::string>& args) const {
+std::string MapViewer::control_sites(const std::vector<std::string>& args,
+                                     std::vector<ControlSite>* found) const {
     // The best places on the whole island for a building, scored as its catchment preview shows:
     // trees for a forester or hunter, open meadow (no forest) for sheep and cattle, open water for a
     // fisher, free land for the fields of a plantation or farm, quarry tiles for a stonemason; any
@@ -2672,6 +3172,7 @@ std::string MapViewer::control_sites(const std::vector<std::string>& args) const
         int rotation;
         bool road;
         std::int32_t value;
+        sim::BuildRefusal refusal;
     };
     std::vector<Site> sites;
     sim::BuildOrder order;
@@ -2692,7 +3193,8 @@ std::string MapViewer::control_sites(const std::vector<std::string>& args) const
                 sim::rotated_size(type, static_cast<std::uint8_t>(rot), w, h);
                 const auto sx = static_cast<std::int32_t>(x);
                 const auto sy = static_cast<std::int32_t>(y);
-                sites.push_back(Site{sx, sy, rot, road_beside(map, m_buildings, sx, sy, w, h), value(sx, sy, w, h)});
+                sites.push_back(Site{sx, sy, rot, road_beside(map, m_buildings, sx, sy, w, h), value(sx, sy, w, h),
+                                     plan.items.front().refusal});
                 break;  // one rotation per place
             }
         }
@@ -2719,9 +3221,83 @@ std::string MapViewer::control_sites(const std::vector<std::string>& args) const
                           "road score):\n",
                           key.c_str(), sites.size(), isl, kScore[static_cast<std::size_t>(score)], r);
     for (const Site& s : picked) {
-        out += fmt("  %d %d %d %s %d\n", s.x, s.y, s.rotation, s.road ? "road" : "no-road", s.value);
+        if (found != nullptr) {
+            found->push_back(ControlSite{s.x, s.y, static_cast<std::uint8_t>(s.rotation), s.refusal});
+        }
+        out += fmt("  %d %d %d %s %d%s\n", s.x, s.y, s.rotation, s.road ? "road" : "no-road", s.value,
+                   short_mark(s.refusal).c_str());
     }
     return out;
+}
+
+std::string MapViewer::control_build_auto(const std::vector<std::string>& args) {
+    // build NAME ISLAND auto [X Y]: one building at the best place the searches know (sites; house-sites for a
+    // house; find-site near X Y), then a road to the nearest road if none touches it.
+    const sim::World& world = m_state->world;
+    const auto id = building_arg(args[1]);
+    if (!id || m_buildings.by_id(*id) == nullptr) {
+        return "error: no such building (see: buildings)\n";
+    }
+    std::int64_t island = 0;
+    std::int64_t near_x = 0;
+    std::int64_t near_y = 0;
+    const bool near = args.size() == 6;
+    if (!number(args, 2, island) || island < 0 || static_cast<std::size_t>(island) >= world.islands().size() ||
+        (args.size() != 4 && !(near && number(args, 4, near_x) && number(args, 5, near_y)))) {
+        return "error: build NAME ISLAND auto [X Y]\n";
+    }
+    const auto isl = static_cast<std::uint16_t>(island);
+    const assets::BuildingType& type = *m_buildings.by_id(*id);
+    std::vector<ControlSite> sites;
+    std::string listing;
+    if (near) {
+        listing = control_build({"find-site", args[1], args[2], args[4], args[5]}, &sites);
+    } else if (type.prod_kind == prod::kHouse) {
+        listing = control_house_sites(isl, 30, &sites);
+    } else {
+        listing = control_sites({"sites", args[1], args[2], "60"}, &sites);
+    }
+    if (sites.empty()) {
+        return listing.rfind("error", 0) == 0
+                   ? listing
+                   : "error: no place for " + building_key(*id) + " there (locked? see: buildings)\n";
+    }
+    const auto best = std::find_if(sites.begin(), sites.end(),
+                                   [](const ControlSite& s) { return s.refusal == sim::BuildRefusal::None; });
+    if (best == sites.end()) {
+        return fmt("error: no place you can pay for now; the best, at %d,%d, is%s\n", sites.front().x, sites.front().y,
+                   short_mark(sites.front().refusal).c_str());
+    }
+    sim::BuildOrder order;
+    order.player = m_local_player;
+    order.island = isl;
+    order.items = {sim::BuildItem{*id, best->x, best->y, best->rotation, 0}};
+    const sim::CommandResult result = control_execute(order);
+    if (!result.build) {
+        return "error: refused (the game did not accept the order: is your player still in the game?)\n";
+    }
+    std::string out = fmt("%s at %d,%d rotation %u: ", building_key(*id).c_str(), best->x, best->y,
+                          static_cast<unsigned>(best->rotation)) +
+                      plan_text(*result.build);
+    if (result.build->placed == 0) {
+        return "error: " + out;
+    }
+    control_look_at(isl, best->x, best->y);
+    // The second order depends on the first: the road is planned around the building on the copy of the world.
+    std::uint32_t w = type.size_x;
+    std::uint32_t h = type.size_y;
+    sim::rotated_size(type, best->rotation, w, h);
+    if (road_beside(world.islands()[isl].map, m_buildings, best->x, best->y, w, h)) {
+        return out + "road: already connected\n";
+    }
+    const auto link = control_link_road(isl, best->x, best->y, w, h, 20, true);
+    if (!link) {
+        return out + "road: no way found\n";
+    }
+    return out + (link->placed == link->wanted
+                      ? fmt("road: %zu tiles to %d,%d\n", link->placed, link->to.x, link->to.y)
+                      : fmt("road: %zu of %zu tiles to %d,%d (short of means: not connected yet)\n", link->placed,
+                            link->wanted, link->to.x, link->to.y));
 }
 
 std::string MapViewer::control_route(const std::vector<std::string>& args) {
@@ -2779,28 +3355,42 @@ std::string MapViewer::control_route(const std::vector<std::string>& args) {
         m_state->world.city(static_cast<std::uint16_t>(island), static_cast<std::uint8_t>(city)) == nullptr) {
         return "error: route SHIP stop N ISLAND CITY [load|unload WARE TONS]... (N 0-7, a city with a Kontor)\n";
     }
+    // The whole command is checked before the first order goes out: a half-set route is worse than none.
+    if ((args.size() - 6) % 3 != 0) {
+        return "error: the last entry is incomplete (load|unload WARE TONS); nothing changed\n";
+    }
+    std::vector<sim::RouteEntry> entries;
+    for (std::size_t i = 6; i + 2 < args.size(); i += 3) {
+        const auto ware = ware_arg(args[i + 1]);
+        std::int64_t amount = 0;
+        if ((args[i] != "load" && args[i] != "unload") || !ware || !number(args, i + 2, amount) || amount < 0 ||
+            amount > 10000 || !m_state->world.goods().is_trade(*ware)) {
+            return fmt("error: entry %zu: load|unload WARE TONS (a trade good, see: goods; TONS 0..10000); nothing "
+                       "changed\n",
+                       entries.size());
+        }
+        entries.push_back(sim::RouteEntry{*ware, args[i] == "unload", static_cast<std::uint32_t>(amount) * 32U});
+    }
+    if (entries.size() > sim::RouteStop::kEntries) {
+        return fmt("error: at most %zu entries a stop; nothing changed\n", sim::RouteStop::kEntries);
+    }
     edit.op = sim::RouteEdit::Op::SetStop;
     edit.stop = static_cast<std::uint8_t>(n);
     edit.target = sim::Target::city_of(static_cast<std::uint16_t>(island), static_cast<std::uint8_t>(city));
     if (!run(edit)) {
-        return "error: refused stop\n";
+        return "error: refused stop (a city of yours, or one whose Kontor the route may call at?); nothing changed\n";
     }
-    std::size_t entry = 0;
-    for (std::size_t i = 6; i + 2 < args.size(); i += 3) {
-        const auto ware = ware_arg(args[i + 1]);
-        std::int64_t amount = 0;
-        if ((args[i] != "load" && args[i] != "unload") || !ware || !number(args, i + 2, amount) || amount < 0) {
-            return fmt("error: entry %zu: load|unload WARE TONS\n", entry);
-        }
+    for (std::size_t i = 0; i < entries.size(); ++i) {
         sim::RouteEdit e = edit;
         e.op = sim::RouteEdit::Op::SetEntry;
-        e.entry = static_cast<std::uint8_t>(entry++);
-        e.value = sim::RouteEntry{*ware, args[i] == "unload", static_cast<std::uint32_t>(amount) * 32U};
+        e.entry = static_cast<std::uint8_t>(i);
+        e.value = entries[i];
         if (!run(e)) {
-            return fmt("error: entry %zu refused (more entries than the ship has holds?)\n", entry - 1);
+            return fmt("error: entry %zu refused after the stop was set; see: route SHIP show\n", i);
         }
     }
-    return fmt("stop %lld set with %zu entries (route SHIP start to run it)\n", static_cast<long long>(n), entry);
+    return fmt("stop %lld set with %zu entries (route SHIP start to run it)\n", static_cast<long long>(n),
+               entries.size());
 }
 
 }  // namespace o1602::app

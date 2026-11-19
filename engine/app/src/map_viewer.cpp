@@ -487,22 +487,32 @@ core::Result<std::unique_ptr<MapViewer>> MapViewer::create(const assets::GameDir
     viewer->m_sound->set_listener([self = viewer.get()](MessageId message, std::uint16_t flags,
                                                         std::optional<std::pair<double, double>> tile,
                                                         std::optional<sim::PlayerId> about, std::string_view text) {
+        // Fires, plagues and attacks: back to normal speed as in the original, unless the display settings
+        // keep the speed; in a multiplayer game only on the host's computer, by the host's settings.
+        const bool slows = (flags & audio::kMessageNormalSpeed) != 0 && self->m_state->simulation.speed() > 1 &&
+                           (!self->m_session || self->host_session() != nullptr) &&
+                           slows_down(self->m_app_settings.display.event_speed, message);
         if (self->m_control) {
-            // The control port reports what the game announced since the last `advance`.
-            std::string line = text.empty() ? "message " + std::to_string(static_cast<int>(message)) : std::string(text);
-            if ((flags & audio::kMessageNormalSpeed) != 0 && self->m_state->simulation.speed() > 1) {
-                line += " (the game went back to speed x1)";
+            // The control port reports what the game announced since the last `advance` or `events`.
+            std::string line = self->control_message_line(message, text, tile);
+            if ((flags & audio::kMessageNormalSpeed) != 0) {
+                // Fires, plagues, attacks: an `advance` stops here, whatever the speed setting does.
+                if (self->m_control_advance && self->m_control_advance->stop_on_message &&
+                    self->m_control_advance->urgent.empty()) {
+                    self->m_control_advance->urgent = line;
+                }
+                if (slows) {
+                    line += " (the game went back to speed x1)";
+                }
             }
-            if (self->m_control_messages.size() < 40) {
-                self->m_control_messages.push_back(std::move(line));
+            if (self->m_control_messages.size() >= 40) {
+                self->m_control_messages.erase(self->m_control_messages.begin());  // the newest are kept
+                ++self->m_control_dropped;
             }
+            self->m_control_messages.push_back(std::move(line));
         }
-        if ((flags & audio::kMessageNormalSpeed) != 0 && self->m_state->simulation.speed() > 1 &&
-            (!self->m_session || self->host_session() != nullptr) &&
-            slows_down(self->m_app_settings.display.event_speed, message)) {
-            // Fires, plagues and attacks: back to normal speed as in the original, unless the
-            // display settings keep the speed, as a command like any other change of the speed; in a
-            // multiplayer game only on the host's computer, by the host's settings.
+        if (slows) {
+            // As a command like any other change of the speed.
             self->m_command_sink.submit(
                 sim::GameSpeedOrder{self->m_local_player, sim::GameSpeedOrder::Op::SetSpeed, 1});
         }
@@ -861,6 +871,8 @@ int MapViewer::run() {
             // game: the others would wait (M-018).
             if (m_session) {
                 update(delta);
+            } else {
+                control_refuse_waiting();
             }
             std::int32_t w = 0;
             std::int32_t h = 0;
@@ -873,6 +885,8 @@ int MapViewer::run() {
                 apply_menu();  // no game runs behind the menu, but for a multiplayer game
                 if (m_session) {
                     update(delta);
+                } else {
+                    control_refuse_waiting();
                 }
                 render();
             } else {
