@@ -55,7 +55,10 @@ before a good the people need runs out.
      hash is the old one.
 4. **Only one's own cities.** `sim::GoodsScope` sums a player's cities, all of them or one island's.
    The window shows the local player's only. Allies and trading partners never see each other's
-   figures, although every computer of a multiplayer game computes all of them.
+   figures, although every computer of a multiplayer game computes all of them. A spectator of a
+   multiplayer game plays no colour: its title is a button that chooses whose figures it reads
+   (the humans and computers in the game, not an absent slot), with the player's banner colour
+   before the name. All tabs, the island choice and the routes then show that player's.
 5. **The early warning (`CityEvent::Kind::RunningLow`).** Once a minute, for the cities of human
    players and the goods the inhabitants consume (`consumer_goods`):
    - The rule: the inhabitants used the good in the last 5 minutes, there is still some in store,

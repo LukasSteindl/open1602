@@ -1020,6 +1020,8 @@ stats.open = Goods balance
 stats.open_help = Goods balance: what your cities produce, buy, use and sell (F2)
 info.rating_alone = The rating sheet is only available when playing alone: in a multiplayer game it would stop the game on one computer only.
 stats.title = Goods balance
+# A spectator's title, a button that chooses the player: {1} the title, {2} the player's name
+stats.title_player = {1}: {2}
 # {1}: how many islands the player has cities on
 stats.all_islands = All islands ({1})
 stats.all_goods = All goods

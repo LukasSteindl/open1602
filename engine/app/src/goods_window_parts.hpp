@@ -29,6 +29,7 @@ constexpr Id kWindow = 2;
 constexpr Id kAllGoods = 3;
 constexpr Id kClose = 4;
 constexpr Id kBack = 5;
+constexpr Id kPlayer = 50;  // a spectator's choice of player in the title
 constexpr Id kChartHour = 6;
 constexpr Id kChartDay = 7;
 constexpr Id kPageUp = 8;

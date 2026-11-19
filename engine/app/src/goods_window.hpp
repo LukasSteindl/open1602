@@ -6,7 +6,8 @@
 // stock lasts at that balance. A click on a good shows where it came from and went to, and its
 // last hour (or twelve hours) as a chart. Further tabs show the production buildings, the
 // inhabitants, the trade at the Kontor, the player's trade routes and the finances (goods_tabs.cpp). Only the local
-// player's cities: allies and trading partners never see each other's figures. The window only reads the world; the
+// player's cities: allies and trading partners never see each other's figures. A spectator of a multiplayer
+// game (no player of its own) chooses whose figures it reads in the title. The window only reads the world; the
 // game goes on behind it. It is drawn as a parchment in the original's style: the owner lays the parchment
 // (parchment.hpp) under what draw() returns.
 #pragma once
@@ -75,6 +76,12 @@ public:
     GoodsWindow(GoodsStyle style, std::vector<std::string> ware_names, std::int32_t ware_icon,
                 BuildingNames building_names = {});
 
+    /// The colours of the banners by banner number (a palette colour or ui::rgb_ink) and the one of
+    /// any further banner: the swatch before the name of the player a spectator watches.
+    void set_banner_colours(std::vector<std::int32_t> colours, std::int32_t other) {
+        m_banner_colours = std::move(colours);
+        m_other_banner_colour = other;
+    }
     /// The names of the classes of inhabitants (Text.cod [GAME] 3 and on), for the tab "Bevölkerung".
     void set_class_names(std::vector<std::string> names) { m_class_names = std::move(names); }
     void set_scale(double scale) { m_form.set_scale(scale); }
@@ -111,7 +118,8 @@ public:
     void wheel(std::int32_t notches) noexcept;
 
     /// Everything to draw for `player`'s cities, relative to the window's top left, over the
-    /// parchment. It lays the window out; mouse() answers what was drawn last.
+    /// parchment. It lays the window out; mouse() answers what was drawn last. For a spectator
+    /// (sim::kNoPlayer) the title chooses the player: a human or computer player in the game.
     [[nodiscard]] std::vector<ui::DrawItem> draw(const sim::World& world, const assets::BuildingTable& buildings,
                                                  const assets::FigureTable& figures, sim::PlayerId player,
                                                  const std::array<const ui::Font*, ui::kFontSlots>& fonts);
@@ -123,6 +131,10 @@ public:
     [[nodiscard]] std::optional<std::uint16_t> island() const noexcept { return m_island; }
     [[nodiscard]] std::optional<std::uint8_t> detail() const noexcept { return m_detail; }
     [[nodiscard]] Tab tab() const noexcept { return m_tab; }
+    /// The player a spectator watches, as last laid out (sim::kNoPlayer: none, or not a spectator).
+    [[nodiscard]] sim::PlayerId watched() const noexcept { return m_spectating ? m_watched : sim::kNoPlayer; }
+    /// The players a spectator can choose, as last laid out.
+    [[nodiscard]] const std::vector<sim::PlayerId>& watchable() const noexcept { return m_players; }
     [[nodiscard]] RouteOrder route_order() const noexcept { return m_route_order; }
     /// The ships of the tab "Routes" as last laid out, in their order.
     [[nodiscard]] const std::vector<ShipTarget>& route_ships() const noexcept { return m_route_ships; }
@@ -139,6 +151,8 @@ public:
 private:
     class Painter;
     void layout_head(const sim::World& world, sim::PlayerId player, Painter& below, Painter& above);
+    /// A spectator's choice of player in the title.
+    void layout_player(const sim::World& world, Painter& above);
     void layout_table(const sim::World& world, sim::PlayerId player, Painter& below, Painter& above);
     void layout_detail(const sim::World& world, const assets::BuildingTable& buildings, sim::PlayerId player,
                        std::uint8_t ware, Painter& below, Painter& above);
@@ -190,6 +204,12 @@ private:
     RouteOrder m_route_order = RouteOrder::Ship;
     std::vector<ShipTarget> m_route_ships;  ///< the ship of each row of the tab "Routes"
     std::optional<ShipTarget> m_ship;       ///< the ship clicked, for take_ship()
+    // A spectator's choice: whose figures, among the players it can choose.
+    bool m_spectating = false;
+    sim::PlayerId m_watched = sim::kNoPlayer;  ///< kept while the window is closed
+    std::vector<sim::PlayerId> m_players;
+    std::vector<std::int32_t> m_banner_colours;
+    std::int32_t m_other_banner_colour = 0;
 };
 
 }  // namespace o1602::app
