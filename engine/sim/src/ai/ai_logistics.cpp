@@ -1649,8 +1649,7 @@ void Engine::order_ship(AiPlayer& p) {
         log_yard(p, YardWait::Waiting);
     }
     if (yard->order == CostBuilding::kNoOrder && at_yard == nullptr) {
-        const Tile t = tile(p.yard_island, p.yard_x, p.yard_y);
-        const bool small = !t.valid() || t.type->size_x <= 3;
+        const bool small = small_yard(p);
         const auto type = static_cast<std::uint8_t>((rng().next() & 1U) * 2U + (small ? 0U : 1U));
         // Open1602: a ship of a package of that type is built as often as the original's
         // (docs/modding/own-figures.md#ships); the original's computers know only theirs.
@@ -1712,6 +1711,12 @@ void Engine::order_ship(AiPlayer& p) {
     execute(offer);
     note(p, at_yard->id).cooldown = 4;
     log(p, "ship %u offered for sale", at_yard->id);
+}
+
+bool Engine::small_yard(const AiPlayer& p) const {
+    // A yard of three tiles across builds the small ships (types 0 and 2), a larger one the large.
+    const Tile t = tile(p.yard_island, p.yard_x, p.yard_y);
+    return !t.valid() || t.type->size_x <= 3;
 }
 
 void Engine::buy_first_ship(AiPlayer& p) {
