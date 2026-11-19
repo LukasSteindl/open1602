@@ -42,6 +42,10 @@ is won by the agent that looks little, decides once and acts in bulk.
   - A house's answer says what reaches it. Without `chapel` in that line it will not rise: build
     houses with X Y near a chapel, or a chapel for them.
 - **Do not check what an answer already told you.** `built 1 of 1` means it stands.
+- **Look ahead instead of waiting to see.** `forecast 300` runs the game five minutes ahead on a
+  copy with nothing else ordered and says where money, balance and residents will stand and which
+  goods run out when. It is a rough guide (no fire or plague in it, and its numbers were off by a
+  third in a test), good for "does the food last" and "does this pay", and it costs no game time.
 
 PowerShell example of one step:
 
@@ -171,9 +175,9 @@ the game running at x8.
   city 2). Use it in `cities I C`, `economy I C`, `route ... stop N I C`.
 - `threats` lists foreign soldiers on your islands, natives' guards included. Only soldiers of a
   player at war (`diplomacy`) are a danger.
-- `inhabitants` in `state` is the game's own figure: the people in your houses plus the workers of
-  your producers (every forester, fisher or farm adds one at once). It is higher than the classes
-  of `cities` added up.
+- `state` gives two counts. `residents` are the people in your houses, the classes of `cities`
+  added up: this is what a tournament scores. `inhabitants` is the game's own figure and adds the
+  workers of your producers, so a forester raises it by one and scores nothing.
 - `economy` shows the trend of the whole stock: purchases and building count too, so "wood +6"
   can hide foresters that give nothing. `production I idle` tells which producers stand.
 
@@ -235,4 +239,9 @@ the game running at x8.
 - `bin\o1602-tool.exe state SAVE --towns` shows a save's inhabitants per class without the game.
 - `tools/agent/jev_driver.py` reads city 0 of its island; on a shared island it reads the wrong
   city. Check shared islands by hand.
+- `tools/agent/steward.py` carries out standing orders from a JSON file (houses, producers, taxes).
+  In its first measurement agents with it had fewer residents than agents who gave every order
+  themselves (`tools/agent/bench/README.md`): do not rely on it until that has changed.
+- While the game stands before a referee starts it, wait with a sleep of a few seconds between
+  looks at the first line of `state`, in one shell command; do not spend a call per look.
 - Streaming a game: the `stream-open1602` skill (its rule on what the stream may show comes first).

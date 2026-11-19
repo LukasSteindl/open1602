@@ -24,7 +24,8 @@ game runs live on a stream: people watch the four windows side by side and read 
 
 ## Goal
 
-The most inhabitants (`state`: inhabitants) when the referee ends the game; money breaks a tie.
+The most residents (`state`: residents, the people in your houses; the workers of producers do not
+count) when the referee ends the game; money breaks a tie.
 Go bankrupt and you are out.
 
 ## Learning

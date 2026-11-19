@@ -67,7 +67,7 @@ bin\o1602-ctl.exe --port 7602 state               # time, money, balance, cities
 |---|---|
 | Look | `state`, `islands [mine]`, `map`, `cities`, `ships`, `buildings`, `goods`, `production [ISLAND] [idle]`, `houses ISLAND [problems]`, `coverage`, `threats`, `units`, `screenshot` |
 | Find places | `kontor-sites`, `find-site`, `sites` (scored by what the catchment holds), `house-sites` |
-| Diagnose | `alerts` (most urgent first: money, fire, plague, short supply, then question marks with their likely cause, missing roads …), `economy ISLAND CITY` (per good: stock, need, trend, minutes until empty), `unconnected`, `events` |
+| Diagnose | `alerts` (most urgent first: money, fire, plague, short supply, then question marks with their likely cause, missing roads …), `economy ISLAND CITY` (per good: stock, need, trend, minutes until empty), `forecast SECONDS` (the game run ahead on a copy: money, balance, residents and what runs out), `unconnected`, `events` |
 | Build | `found`, `build`, `build NAME ISLAND auto` (best place, with a road), `build-many`, `road` (dirt or stone), `fix-roads`, `demolish` (a tile or a rectangle), `off`, `on` |
 | Ships and trade | `ship-move` (to a tile or to a city's Kontor), `ship-stop`, `load`, `unload` (a good or `all`), `route` (trade routes), `trade` (Kontor offers), `explore` |
 | Economy | `tax` |
@@ -205,6 +205,17 @@ The other scripts in `tools/agent/` (`embark.py`, `explore_all.py`, `arm_fleet.p
   `tools/agent/selbstturnier-2026-11-19-2/` is the same game played again after the first one's
   lessons had gone into the skills and the control port: Opus 287, Fable 284, Sonnet 181, Haiku 78.
   One game each, so a hint and no proof.
+
+## Measuring a change
+
+`tools/agent/bench/` plays the same game several times: identical games alone, a clock that starts
+and ends them alike, one line per run in `results.csv`. The score is `residents` (`state`): the
+people in the houses, without the workers of producers, which the game's own `inhabitants` adds.
+Three runs of one variant differed by a third (178 to 244 residents), so one run per variant
+proves little. `bench/README.md` has the protocol and the results so far.
+
+`tools/agent/steward.py` carries out standing orders from a JSON file (houses, producers, taxes).
+In the first measurement it brought no gain; the README there says why.
 
 ## Environment variables
 

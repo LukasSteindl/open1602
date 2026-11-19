@@ -1,0 +1,15 @@
+{
+  "island": 12,
+  "city": 0,
+  "interval": 30,
+  "stop_at": "0:30:00",
+  "enabled": true,
+  "reserve": { "wood": 0, "tools": 4 },
+  "houses": { "max": 60, "per_round": 4, "min_food_supply": 95, "min_food_stock": 5 },
+  "producers": [
+    { "kind": "forester", "count": 6 },
+    { "kind": "fishers_hut", "count": 2 },
+    { "kind": "chapel", "count": 1 }
+  ],
+  "taxes": { "pioneers": 192, "settlers": 128 }
+}
