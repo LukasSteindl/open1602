@@ -834,6 +834,9 @@ private:
         std::uint32_t first_id = 0;  ///< the party: soldiers with an id from first_id to last_id
         std::uint32_t last_id = 0;
         std::uint32_t towers = 0;  ///< hostile towers on the island at the landing
+        /// The hostile soldiers on the island at the landing (Soldier::id), to tell the defenders who
+        /// come later by where they come from.
+        std::vector<std::uint32_t> foes;
         /// The attacker's ships off the island at the landing: the carrier and its escort.
         std::vector<std::uint32_t> ships;
         /// The defender's buildings on the island at the landing.

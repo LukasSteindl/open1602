@@ -2681,6 +2681,43 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
         log(p, "landing of ship %u: no soldier got off", s.id);
         return;
     }
+    // The target: the city of the defender on the island nearest to the landing.
+    const auto& cities = m_world.cities();
+    std::uint32_t city = static_cast<std::uint32_t>(cities.size());
+    for (std::uint32_t i = 0; i < cities.size(); ++i) {
+        if (cities[i].island == island && cities[i].owner == owner) {
+            city = i;
+            break;
+        }
+    }
+    // The way to the city: the cells on the straight line from the landing to its market or
+    // Kontor, which the party walks or cuts its way along (way_in).
+    std::vector<std::pair<std::int32_t, std::int32_t>> way;
+    if (city < cities.size()) {
+        std::optional<std::pair<std::int32_t, std::int32_t>> goal;
+        for (const Production& pr : m_world.productions()) {
+            if (!goal && pr.used && pr.island == island) {
+                const Tile tt = tile(island, pr.x, pr.y);
+                if (tt.valid() && tt.city == cities[city].index && tt.prod == prod::kMarket) {
+                    goal = std::pair{static_cast<std::int32_t>(pr.x), static_cast<std::int32_t>(pr.y)};
+                }
+            }
+        }
+        if (!goal && cities[city].warehouse_x && cities[city].warehouse_y) {
+            goal = std::pair{static_cast<std::int32_t>(*cities[city].warehouse_x),
+                             static_cast<std::int32_t>(*cities[city].warehouse_y)};
+        }
+        if (goal) {
+            const WorldIsland& isl = island_of(island);
+            const std::int32_t gx = 2 * (static_cast<std::int32_t>(isl.x) + goal->first);
+            const std::int32_t gy = 2 * (static_cast<std::int32_t>(isl.y) + goal->second);
+            const std::int32_t n = std::max({std::abs(gx - cx), std::abs(gy - cy), 1});
+            for (std::int32_t k = 0; k <= n; ++k) {
+                way.emplace_back(cx + (gx - cx) * k / n, cy + (gy - cy) * k / n);
+            }
+        }
+    }
+    std::uint32_t covering = 0;
     std::uint32_t reach = 0;
     std::uint32_t towers = 0;
     for (const Tower& tw : m_world.towers()) {
@@ -2688,19 +2725,25 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
             continue;
         }
         ++towers;
-        if (const auto f = combat.fighter(Target::building(tw.island, tw.x, tw.y));
-            f && f->cells.distance(cx, cy) <= f->range8 / 4) {
+        const auto f = combat.fighter(Target::building(tw.island, tw.x, tw.y));
+        if (f && f->cells.distance(cx, cy) <= f->range8 / 4) {
             ++reach;
+        }
+        if (f && std::ranges::any_of(
+                     way, [&](const auto& c) { return f->cells.distance(c.first, c.second) <= f->range8 / 4; })) {
+            ++covering;
         }
     }
     // Hostile soldiers: those in the field the attacker sees (on a discovered island, as seen_army
     // counts them), and all of them with the units in the castles, which it cannot see.
     const bool known = island_of(island).discovered_by(p.player);
+    std::vector<std::uint32_t> foes;
     std::uint32_t field = 0;
     std::uint32_t field_hp = 0;
     std::vector<std::pair<std::uint16_t, std::uint32_t>> field_types;
     for (const Soldier& u : m_world.soldiers()) {
         if (u.island == island && !u.away() && m_world.diplomacy().hostile(p.player, u.owner)) {
+            foes.push_back(u.id);
             ++field;
             field_hp += u.health;
             tally(field_types, u.figure);
@@ -2720,17 +2763,11 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
             }
         }
     }
-    log(p, "landing of ship %u: defenders in the field %sHP %u/32; in castles %s", s.id, tallied(field_types).c_str(),
-        field_hp, tallied(castle_types).c_str());
-    // The target: the city of the defender on the island nearest to the landing.
-    const auto& cities = m_world.cities();
-    std::uint32_t city = static_cast<std::uint32_t>(cities.size());
-    for (std::uint32_t i = 0; i < cities.size(); ++i) {
-        if (cities[i].island == island && cities[i].owner == owner) {
-            city = i;
-            break;
-        }
-    }
+    log(p,
+        "landing of ship %u: towers covering the way to the city %u (%u cells); defenders in the field %sHP %u/32; in "
+        "castles %s",
+        s.id, covering, static_cast<unsigned>(way.size()), tallied(field_types).c_str(), field_hp,
+        tallied(castle_types).c_str());
     const std::string party = tallied(types);
     std::uint32_t people = 0;
     if (city < cities.size()) {
@@ -2754,6 +2791,7 @@ void Engine::log_landing(const AiPlayer& p, const Ship& s, std::uint32_t first_i
     w.first_id = first_id;
     w.last_id = last_id;
     w.towers = towers;
+    w.foes = std::move(foes);
     w.ships = ships_off(island, p.player);
     for (const std::uint32_t id : w.ships) {
         if (const Ship* o = m_world.ship(id)) {
@@ -2846,10 +2884,22 @@ void Engine::watch_landings() {
         }
         std::vector<std::pair<std::uint16_t, std::uint32_t>> foes;
         std::uint32_t foes_hp = 0;
+        std::uint32_t there = 0;
+        std::uint32_t fresh = 0;
+        std::uint32_t came = 0;
         for (const Soldier& u : m_world.soldiers()) {
             if (u.island == w.island && !u.away() && m_world.diplomacy().hostile(w.player, u.owner)) {
                 tally(foes, u.figure);
                 foes_hp += u.health;
+                // Where it comes from: on the island at the landing, a unit new since (recruited
+                // or out of a castle), or one that came from another island.
+                if (std::ranges::find(w.foes, u.id) != w.foes.end()) {
+                    ++there;
+                } else if (u.id > w.last_id) {
+                    ++fresh;
+                } else {
+                    ++came;
+                }
             }
         }
         std::uint32_t reach = 0;
@@ -2899,11 +2949,13 @@ void Engine::watch_landings() {
         if (p != nullptr) {
             log(*p,
                 "landing of ship %u, minute %u: %u alive (%u ashore), HP %u/32; towers reaching them %u, on the "
-                "island %u of %u; defenders in the field %sHP %u/32; city %u owner %u inhabitants %u; ships afloat "
+                "island %u of %u; defenders in the field %sHP %u/32 (%u there at the landing, %u new, %u from other "
+                "islands); city %u owner %u inhabitants %u; ships afloat "
                 "%u of %u, HP %u/32, soldiers aboard %u; buildings destroyed %s(value %llu)%s",
-                w.ship, minute, alive, ashore, hp, reach, towers, w.towers, tallied(foes).c_str(), foes_hp, w.city,
-                unsigned{owner}, people, afloat, static_cast<unsigned>(w.ships.size()), ship_hp, aboard, lost.c_str(),
-                static_cast<unsigned long long>(value), alive == 0 ? "; the party is gone (fallen or aboard)" : "");
+                w.ship, minute, alive, ashore, hp, reach, towers, w.towers, tallied(foes).c_str(), foes_hp, there,
+                fresh, came, w.city, unsigned{owner}, people, afloat, static_cast<unsigned>(w.ships.size()), ship_hp,
+                aboard, lost.c_str(), static_cast<unsigned long long>(value),
+                alive == 0 ? "; the party is gone (fallen or aboard)" : "");
         }
         if (alive == 0) {
             m_landings.erase(m_landings.begin() + static_cast<std::ptrdiff_t>(i));
