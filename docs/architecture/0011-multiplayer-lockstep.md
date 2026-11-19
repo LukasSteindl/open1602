@@ -53,6 +53,10 @@ menu in `engine/app` (`multiplayer_menu.hpp`, `multiplayer.cpp`).
    MS-20) the host takes no pause, resume or speed orders from the others. A message that makes no
    sense, a message to the host larger than 1 MiB and a connection without `Hello` after 3 s
    disconnect the computer.
+   **Spectators read, they do not order.** A spectator reads every city and every building's window
+   as its owner sees it, and the holds of every ship and trade cart (goods, amounts, soldiers). Its
+   clicks in these windows turn pages only; the orders they would give are dropped before they are
+   sent, and the host would refuse them anyway.
    **Admission by work.** A frame holds at most 1024 commands and 64 KiB of them, 64 places kept for
    the host's own (`PlayerControl`, names), which are never dropped. Each player has an equal share of
    the rest (at most 256) and of the frame's work, `kFrameWork` units of about one map tile looked at

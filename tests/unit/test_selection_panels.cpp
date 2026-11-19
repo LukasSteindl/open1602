@@ -1690,3 +1690,66 @@ TEST_CASE("selection panels: the city list shows a pirates' nest once its island
     t.world.island(0).discover(kOther);
     CHECK(!listed());
 }
+
+TEST_CASE("selection panels: a spectator reads the holds of every ship and cart, its clicks give no orders") {
+    Game g("o1602-test-selection-spectator");
+    Town t;
+    sim::Ship ship = sim::make_ship("Stranger", 35, 30, 0, kOther);
+    ship.cargo = {sim::CargoSlot{sim::ware::kCannons, 32}, sim::CargoSlot{sim::ware::kTools, 5 * 32}};
+    t.world.add_ship(ship);
+    sim::Ship cart = sim::make_ship("Altair", 9, 6, sim::figure::kTradeCart, kOther);
+    cart.cargo = {sim::CargoSlot{sim::ware::kTools, 2 * 32}, sim::CargoSlot{}, sim::CargoSlot{}};
+    t.world.add_ship(cart);
+    sim::Simulation simulation(t.world, t.buildings, t.figures);
+    SelectionPanels panels(*g.dir);
+    const PanelContext player{simulation, t.buildings, t.figures, &g.texts, kLocal};
+    const PanelContext spectator{simulation, t.buildings, t.figures, &g.texts, sim::kNoPlayer};
+    const auto select = [&](std::size_t i) {
+        Selection s;
+        s.kind = Selection::Kind::Ship;
+        s.ship = t.world.ships()[i].id;
+        s.serial = static_cast<std::uint32_t>(i + 1);
+        return s;
+    };
+    // Whether gadget `id` of the window shown answers the mouse (hidden ones do not).
+    const auto answers = [](SelectionPanel& p, std::int32_t id) {
+        const auto at = p.panel().position(id);
+        REQUIRE(at.has_value());
+        (void)p.panel().mouse((*at)[0] + 5, (*at)[1] + 5, false);
+        return p.panel().hovered() == std::optional<std::int32_t>(id);
+    };
+    const auto click = [](SelectionPanel& p, std::int32_t id, const Selection& s, const PanelContext& c) {
+        std::vector<sim::Command> out;
+        p.clicked(ui::PanelEvent{ui::PanelEvent::Kind::Clicked, id}, s, c, out);
+        return out;
+    };
+
+    // Another player's ship: a player does not see its holds, a spectator sees both.
+    const Selection stranger = select(0);
+    SelectionPanel* p = panels.panel_for(stranger, player);
+    REQUIRE(p != nullptr);
+    p->refresh(stranger, player);
+    CHECK(!answers(*p, 38091));
+    REQUIRE(panels.panel_for(stranger, spectator) == p);
+    p->refresh(stranger, spectator);
+    CHECK(answers(*p, 38091));
+    CHECK(answers(*p, 38092));
+    CHECK(!answers(*p, 38093));  // two holds only
+    const auto line = p->help(38092, stranger, spectator);
+    REQUIRE(line.has_value());
+    CHECK(!line->empty());
+    // Nothing to order: no cannons mounted from the hold, no route, no transfer or trade.
+    CHECK(!answers(*p, 38021));
+    CHECK(click(*p, 38091, stranger, spectator).empty());
+
+    // A trade cart the same.
+    const Selection altair = select(1);
+    SelectionPanel* w = panels.panel_for(altair, player);
+    REQUIRE(w != nullptr);
+    w->refresh(altair, player);
+    CHECK(!answers(*w, 59091));
+    w->refresh(altair, spectator);
+    CHECK(answers(*w, 59091));
+    CHECK(!answers(*w, 59006));  // the route switch
+    CHECK(click(*w, 59091, altair, spectator).empty());
+}
