@@ -35,9 +35,17 @@ rise to settlers another 3 t, and one forester gives about 1 t a minute.
 - **Cloth decides whether you get settlers.** Check the island for meadow before you settle
   (`sites sheep_farm I`); a forest island gives sheep farms 25 to 35 %. Without meadow buy cloth
   from the first minutes (the game takes up to 50 for it) or settle elsewhere.
-- A house holds more people in every higher class (about 2 pioneers, 6 settlers), so a rise is the
-  cheapest way to grow: cloth and a chapel in reach come before more houses. A pioneer house fills
-  in about three and a half minutes; a house that rose fills more slowly.
+- A house holds more people in every higher class (2 pioneers, about 6 settlers), so a rise is the
+  cheapest way to grow: it gives four more people for 3 t wood and 1 t tools, a new house two for
+  3 t wood. Cloth and a chapel in reach come before more houses. A pioneer house fills in about
+  three and a half minutes; a house that rose fills more slowly.
+- **Rises take the wood before you can save it.** To save 10 t for a market, load wood onto a ship
+  at your Kontor and unload it when you build (the same way a tool reserve is kept).
+- **Put the weaving hut beside the sheep farms.** A hut fourteen tiles away, on a road and inside
+  its own reach, got no wool while two farms sat full.
+- **In thirty minutes nobody reached citizens.** They need bricks (quarry and stonemason), a
+  tavern and a school, tobacco goods and spices. In a game that short, all houses to settlers and
+  then more houses is the whole plan.
 - Stop buying wood and tools once your own production carries the town; the purchases alone can
   turn the balance negative. Give tools a price (80 to 100): without one you pay what the trader
   asks.

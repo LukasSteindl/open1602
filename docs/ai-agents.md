@@ -202,6 +202,9 @@ The other scripts in `tools/agent/` (`embark.py`, `explore_all.py`, `arm_fleet.p
   game time Opus had 231 inhabitants, Fable 155, Sonnet 105 and Haiku 59. Its `clock.ps1` is a
   referee as a script: start, a line per player and game minute, pause, save, scores. Note on the
   score: the game's inhabitants count the workers of producers too.
+  `tools/agent/selbstturnier-2026-11-19-2/` is the same game played again after the first one's
+  lessons had gone into the skills and the control port: Opus 287, Fable 284, Sonnet 181, Haiku 78.
+  One game each, so a hint and no proof.
 
 ## Environment variables
 

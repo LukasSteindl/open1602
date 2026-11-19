@@ -34,10 +34,13 @@ is won by the agent that looks little, decides once and acts in bulk.
   - Without X Y the place has the best catchment of the island (trees, meadow, fish), which may lie
     far from town. `build NAME I auto X Y` takes the place nearest to X Y, within 8 tiles of it: use
     it to put houses and public buildings where you want them and to spread producers.
-  - The road crosses a river with a wooden bridge by itself (that costs wood). It builds nothing
-    when no road can reach a place, and says so.
-  - Houses keep out of your foresters' windows while another place is left. Foresters do not keep
-    out of house land: place them with X Y away from where the town will grow.
+  - The road crosses a river with a wooden bridge by itself; the answer says how many bridges, and
+    they cost wood. It builds nothing when no road can reach a place, and says so.
+  - Houses keep out of your foresters' windows, and a producer keeps six tiles from another of its
+    kind, while another place is left. Foresters do not keep out of house land: place them with X Y
+    away from where the town will grow.
+  - A house's answer says what reaches it. Without `chapel` in that line it will not rise: build
+    houses with X Y near a chapel, or a chapel for them.
 - **Do not check what an answer already told you.** `built 1 of 1` means it stands.
 
 PowerShell example of one step:
@@ -99,16 +102,21 @@ the game running at x8.
    ore. In a game alone `islands` prints crops even for islands marked `not discovered`: leave
    those lines unread until your ship has been there (the no-cheating rule).
    - **At the start no island is discovered**, and `kontor-sites` refuses an island you have not
-     seen. First `ship-move SHIP X Y` into the rectangle of the nearest big island (`islands` gives
-     each island's world position and size), `advance 60 until ship SHIP`, then go on.
+     seen. First `ship-move SHIP X Y` to a tile of the nearest big island (`islands` gives each
+     island's world position and size; for a land tile the ship takes the sea tile nearest to it),
+     `advance 60 until ship SHIP`, then go on.
    - Before you settle, look at what the island gives: `sites sheep_farm I 3` (meadow for cloth;
-     without cloth there are no settlers), `sites forester I 3`, `sites fishers_hut I 3`.
+     without cloth there are no settlers), `sites forester I 3`, `sites fishers_hut I 3`. On a
+     discovered island they answer before you have a city there.
 2. `kontor-sites SHIP I`: an `ok` place with free land and forest behind it. "the ship is too far
-   away": sail closer (within 16 tiles).
-3. `found SHIP I X Y`. The answer names the city (island and city number) and says whether the
-   ship lies in reach.
-4. One batch: `ship-move SHIP city I C`, then `advance 120 until ship SHIP`, then `unload SHIP all`.
-   Building materials must lie in the Kontor, not on the ship. The city's room per good is
+   away": sail closer (within 16 tiles). `ok` means founding works from there; unloading needs
+   the ship within 5 tiles.
+3. `found SHIP I X Y`. The answer names the city (island and city number); a ship out of reach
+   sails to the new Kontor by itself.
+4. `advance 60 until ship SHIP`, then, in the next batch, `unload SHIP all` and the first buildings.
+   A batch carries on after a failed part, so builds sent together with a `found` whose ship has
+   not arrived all fail for want of materials. Building materials must lie in the Kontor, not on
+   the ship. The city's room per good is
    limited (30 to 40 t at first, `cities I C` says it; every market adds room) and the answer says
    what stayed on board. Unload the rest when room is free.
 5. One batch: `build marketplace I auto X Y` beside the Kontor, `build fishers_hut I auto`, and
@@ -176,7 +184,9 @@ the game running at x8.
   (`diplomacy PLAYER trade offer`).
 - `trade I C WARE buy|sell|none [TONS] [PRICE]` sets what your Kontor buys from and sells to ships
   that call. The slots are few: set another good to `none` first. The game clamps prices to a
-  range per good; the answer says the values in force.
+  range per good; the answer says the values in force. For `buy`, TONS is the stock up to which
+  the Kontor buys, so TONS times PRICE is what one visit can cost you (40 t tools at 100: 4,000).
+  `purchases` in `state` is an average over the last minutes and stays up after you stop buying.
 - **The free trader** is the only early source of goods you lack: set `trade I C wood buy 40` (and
   cloth, tools) in the first minutes. He sells only what he bought at other Kontors, and he sails
   to the Kontor that promises him the most profit. Cheap surplus on sale (bricks 15, wood 8) and a good buy price for
@@ -194,9 +204,11 @@ the game running at x8.
 - The game does not wait for you. `advance N` only waits; pause and speed belong to the host (in
   a tournament to the referee, and your port refuses them).
 - **Count your turns.** At speed x2 a game minute lasts 30 s, so thirty game minutes are about
-  25 of your turns. Read the skills before the clock starts; when it runs, found at once. Per turn
-  send one batch that looks and acts, then one `advance`. If you script several rounds in one
-  shell command, never filter the answers: a hidden `error:` cost one player four minutes.
+  25 of your turns. Read the skills before the clock starts and give no order while the game
+  stands (test the first line of `state` for `running`: the word is also in "running costs");
+  when it runs, sail at once. Per turn send one batch that looks and acts, then one `advance`
+  (one per call: at x2 `advance 120` takes a minute of real time). If you script several rounds
+  in one shell command, never filter the answers: a hidden `error:` cost one player four minutes.
 - An order answers after about 2.5 s of game time, so that the next command sees its result. A
   batch waits once for all its orders: batching is how you keep up.
 - The answer comes from a copy of the game. When another player changed the same place in between,
