@@ -614,9 +614,7 @@ void Engine::war_plan(AiPlayer& p, bool broke) {
         st.war_arming = true;
         return;
     }
-    // Open1602: only with an economy that carries the army at war: cities that earn more than they
-    // cost, and the army's upkeep within what the war may cost.
-    if (pays_upkeep(m_world, player(p)) && (civil_income(p) < 0 || military_cost(p) > arming_budget(p))) {
+    if (!war_carried(p)) {
         return;
     }
     log(p, "declares war on player %u (war plan, %u soldiers, strength %u against %u)", best, units, own,
@@ -637,8 +635,30 @@ bool Engine::war_supplied(AiPlayer& p) {
         return false;
     }
     const std::uint8_t food = m_buildings.food_ware();
-    return critical_short(p.player, ware::kAlcohol) == 0 && critical_short(p.player, ware::kCloth) == 0 &&
-           supply(*home, food) >= demand(*home, food) && player(p).money >= kWarReserve * kWarSupplyReserve;
+    if (critical_short(p.player, ware::kAlcohol) != 0 || critical_short(p.player, ware::kCloth) != 0 ||
+        supply(*home, food) < demand(*home, food)) {
+        return false;
+    }
+    const std::int64_t reserve = kWarReserve * kWarSupplyReserve;
+    if (player(p).money >= reserve) {
+        return true;
+    }
+    // Open1602: below the reserve, a war its income carries: a growing economy spends its income as
+    // it comes and kept the gold under the reserve for hours, while a player with an income that
+    // pays the army does not wait for a pile of gold first. The same test war_plan makes before it
+    // declares (war_carried), so a war passed here is carried there too.
+    if (!war_carried(p)) {
+        return false;
+    }
+    log(p, "gold passes by income (cash %d of %lld, upkeep %d, income %d)", player(p).money,
+        static_cast<long long>(reserve), military_cost(p), civil_income(p));
+    return true;
+}
+
+bool Engine::war_carried(const AiPlayer& p) const {
+    // Open1602: only with an economy that carries the army at war: cities that earn more than they
+    // cost, and the army's upkeep within what the war may cost.
+    return !pays_upkeep(m_world, player(p)) || (civil_income(p) >= 0 && military_cost(p) <= arming_budget(p));
 }
 
 void Engine::start_war(AiPlayer& p, PlayerId target) {

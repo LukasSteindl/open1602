@@ -717,7 +717,10 @@ half an hour. The budget is the computer's own; the army's shares and the debt m
 not yet part of it.
 
 An improved rival starts or joins a war only while none of
-its cities lacks alcohol or cloth, its home city makes the food it eats, and it has 5000 gold.
+its cities lacks alcohol or cloth, its home city makes the food it eats, and it has 5000 gold or an
+income that carries the army at war (its cities earn more than they cost, and the army's upkeep stays
+within what a war may cost): a growing economy spends its income as it comes and kept its gold below
+the 5000 for hours.
 
 In debt, an improved computer locks the building material of a city (the city window's switch)
 while the city has less than 1 t of food, or of a good its citizens or higher classes want and

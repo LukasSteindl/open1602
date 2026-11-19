@@ -575,6 +575,8 @@ private:
     [[nodiscard]] std::int64_t colony_savings(AiPlayer& p);
     /// Improved computers: its supply and gold carry a war it would start or join.
     [[nodiscard]] bool war_supplied(AiPlayer& p);
+    /// Open1602: whether its income carries the army at war (civil income, upkeep within arming_budget).
+    [[nodiscard]] bool war_carried(const AiPlayer& p) const;
     /// Improved computers: settlers in the home city want a good whose crop none of the computer's
     /// islands grows, and it may found a colony for it.
     [[nodiscard]] bool colony_crop_missing(AiPlayer& p);
