@@ -984,6 +984,8 @@ stats.open = Warenbilanz
 stats.open_help = Warenbilanz: was Ihre Städte erzeugen, kaufen, verbrauchen und verkaufen (F2)
 info.rating_alone = Die Bewertung gibt es nur im Spiel allein: Im Mehrspielerspiel würde sie das Spiel nur auf einem Rechner anhalten.
 stats.title = Warenbilanz
+# Der Titel eines Zuschauers, ein Knopf, der den Spieler wählt: {1} der Titel, {2} der Name des Spielers
+stats.title_player = {1}: {2}
 stats.all_islands = Alle Inseln ({1})
 stats.all_goods = Alle Waren
 stats.group.consumer = Verbrauchsgüter

@@ -405,6 +405,7 @@ Hud::Hud(SDL_Renderer* renderer, const assets::GameDirectory& game, const assets
         m_multiplayer->set_banners(std::move(menu_banners), grey);
         m_banner_palette = banner_colours;
         m_other_banner_palette = grey;
+        m_goods->set_banner_colours(banner_colours, grey);
         m_chat->set_banners(std::move(banner_colours), grey);
     }
     if (auto tutor = assets::load_gad(game, "TUTOR.GAD")) {
