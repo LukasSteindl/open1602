@@ -135,9 +135,9 @@ player, without costs, and takes them away again. Each click, or each drag, is o
 
 | Setting | What it does |
 |---|---|
-| Tool | **Build**: a left click puts the building down about the mouse, for the owner; dragged, the next one goes where it no longer covers the last, so roads, walls and fields are dragged out. **Template**: a left click builds one of the templates saved in games (the copy tool's pieces, kept in the folder "templates" of the user's data folder) about the mouse, for the owner; what does not fit is left out. **Ship**: a left click puts a new, empty ship on the water. **Unit**: a left click puts a land unit on an island, or a trade cart on a road of its owner's land. **Resource**: a left click puts a vein into an ore mountain, a treasure under open ground or deer into a forest. **Paint territory**: dragged over land, gives it to the owner's city on that island without a building that claims it (a city of its own needs its Kontor first); the right button takes it back, except where a market, Kontor or tower of the city covers it or one of its buildings stands. **Remove**: a left click takes the ship or unit under the mouse away, else the treasure, deer or vein there, else the building, as its owner demolishes it. |
+| Tool | **Build**: a left click puts the building down about the mouse, for the owner; dragged, the next one goes where it no longer covers the last, so roads, walls and fields are dragged out. **Template**: a left click builds one of the templates saved in games (the copy tool's pieces, kept in the folder "templates" of the user's data folder) about the mouse, for the owner; what does not fit is left out. **Ship**: a left click puts a new, empty ship on the water. **Unit**: a left click puts a land unit on an island, or a trade cart on a road of its owner's land. **Resource**: a left click puts a vein into an ore mountain, a treasure under open ground or deer into a forest. **Paint territory**: dragged over land, gives it to the owner's city on that island without a building that claims it (a city of its own needs its Kontor first); the right button takes it back, except where a market, Kontor or tower of the city covers it or one of its buildings stands. **Left button** switches the tool to taking land back with the left button; the right button then gives it. **Remove**: a left click takes the ship or unit under the mouse away, else the treasure, deer or vein there, else the building, as its owner demolishes it. |
 | Group | The groups of the build menu (with the buildings packages add to it), then the natives' and pirates' buildings (the natives' huts named by what they are: chief's, warriors', tobacco growers', spice growers' and dwelling huts, each in the natives' two looks; the pyramid, the pirates' warehouse, houses and tower, ...), last the special objects (below); not for ships and units. |
-| Building, Template, Ship, Unit, Resource, Brush | The group's buildings by name; the templates by name, read again from their folder each time the tool is chosen; the four ships of the shipyards (with those packages add), the pirates' ship and the free trader's ship, the four land units of the castle (with those packages add) the natives' spearman, placed for the natives only, and the trade cart; a big or small iron vein, gold, a treasure or deer; for Paint territory the brush's size (its shape is the terrain brush's). |
+| Building, Template, Ship, Unit, Resource, Brush | The group's buildings by name; the templates by name, read again from their folder each time the tool is chosen; the four ships of the shipyards (with those packages add), the pirates' ship and the free trader's ship, the four land units of the castle (with those packages add) the natives' spearman, placed for the natives only, and the trade cart; a big or small iron vein, gold, a treasure or deer; for Paint territory the brush's size (its shape is the terrain brush's) and which way the left button paints (Left button). |
 | Rotation | A quarter clockwise, for a building that turns or a template; the way a ship or unit faces. |
 | Owner | The player the building, template, ship or unit is for: one of the map's humans and computers, or the natives or the pirates where the map has them; for a ship also the free trader; for a trade cart only the humans and computers. For buildings, templates and units the last is "Neutral": buildings for nobody on free land, without a Kontor, which soldiers take ([the neutral buildings](modding/factions.md#the-neutral-buildings)); the map gets their player when it is first chosen. |
 | Placed lately | The last six objects placed, the last first: a click takes one in hand again (its tool, building or type and rotation), for the owner chosen now. |
@@ -169,8 +169,10 @@ them over. **Remove** takes them away again and the ground under them comes back
 Land painted with **Paint territory** is the city's as if a market claimed it: its owner builds
 there in the game, a human as a computer, and the land stays the city's when a market or tower
 nearby is demolished, as long as the city stands; a city that is dissolved gives it up. The scenario
-keeps it. The brush shows white where it gives land, orange-red with the right button where it takes
-it back, and red where the owner has no city on the island. This does not exist in the original.
+keeps it. The brush shows white where it gives land, orange-red where it takes it back (the right
+button, or the left one set to take land back), and red where the owner has no city on the island. A
+stroke that begins where there is no painted land to take back says why: land a Kontor, market or
+tower covers stays the city's while they stand. This does not exist in the original.
 
 Each owner founds one city on an island, the natives and the pirates as well. Their cities are named
 after what they are ("Native village", "Pirates' nest", with a number from the second on); the
@@ -450,7 +452,7 @@ there are, a target player who starts without the cities the loss conditions ask
 | M | Set markers |
 | R | Turn the piece or object in hand |
 | + and -, Ctrl and the mouse wheel | Larger and smaller brush |
-| Right button dragged | Land, Water, the brush and Random fill draw the other way (water for land); Paint territory takes land back |
+| Right button dragged | Land, Water, the brush and Random fill draw the other way (water for land); Paint territory paints the other way than the left button |
 | Right click | Puts back what is in hand (an island being placed, an object) |
 | Shift and Build dragged | Places along a straight row |
 | F5 | Test play; in the test game F5 leads back |

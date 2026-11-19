@@ -86,7 +86,8 @@ struct EditorObjects {
     /// the mouse, for the owner, without costs; Ship, Unit: a ship on the water, a land unit on an island, for the
     /// owner; Resource: an ore or gold vein in a mountain, a treasure, deer in a forest; Remove:
     /// takes the ship, unit, resource or building clicked away; Territory: land painted to the
-    /// owner's city on the island without a building (the right button takes it back).
+    /// owner's city on the island without a building (the right button takes it back, or the left
+    /// one with take_land).
     enum class Tool : std::uint8_t { Build, Template, Ship, Unit, Resource, Remove, Territory };
     static constexpr std::size_t kTools = 7;
     Tool tool = Tool::Build;
@@ -99,6 +100,7 @@ struct EditorObjects {
     std::uint8_t rotation = 0;  ///< 0..3, a quarter clockwise each; ships and units face 2 * rotation
     std::size_t owner = 0;      ///< index into the world's players
     std::size_t brush = 2;      ///< Territory: index into editor::kBrushSizes
+    bool take_land = false;     ///< Territory: the left button takes land back, the right one gives it
     friend bool operator==(const EditorObjects&, const EditorObjects&) = default;
 };
 

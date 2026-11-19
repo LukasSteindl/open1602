@@ -2249,12 +2249,13 @@ void MapViewer::draw_editor_marks() {
                 outline(tile->x, tile->y, 1, 1,
                         ui::rgb_ink(fits ? assets::Rgba{90, 230, 90, 255} : assets::Rgba{230, 60, 60, 255}));
             } else if (tool == EditorObjects::Tool::Territory) {
-                // The brush in its shape: white where it gives, red where it takes back, where the
-                // owner has a city on the island.
+                // The brush in its shape: white where it gives, orange where it takes back (the
+                // right button paints the other way than the left), red where the owner has no city
+                // on the island.
                 const std::uint32_t side =
                     editor::kBrushSizes[std::min(m_editor->objects.brush, editor::kBrushSizes.size() - 1)];
                 const auto shape = static_cast<editor::BrushShape>(m_editor->terrain.shape % editor::kBrushShapes);
-                const bool taking = m_input->right_stroke();
+                const bool taking = m_input->right_stroke() != m_editor->objects.take_land;
                 const bool city = editor_claim_city(tile->x, tile->y).has_value();
                 rim(editor::brush_tiles(tile->x, tile->y, side, world.width(), world.height(), shape),
                     ui::rgb_ink(!city    ? assets::Rgba{230, 60, 60, 255}
@@ -2972,7 +2973,8 @@ bool MapViewer::editor_stroke(std::optional<render::TilePos> tile, Stroke phase,
         editor_end_stroke();
         if (m_editor->objects.tool == EditorObjects::Tool::Territory) {
             if (phase == Stroke::Begin) {
-                m_editor->claim_take = erase;  // the right button takes land back
+                // The right button paints the other way than the left (EditorObjects::take_land).
+                m_editor->claim_take = erase != m_editor->objects.take_land;
             }
             return editor_objects_stroke(tile, phase);
         }
