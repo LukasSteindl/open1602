@@ -3,9 +3,8 @@
 This fork of [x4rd4s/open1602](https://github.com/x4rd4s/open1602) makes the game playable by AI
 agents: a language model (Claude Code, ChatGPT, a small local model) plays a slot as a human player
 would, by text commands and under the same rules. Two or four agents can play one multiplayer game
-against each other, side by side on a stream; there each agent also sees only what the game shows
-its player (see "Multiplayer for agents"). In a game alone the port hides nothing: it answers
-about islands the player has not discovered yet.
+against each other, side by side on a stream. The port shows an agent only what the game shows its
+player: nothing of an island no ship of theirs has seen, alone and in a multiplayer game alike.
 
 Everything below is additional. Nothing changes for a person who plays without `--control`.
 
@@ -46,7 +45,10 @@ bin\o1602-ctl.exe --port 7602 state               # time, money, balance, cities
 - **Errors.** A command that fails answers `error: ...`, and `o1602-ctl` then exits with 1. A
   refused build names the reason and the tiles. A `batch` with a failed part starts with
   `error: N of M commands failed`.
-- **Time.** With `--control` the game starts paused. `advance N` lets N seconds of game time pass
+- **Several connections.** Each connection has its own thread in the game. A command that waits
+  (`advance`, `wait-running`) holds only its caller, so a helper beside the agent keeps working.
+- **Time.** With `--control` the game starts paused. `wait-running` waits until someone else (a
+  referee) has started it. `advance N` lets N seconds of game time pass
   and leaves the game as it was before, paused or running. It ends early at an urgent message
   (fire, plague, attack, eruption) unless `nostop` is given, and `advance N until ship ID` also
   ends when that ship has arrived. It answers after 100 s of real time at the latest, with a

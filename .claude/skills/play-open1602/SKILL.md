@@ -12,8 +12,9 @@ person has. Every command is one call: `bin\o1602-ctl.exe [--port N] COMMAND [AR
 
 **No cheating (user rule).** Use only what a person playing could click or see. No `autoplay`
 (the built-in computer would play your slot), no editor, no savegame edits, no engine changes that
-bend the rules, and no information a player would not have (in a game alone the port answers about
-islands you have not discovered: do not ask it about them). When in doubt, ask the user.
+bend the rules, and no information a player would not have. The port keeps to that itself: what
+you have not discovered it does not show. Looking ahead is allowed (`forecast`). When in doubt,
+ask the user.
 
 ## What costs you: turns and answer size
 
@@ -36,11 +37,12 @@ is won by the agent that looks little, decides once and acts in bulk.
     it to put houses and public buildings where you want them and to spread producers.
   - The road crosses a river with a wooden bridge by itself; the answer says how many bridges, and
     they cost wood. It builds nothing when no road can reach a place, and says so.
-  - Houses keep out of your foresters' windows, and a producer keeps six tiles from another of its
-    kind, while another place is left. Foresters do not keep out of house land: place them with X Y
-    away from where the town will grow.
-  - A house's answer says what reaches it. Without `chapel` in that line it will not rise: build
-    houses with X Y near a chapel, or a chapel for them.
+  - While another place is left: houses keep out of your foresters' windows, a producer keeps six
+    tiles from another of its kind, and foresters, farms, pastures and hunters keep eight tiles
+    from your markets and Kontor, where the town grows.
+  - A house is only built with a market in reach, and where a chapel reaches when there is such a
+    place. Its answer says what reaches it: without `chapel` in that line it will not rise, so
+    build a chapel for those houses.
 - **Do not check what an answer already told you.** `built 1 of 1` means it stands.
 - **Look ahead instead of waiting to see.** `forecast 300` runs the game five minutes ahead on a
   copy with nothing else ordered and says where money, balance and residents will stand and which
@@ -103,8 +105,7 @@ the game running at x8.
 1. `islands` and `ships`: pick a big free island near your ship whose crops fit your plan (north:
    tobacco, wine, sugar; south: spices, cotton, cocoa). An island counts as discovered when your
    ship has been inside its bounding box; `explore SHIP` (a still ship beside it) shows crops and
-   ore. In a game alone `islands` prints crops even for islands marked `not discovered`: leave
-   those lines unread until your ship has been there (the no-cheating rule).
+   ore.
    - **At the start no island is discovered**, and `kontor-sites` refuses an island you have not
      seen. First `ship-move SHIP X Y` to a tile of the nearest big island (`islands` gives each
      island's world position and size; for a land tile the ship takes the sea tile nearest to it),
@@ -209,8 +210,8 @@ the game running at x8.
   a tournament to the referee, and your port refuses them).
 - **Count your turns.** At speed x2 a game minute lasts 30 s, so thirty game minutes are about
   25 of your turns. Read the skills before the clock starts and give no order while the game
-  stands (test the first line of `state` for `running`: the word is also in "running costs");
-  when it runs, sail at once. Per turn send one batch that looks and acts, then one `advance`
+  stands; `wait-running` answers the moment it runs (call it again after "still stands"). When it
+  runs, sail at once. Per turn send one batch that looks and acts, then one `advance`
   (one per call: at x2 `advance 120` takes a minute of real time). If you script several rounds
   in one shell command, never filter the answers: a hidden `error:` cost one player four minutes.
 - An order answers after about 2.5 s of game time, so that the next command sees its result. A
@@ -242,6 +243,4 @@ the game running at x8.
 - `tools/agent/steward.py` carries out standing orders from a JSON file (houses, producers, taxes).
   In its first measurement agents with it had fewer residents than agents who gave every order
   themselves (`tools/agent/bench/README.md`): do not rely on it until that has changed.
-- While the game stands before a referee starts it, wait with a sleep of a few seconds between
-  looks at the first line of `state`, in one shell command; do not spend a call per look.
 - Streaming a game: the `stream-open1602` skill (its rule on what the stream may show comes first).

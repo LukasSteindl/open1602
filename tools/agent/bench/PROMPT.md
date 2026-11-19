@@ -18,8 +18,8 @@ port PORT. Do not start or close a game. The client is
 belong to other players). `... --port PORT help` lists the commands.
 
 The clock: the game stands paused now and a referee starts it about two minutes after you were
-started. Use that time to read the skills and to look; give no orders before the first line of
-`state` shows `running`. Then the game runs at speed x2 without waiting for you: one game minute is
+started. Use that time to read the skills and to look; give no orders before it runs
+(`wait-running` answers the moment it does). Then the game runs at speed x2 without waiting for you: one game minute is
 30 seconds of real time. Never use `pause`, `resume` or `speed`: the referee keeps the time, and a
 run in which the game was found paused does not count. Never end your turn before the end: wait
 in the foreground with `advance`. The referee pauses the game at 0:30:00; that is the end.

@@ -47,6 +47,8 @@ Why, from the agents' reports and the stewards' logs:
   trader had delivered.
 - What it did well: taxes (pioneers at 192 from the start) and money (never below 4,700).
 
-What would have to change before measuring again: an `advance` that does not hold the port (or a
+Since then the port serves every connection in its own thread, so an `advance` holds only its
+caller, and `wait-running` replaces the looks at `state` before the start. What would still have to
+change in the steward before measuring again (the first point is done): an `advance` that does not hold the port (or a
 steward that does the waiting), houses before wood-costing producers, spacing that also holds with
 `near`, and bulk building when wood has piled up.
