@@ -1181,7 +1181,7 @@ void Engine::missions(AiPlayer& p) {
                     }
                     break;
                 }
-                const auto wall = landing_beach(p, *t, true);
+                const auto wall = breach_target(p, *t);
                 if (!wall || n.counter == 0 || !healthy(*s)) {
                     log(p, "ship %u ends its breach of city %u/%u (%s)", s->id, t->island, t->index,
                         !wall            ? "no wall left to shoot"
@@ -1270,8 +1270,15 @@ void Engine::breach(AiPlayer& p, Ship& s, ShipNote& n, const City& t) {
     // Open1602: the target's coast is walled all along, so no beach is free to land on. As a
     // player would, a warship shoots a gap into the wall on the beach the landing would take, and
     // the troops wait aboard until it is open. With no warship free the troop ship shoots it itself.
-    const auto wall = landing_beach(p, t, true);
+    const auto wall = breach_target(p, t);
     if (!wall) {
+        // Open1602: a free beach whose landing cell nothing in reach opens: the landing as before.
+        if (const auto beach = landing_beach(p, t, false, true)) {
+            log(p, "ship %u lands at beach %d,%d of city %u/%u: nothing to shoot clears a landing cell", s.id,
+                beach->first, beach->second, t.island, t.index);
+            ship_send(p, s, water_near(t.island, beach->first, beach->second), kMissionLanding, t.owner);
+            return;
+        }
         log(p, "ship %u finds no beach and no wall on the beach of city %u/%u", s.id, t.island, t.index);
         mission_end(p, s, n);
         return;
@@ -1308,8 +1315,9 @@ void Engine::breach(AiPlayer& p, Ship& s, ShipNote& n, const City& t) {
     }
     const Target at =
         Target::building(t.island, static_cast<std::uint32_t>(wall->first), static_cast<std::uint32_t>(wall->second));
+    const char* what = tile(t.island, wall->first, wall->second).kind == kind::kForest ? "trees" : "wall";
     if (best != nullptr) {
-        log(p, "ship %u breaches the wall at %d,%d of city %u/%u for ship %u", best->id, wall->first, wall->second,
+        log(p, "ship %u breaches the %s at %d,%d of city %u/%u for ship %u", best->id, what, wall->first, wall->second,
             t.island, t.index, s.id);
         ship_send(p, *best, at, kMissionBreach, param);
         return;
@@ -1320,13 +1328,59 @@ void Engine::breach(AiPlayer& p, Ship& s, ShipNote& n, const City& t) {
         mission_end(p, s, n);
         return;
     }
-    log(p, "ship %u breaches the wall at %d,%d of city %u/%u itself, %u soldiers aboard (no warship free)", s.id,
+    log(p, "ship %u breaches the %s at %d,%d of city %u/%u itself, %u soldiers aboard (no warship free)", s.id, what,
         wall->first, wall->second, t.island, t.index, soldiers_aboard(s));
     ship_send(p, s, at, kMissionBreach, param);
 }
 
-std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const AiPlayer& p, const City& c,
-                                                                           bool wall) const {
+std::optional<std::pair<std::int32_t, std::int32_t>> Engine::breach_target(const AiPlayer& p, const City& c) const {
+    // What a breach shoots at: a wall on the beach, else what seals the landing cells of the beach.
+    if (const auto wall = landing_beach(p, c, true)) {
+        return wall;
+    }
+    return landing_blocker(p, c);
+}
+
+std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_blocker(const AiPlayer& p, const City& c) const {
+    // Open1602: the beach a landing would take is free, but nothing within the unload range of it
+    // is a cell the soldiers can stand on: trees or a hostile wall behind the sand. The one of those
+    // nearest to the beach, as a player shoots a forest ring open (a tree not its own, which a ship
+    // fells as Combat::fellable allows, or a wall or gate of the enemy). The soldiers ashore cut
+    // their own way on (way_in).
+    const auto beach = landing_beach(p, c, false, true);
+    if (!beach) {
+        return std::nullopt;
+    }
+    const auto range = static_cast<std::int32_t>(m_world.balance().castle_unload_range);
+    const IslandMap& map = island_of(c.island).map;
+    const auto w = static_cast<std::int32_t>(map.width());
+    const auto h = static_cast<std::int32_t>(map.height());
+    std::optional<std::pair<std::int32_t, std::int32_t>> best;
+    std::int32_t best_d = 0;
+    for (std::int32_t y = std::max(0, beach->second - range); y <= std::min(h - 1, beach->second + range); ++y) {
+        for (std::int32_t x = std::max(0, beach->first - range); x <= std::min(w - 1, beach->first + range); ++x) {
+            const Tile t = tile(c.island, x, y);
+            if (!t.valid() || t.type->destroyed) {
+                continue;
+            }
+            const bool tree = t.kind == kind::kForest && t.owner != p.player;
+            const bool wall = (t.kind == kind::kWall || t.kind == kind::kWallBeach || t.kind == kind::kGate) &&
+                              t.owner != kNoPlayer && m_world.diplomacy().hostile(p.player, t.owner);
+            if (!tree && !wall) {
+                continue;
+            }
+            const std::int32_t d = sea_distance(x - beach->first, y - beach->second);
+            if (d <= range && (!best || d < best_d)) {
+                best = std::pair{x, y};
+                best_d = d;
+            }
+        }
+    }
+    return best;
+}
+
+std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const AiPlayer& p, const City& c, bool wall,
+                                                                           bool any) const {
     const City* t = &c;
     const std::uint16_t island = t->island;
     const WorldIsland& isl = island_of(island);
@@ -1375,6 +1429,7 @@ std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const
         }
     }
     // Beach tiles within 24 tiles of a target, scored by the danger around them.
+    std::uint32_t sealed = 0;
     std::int32_t best = 10000;
     std::int32_t bx = 0;
     std::int32_t by = 0;
@@ -1410,17 +1465,38 @@ std::optional<std::pair<std::int32_t, std::int32_t>> Engine::landing_beach(const
             for (const auto& [ox, oy] : ships) {
                 score += sea_distance(ox - wx, oy - wy) <= 16 ? 30 : 0;
             }
-            if (score < best) {
-                best = score;
-                bx = static_cast<std::int32_t>(x);
-                by = static_cast<std::int32_t>(y);
+            if (score >= best) {
+                continue;
             }
+            // Open1602: a beach only with a cell within the unload range the soldiers can stand on
+            // (Military::landing_cell); trees or walls right behind the sand seal it.
+            if (!wall && !any && rivals() && !m_sim.military().landing_cell_at(wx, wy, p.player)) {
+                ++sealed;
+                continue;
+            }
+            best = score;
+            bx = static_cast<std::int32_t>(x);
+            by = static_cast<std::int32_t>(y);
         }
     }
     if (best >= 10000) {
+        if (sealed != 0) {
+            log_sealed(p, c, sealed);
+        }
         return std::nullopt;
     }
     return std::pair{bx, by};
+}
+
+void Engine::log_sealed(const AiPlayer& p, const City& c, std::uint32_t beaches) const {
+    // Once each time the beaches of a city start to have no landing cell (only the log).
+    const std::pair<PlayerId, std::uint32_t> key{p.player, city_param(c)};
+    if (std::ranges::find(m_sealed_logged, key) != m_sealed_logged.end()) {
+        return;
+    }
+    m_sealed_logged.push_back(key);
+    log(p, "beaches of city %u/%u have no landing cell (%u rejected): trees or walls behind them", c.island, c.index,
+        beaches);
 }
 
 bool Engine::takes_landing(const AiPlayer& p, const Ship& s, const ShipNote& n) const {

@@ -312,8 +312,16 @@ public:
     /// The beach tile (island coordinates) a landing against city `c` makes for: near its markets
     /// (or its Kontor), away from hostile towers, soldiers and ships; none when no beach is free.
     /// With `wall`, the hostile wall on the beach a breach shoots at, chosen the same way.
+    /// With `any`, a free beach even when nothing lets the soldiers stand within the unload range.
     [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_beach(const AiPlayer& p, const City& c,
-                                                                                     bool wall = false) const;
+                                                                                     bool wall = false,
+                                                                                     bool any = false) const;
+    /// What a breach shoots at: a wall on the beach, else the tree or wall that seals the landing.
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> breach_target(const AiPlayer& p,
+                                                                                     const City& c) const;
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_blocker(const AiPlayer& p,
+                                                                                       const City& c) const;
+    void log_sealed(const AiPlayer& p, const City& c, std::uint32_t beaches) const;
     /// Open1602: a wall standing on the beach, and the ruin it leaves when shot down.
     [[nodiscard]] bool beach_wall(std::uint16_t island, std::uint32_t x, std::uint32_t y) const;
     [[nodiscard]] bool beach_gap(std::uint16_t island, std::uint32_t x, std::uint32_t y) const;
@@ -1213,6 +1221,8 @@ private:
         Afford
     };
     mutable std::vector<YardWait> m_yard_logged;
+    /// Player and city whose sealed beaches were logged (only the log).
+    mutable std::vector<std::pair<PlayerId, std::uint32_t>> m_sealed_logged;
     /// Per player: war_supplied's gold held back by the floor alone at the last look (only the log).
     std::vector<bool> m_floor_logged;
     /// Per player, the yard sites of the running search refused because the yard's carriers would
