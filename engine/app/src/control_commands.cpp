@@ -297,6 +297,7 @@ std::string MapViewer::control_dry_run(const std::vector<std::string>& args,
     // here: that would leave this computer's game different from the others' (lockstep, ADR 0011).
     std::unique_ptr<GameState> real = std::move(m_state);
     m_state = std::make_unique<GameState>(sim::World(real->world), m_buildings, m_figures, real->simulation.rules());
+    m_state->simulation.set_speed(real->simulation.speed());  // what `state` in a batch reports
     m_control_dry_run = true;
     m_control_orders.clear();
     std::string answer;
@@ -864,7 +865,8 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         order.ship = static_cast<std::uint32_t>(id);
         const bool ok = control_execute(order).accepted;
         return ok ? "exploring the island the ship lies at (see 'islands' for the deposits found)\n"
-                  : "error: refused: the ship must lie still at an island that still hides something\n";
+                  : "error: refused: the ship must lie still at an island that still hides something (inside the "
+                    "island's rectangle: world position and size in islands)\n";
     }
     if (cmd == "attack") {
         // The military mode's right click with a ship on a building: the ship sails there and
@@ -1363,9 +1365,12 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
                 note += fmt("; PRICE %lld clamped to %u (the game allows %u..%u)", static_cast<long long>(price),
                             in_force, range.min, range.max);
             }
+            if (!t.buy && !t.sell) {
+                return fmt("%s: not traded any more (the Kontor neither buys nor sells it)%s\n",
+                           ware_key(*ware).c_str(), note.c_str());
+            }
             return fmt("%s: %s%s, buy price %u, sell price %u, buy up to %.0f t, sell above %.0f t%s\n",
-                       ware_key(*ware).c_str(), t.buy ? "buying " : (t.sell ? "" : "not traded"), t.sell ? "selling" : "",
-                       t.buy_price,
+                       ware_key(*ware).c_str(), t.buy ? "buying " : "", t.sell ? "selling" : "", t.buy_price,
                        t.sell_price, tons(t.limit), tons(t.keep), note.c_str());
         }
         return "set" + note + "\n";
@@ -2395,9 +2400,20 @@ std::optional<MapViewer::ControlRoadLink> MapViewer::control_link_road(std::uint
         order.island = island;
         order.skip_unpaid = true;
         for (const sim::DragStep& st : steps) {
-            if (!is_road_tile(map, m_buildings, st.x, st.y)) {
-                order.items.push_back(sim::BuildItem{assets::id::kRoadDirt, st.x, st.y, st.rotation, 0});
+            if (is_road_tile(map, m_buildings, st.x, st.y)) {
+                continue;
             }
+            // Over a river a wooden bridge, turned along the way (as `road` lays it).
+            const assets::BuildingType* b = nullptr;
+            if (st.x >= 0 && st.y >= 0 &&
+                map.contains(static_cast<std::uint32_t>(st.x), static_cast<std::uint32_t>(st.y))) {
+                const sim::MapCell& top = map.top(static_cast<std::uint32_t>(st.x), static_cast<std::uint32_t>(st.y));
+                b = top.empty() ? nullptr : m_buildings.by_sprite(top.sprite);
+            }
+            const bool river = b != nullptr && (b->kind == kind::kRiver || b->kind == kind::kRiverCorner);
+            order.items.push_back(river ? sim::BuildItem{assets::id::kBridgeWood, st.x, st.y,
+                                                         static_cast<std::uint8_t>(st.rotation & 1U), 0}
+                                        : sim::BuildItem{assets::id::kRoadDirt, st.x, st.y, st.rotation, 0});
         }
         if (order.items.empty()) {
             return;
@@ -3287,19 +3303,49 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
     // a building no carrier comes to is money lost. At most 40 places are tried.
     constexpr std::int32_t kRoadReach = 20;
     const sim::IslandMap& ground = world.islands()[isl].map;
+    // A house keeps out of the windows of the player's foresters (3 tiles around them) while another place
+    // is left: there it would stand on the trees the forester lives off.
+    std::vector<sim::TilePos> foresters;
+    if (const auto forester = building_arg("forester"); forester && type.prod_kind == prod::kHouse) {
+        for (const sim::Production& p : world.productions()) {
+            if (!p.used || p.island != isl || !ground.contains(p.x, p.y)) {
+                continue;
+            }
+            const sim::MapCell& cell = ground.top(p.x, p.y);
+            const assets::BuildingType* b = cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
+            if (b != nullptr && b->id == *forester && cell.owner == m_local_player) {
+                foresters.push_back(sim::TilePos{static_cast<std::int32_t>(p.x), static_cast<std::int32_t>(p.y)});
+            }
+        }
+    }
+    const auto in_forester_window = [&](const ControlSite& s) {
+        // Both stand on 2x2 tiles: within 3 tiles of the forester means origins at most 4 apart.
+        return std::any_of(foresters.begin(), foresters.end(), [&](const sim::TilePos& f) {
+            return std::max(std::abs(s.x - f.x), std::abs(s.y - f.y)) <= 4;
+        });
+    };
     auto best = sites.end();
     std::size_t payable = 0;
-    for (auto s = sites.begin(); s != sites.end() && payable < 40; ++s) {
-        if (s->refusal != sim::BuildRefusal::None) {
-            continue;
+    for (const bool avoid : {true, false}) {
+        payable = 0;
+        for (auto s = sites.begin(); s != sites.end() && payable < 40; ++s) {
+            if (s->refusal != sim::BuildRefusal::None) {
+                continue;
+            }
+            ++payable;
+            if (avoid && in_forester_window(*s)) {
+                continue;
+            }
+            std::uint32_t sw = type.size_x;
+            std::uint32_t sh = type.size_y;
+            sim::rotated_size(type, s->rotation, sw, sh);
+            if (road_beside(ground, m_buildings, s->x, s->y, sw, sh) ||
+                control_link_road(isl, s->x, s->y, sw, sh, kRoadReach, true, true)) {
+                best = s;
+                break;
+            }
         }
-        ++payable;
-        std::uint32_t sw = type.size_x;
-        std::uint32_t sh = type.size_y;
-        sim::rotated_size(type, s->rotation, sw, sh);
-        if (road_beside(ground, m_buildings, s->x, s->y, sw, sh) ||
-            control_link_road(isl, s->x, s->y, sw, sh, kRoadReach, true, true)) {
-            best = s;
+        if (best != sites.end() || foresters.empty()) {
             break;
         }
     }
