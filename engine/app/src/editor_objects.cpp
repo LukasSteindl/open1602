@@ -1607,7 +1607,7 @@ void MapViewer::editor_claim(std::int64_t x, std::int64_t y, bool tell) {
     if (!city) {
         if (tell) {
             editor_notice(ui::tr(object_owners(world).empty() ? "editor.objects.note.no_players"
-                                                              : "editor.objects.refused.territory"),
+                                                              : "editor.objects.refused.no_city"),
                           true, "no city to give land to");
         }
         return;
@@ -1625,7 +1625,11 @@ void MapViewer::editor_claim(std::int64_t x, std::int64_t y, bool tell) {
     }
     auto op = editor::claim_land(world, m_buildings, island, index, tiles, m_editor->claim_take);
     if (!op) {
-        return;  // nothing to give or take there: no note at every tile of a drag
+        // Nothing to give or take there: a note where the stroke begins, not at every tile of a drag.
+        if (tell && m_editor->claim_take) {
+            editor_notice(ui::tr("editor.objects.refused.territory_held"), true, "no painted land to take back");
+        }
+        return;
     }
     (*op)->apply(world);
     m_editor->object_steps.push_back(std::move(op).value());
@@ -1668,7 +1672,7 @@ std::string MapViewer::editor_hover_refusal(std::int64_t x, std::int64_t y) cons
         if (object_owners(world).empty()) {
             return ui::tr("editor.objects.note.no_players");
         }
-        return editor_claim_city(x, y) ? std::string() : ui::tr("editor.objects.refused.territory");
+        return editor_claim_city(x, y) ? std::string() : ui::tr("editor.objects.refused.no_city");
     }
     if (tool == Tool::Resource) {
         const sim::World::Cell& c = world.cell(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));

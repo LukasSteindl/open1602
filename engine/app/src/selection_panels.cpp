@@ -1262,8 +1262,9 @@ public:
         for (const std::int32_t id : {39011, 39012, 39014, 39015}) {
             m_werft.set_visible(id, order);
         }
-        m_werft.set_visible(39016, !(order));
-        m_werft.set_visible(39017, order);
+        // A spectator sees what is built and how far, without the buttons that order or cancel.
+        m_werft.set_visible(39016, !order && !spectating(c));
+        m_werft.set_visible(39017, order && !spectating(c));
         m_werft.set_selected(39018, m_stop.shown(switch_key(s), !yard->enabled, c.now_ms));
         if (order) {
             const assets::FigureType* f = c.figures.get(sim::yard_ship(*yard));
@@ -1284,8 +1285,8 @@ public:
             return;
         }
         const sim::CostBuilding* yard = cost_building_at(s, c, sim::CostBuilding::Kind::Shipyard);
-        if (yard == nullptr) {
-            return;
+        if (yard == nullptr || spectating(c)) {
+            return;  // a spectator neither chooses a ship nor flips the switch
         }
         sim::ShipyardOrder o;
         o.player = c.local;
@@ -1523,8 +1524,12 @@ public:
         const bool free = static_cast<std::int32_t>(castle->slots.size()) < places;
         m_panel.set_disabled(40009, !free);
         const bool chosen = static_cast<std::size_t>(m_slot) < castle->slots.size();
-        m_panel.set_visible(40003, chosen);
-        m_panel.set_visible(40004, !(!chosen || castle->slots[static_cast<std::size_t>(std::max(m_slot, 0))].training));
+        // A spectator sees what is trained and how far, without recruit, cancel and send out.
+        const bool orders = !spectating(c);
+        m_panel.set_visible(40009, orders);
+        m_panel.set_visible(40003, chosen && orders);
+        m_panel.set_visible(40004,
+                            orders && chosen && !castle->slots[static_cast<std::size_t>(std::max(m_slot, 0))].training);
     }
 
     void clicked(const ui::PanelEvent& e, const Selection& s, const PanelContext& c,
@@ -1564,6 +1569,9 @@ public:
             m_unit = u;
             m_family = next;
             return;
+        }
+        if (spectating(c)) {
+            return;  // a spectator picks a place to look at, nothing else
         }
         sim::CastleOrder o;
         o.player = c.local;

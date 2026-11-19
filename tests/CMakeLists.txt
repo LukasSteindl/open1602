@@ -151,7 +151,8 @@ o1602_set_warnings(o1602_tests)
 # Stored savegames of earlier versions (DS-3), read by test_save_game.cpp.
 target_compile_definitions(o1602_tests PRIVATE O1602_TEST_SAVES="${CMAKE_CURRENT_SOURCE_DIR}/unit/saves"
                                                O1602_TEST_SOUNDS="${CMAKE_CURRENT_SOURCE_DIR}/unit/sounds"
-                                               O1602_EXAMPLE_MODS="${PROJECT_SOURCE_DIR}/data/mods")
+                                               O1602_EXAMPLE_MODS="${PROJECT_SOURCE_DIR}/data/mods"
+                                               O1602_LOCALES="${PROJECT_SOURCE_DIR}/data/locale")
 o1602_utf8_manifest(o1602_tests)  # UTF-8 paths and arguments on Windows, as in the game
 # Tests dereference lookup results (world.player(0)->money) right after creating them; a null there
 # crashes the test, which reports it as failed. GCC's -Wnull-dereference flags every such line at -O2,

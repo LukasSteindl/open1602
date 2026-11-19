@@ -1208,6 +1208,10 @@ list.order.own = Own first
 list.order.largest = Largest first
 list.order.help.ships = Click: order the ships by name, idle or damaged first, or as the original
 list.order.help.cities = Click: order the cities by name, own first, largest first, or as the original
+# For spectators (no ships or cities of their own): by owner instead of own first
+list.order.owner = By owner
+list.order.help.ships_watched = Click: order the ships by name, owner, idle or damaged first, or as the original
+list.order.help.cities_watched = Click: order the cities by name, owner, largest first, or as the original
 
 # The screen "Mods" of the main menu (mods_menu.cpp)
 menu.mods = Mods
@@ -1814,7 +1818,7 @@ editor.objects.note.ship = A click puts a new, empty ship of the owner on the wa
 editor.objects.note.unit = A click puts a land unit of the owner on an island; a trade cart on a road beside its Kontor or market.
 editor.objects.note.resource = A click: a vein into an ore mountain, a treasure under open ground, deer into a forest.
 editor.objects.note.remove = A click takes a building, ship, unit or resource away; a Kontor last.
-editor.objects.note.territory = Drag over land: land of the owner's city. Right button: back.
+editor.objects.note.territory = Drag over land to give it to the owner's city or take it back; the right button paints the other way.
 editor.objects.note.no_players = The map has no players to build for.
 editor.objects.note.neutral = For nobody, on free land. Soldiers take it where their land reaches it.
 editor.objects.group = Group
@@ -1896,8 +1900,12 @@ editor.objects.owner_neutral = Neutral
 editor.objects.owner_natives = Natives
 editor.objects.owner_pirates = Pirates
 editor.objects.no_owner = nobody
+editor.objects.left_button = Left button
+editor.objects.left_button.give = Paints land
+editor.objects.left_button.take = Takes land back
 editor.objects.refused.island = Buildings stand only on islands.
-editor.objects.refused.territory = The owner has no city on this island: found one first, then paint its land.
+editor.objects.refused.no_city = The owner has no city on this island: found one first, then paint its land.
+editor.objects.refused.territory_held = Only painted land comes back. Land a Kontor, market or tower covers stays the city's.
 editor.objects.refused.terrain = The ground there does not take the building.
 editor.objects.refused.territory = Only on the land of a city of the owner; build a Kontor first.
 editor.objects.refused.foreign = Another player's city is there.
