@@ -1268,6 +1268,11 @@ void Engine::plan_landing(AiPlayer& p, Ship& s, ShipNote& n) {
     ship_send(p, s, water_near(island, bx, by), 7, t->owner);
 }
 
+bool Engine::takes_landing(const AiPlayer& p, const Ship& s, const ShipNote& n) const {
+    return s.id != p.settle.ship && !s.held && n.mission == 0 && !n.supply && s.cannons != 0 &&
+           free_holds(s) + soldiers_aboard(s) >= kLandingHolds;
+}
+
 Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_same) {
     // An armed ship with room, healthy and well armed.
     (void)max_same;
@@ -1280,11 +1285,7 @@ Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_
     Ship* best = nullptr;
     std::uint32_t best_score = 8;
     for (Ship* s : own_ships(p)) {
-        const ShipNote& n = note(p, s->id);
-        if (s->id == p.settle.ship || s->held || n.mission != 0 || n.supply || s->cannons == 0) {
-            continue;
-        }
-        if (free_holds(*s) + soldiers_aboard(*s) < kLandingHolds) {
+        if (!takes_landing(p, *s, note(p, s->id))) {
             continue;
         }
         const std::uint32_t score = health128(*s) / 16 + 2U * s->cannons;

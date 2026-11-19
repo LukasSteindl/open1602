@@ -52,7 +52,8 @@ constexpr std::int64_t kThreatRunwayMinutes = 90;
 constexpr std::int64_t kWarRunwayMinutes = 180;
 constexpr std::int64_t kArmingRunwayMinutes = 360;
 constexpr std::int64_t kWarDebt = -2000;
-// Below this, with its gold falling, a computer is broke and ends its war ("out of gold").
+// Below this, with its gold falling, a computer is broke: outside its war economy, which at war
+// holds only until the first look without progress, it ends its war here ("out of gold").
 constexpr std::int32_t kBrokeCash = 2000;
 
 const char* goal_name(std::uint8_t g) {
@@ -642,14 +643,20 @@ bool Engine::war_supplied(AiPlayer& p) {
         return false;
     }
     const WarGold g = war_gold_input(p);
+    // Each time the floor alone starts to hold it back (only the log).
+    const bool floor_only = g.money < g.reserve && g.money < g.floor && g.net_income >= 0 && ai::war_carried(g);
+    if (m_floor_logged.size() <= p.player) {
+        m_floor_logged.resize(std::size_t{p.player} + 1, false);
+    }
+    if (floor_only && !m_floor_logged[p.player]) {
+        log(p, "gold blocked by the floor only (cash %lld, floor %lld, net %d)", static_cast<long long>(g.money),
+            static_cast<long long>(g.floor), g.net_income);
+    }
+    m_floor_logged[p.player] = floor_only;
     if (g.money >= g.reserve) {
         return true;
     }
     if (!war_gold(g)) {
-        if (g.money < g.floor && g.net_income >= 0 && ai::war_carried(g)) {
-            log(p, "gold blocked by the floor only (cash %lld, floor %lld, net %d)", static_cast<long long>(g.money),
-                static_cast<long long>(g.floor), g.net_income);
-        }
         return false;
     }
     log(p,
@@ -670,8 +677,8 @@ WarGold Engine::war_gold_input(const AiPlayer& p) const {
     g.military_cost = military_cost(p);
     g.arming_budget = arming_budget(p);
     g.net_income = net_income(p);
-    // The floor: the broke line, at which a war ends as soon as its gold falls, and the ship of the
-    // first landing when it has none to carry it.
+    // The floor: the broke line, at which a war that has failed a look ends as soon as its gold
+    // falls, and the ship of the first landing when it has none to carry it.
     g.floor = g.reserve;
     const std::int64_t ship = landing_ship_cost(p);
     if (ship >= 0) {
@@ -686,12 +693,11 @@ std::int64_t Engine::landing_ship_cost(const AiPlayer& p) const {
         if (s.owner != p.player || s.sinking || s.trader || s.cart()) {
             continue;
         }
-        const ShipNote* n = nullptr;
+        ShipNote n;  // a ship without a note has no job
         for (const ShipNote& x : p.ships) {
-            n = x.id == s.id ? &x : n;
+            n = x.id == s.id ? x : n;
         }
-        if (s.id != p.settle.ship && !s.held && s.cannons != 0 && (n == nullptr || (n->mission == 0 && !n->supply)) &&
-            free_holds(s) + soldiers_aboard(s) >= kLandingHolds) {
+        if (takes_landing(p, s, n)) {
             return 0;
         }
     }
