@@ -1540,7 +1540,7 @@ std::string MapViewer::control_help() const {
            "  off|on ISLAND X Y             switch the production building at X Y off (idle) or on\n"
            "  kontor-sites SHIP ISLAND      where SHIP can found a Kontor (warehouse) on ISLAND\n"
            "  found SHIP ISLAND X Y         found a city: Kontor from SHIP's cargo at X Y (rotation automatic); the\n"
-           "                                answer names the city and says if SHIP lies in reach for unload SHIP all\n"
+           "                                answer names the city; a SHIP out of reach sails to the Kontor by itself\n"
            "  find-site NAME ISLAND X Y [R] free places for a building near X Y (radius R, default 8); with sites and\n"
            "                                house-sites: '(short: wood)' = you cannot pay for that place now\n"
            "  build NAME ISLAND X Y [ROT]   one building, X Y its top left tile, ROT 0-3\n"
@@ -1551,7 +1551,7 @@ std::string MapViewer::control_help() const {
            "  demolish ISLAND X Y [X2 Y2]   tear down the tile's building, or a rectangle (up to 32 x 32; it leaves\n"
            "                                houses and workshops standing unless nothing else is in it)\n"
            "  ship-move SHIP X Y | ship-move SHIP city ISLAND CITY | ship-stop SHIP   (city: sail within reach of\n"
-           "                                that Kontor, yours or a foreign one you trade at)\n"
+           "                                that Kontor, yours or a foreign one; X Y on land: the nearest sea tile)\n"
            "  load SHIP WARE TONS | unload SHIP WARE TONS|all   at a Kontor within 5 tiles (all: every good on board)\n"
            "  trade ISLAND CITY WARE buy|sell|none [TONS] [PRICE]  the Kontor buys from / sells to ships that call\n"
            "                                (the free trader): buy up to TONS, sell above TONS; the answer shows the\n"
@@ -2205,10 +2205,17 @@ std::string MapViewer::control_found(const std::vector<std::string>& args) {
                                       now->y)
                    ? fmt("new city: island %u city %u; ship %u lies in reach: unload %u all works now\n", city->island,
                          city->index, now->id, now->id)
-                   : fmt("new city: island %u city %u; ship %u is %lld tiles from its Kontor (reach 5): ship-move %u "
-                         "city %u %u first\n",
-                         city->island, city->index, now->id, static_cast<long long>(far), now->id, city->island,
-                         city->index);
+                   : fmt("new city: island %u city %u; ship %u is %lld tiles from its Kontor (reach 5) and sails "
+                         "there now: unload %u all once it lies still (advance 60 until ship %u), not in this batch\n",
+                         city->island, city->index, now->id, static_cast<long long>(far), now->id, now->id);
+        if (!sim::building_in_reach(world, m_buildings, city->island, *city->warehouse_x, *city->warehouse_y, now->x,
+                                    now->y)) {
+            sim::ShipOrder sail;
+            sail.player = m_local_player;
+            sail.ship = now->id;
+            sail.target = sim::Target::city_of(city->island, city->index);
+            (void)control_execute(sail);
+        }
     }
     return out;
 }
@@ -2419,7 +2426,7 @@ std::optional<MapViewer::ControlRoadLink> MapViewer::control_link_road(std::uint
             return;
         }
         if (only_test) {
-            link = ControlRoadLink{0, order.items.size(), best, {}};
+            link = ControlRoadLink{0, order.items.size(), best, {}, 0};
             return;
         }
         const sim::CommandResult r = control_execute(order);
@@ -2432,7 +2439,11 @@ std::optional<MapViewer::ControlRoadLink> MapViewer::control_link_road(std::uint
                     refused += (refused.empty() ? "" : ", ") + why;
                 }
             }
-            link = ControlRoadLink{r.build->placed, order.items.size(), best, std::move(refused)};
+            std::size_t bridges = 0;
+            for (std::size_t i = 0; i < order.items.size() && i < r.build->items.size(); ++i) {
+                bridges += order.items[i].building == assets::id::kBridgeWood && r.build->items[i].ok() ? 1 : 0;
+            }
+            link = ControlRoadLink{r.build->placed, order.items.size(), best, std::move(refused), bridges};
         }
     });
     return link;
@@ -2797,6 +2808,35 @@ std::string MapViewer::control_ship_move(const std::vector<std::string>& args) {
             y >= m_state->world.height()) {
             return "error: ship-move SHIP X Y (world tiles)\n";
         }
+        const sim::World& world = m_state->world;
+        const std::uint16_t land = world.cell(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)).island;
+        if (land != sim::World::kSea && !control_hides(land)) {
+            // A ship cannot go onto land: the sea tile nearest to the one named (an island is at most 70 wide).
+            std::optional<std::pair<std::int64_t, std::int64_t>> sea;
+            for (std::int64_t ring = 1; ring <= 40 && !sea; ++ring) {
+                for (std::int64_t dy = -ring; dy <= ring && !sea; ++dy) {
+                    for (std::int64_t dx = -ring; dx <= ring && !sea; ++dx) {
+                        const std::int64_t tx = x + dx;
+                        const std::int64_t ty = y + dy;
+                        if (std::max(std::abs(dx), std::abs(dy)) == ring && tx >= 0 && ty >= 0 &&
+                            tx < world.width() && ty < world.height() &&
+                            world.cell(static_cast<std::uint32_t>(tx), static_cast<std::uint32_t>(ty)).island ==
+                                sim::World::kSea) {
+                            sea = std::pair{tx, ty};
+                        }
+                    }
+                }
+            }
+            if (!sea) {
+                return fmt("error: %lld,%lld is land (island %u) with no sea within 40 tiles: name a sea tile\n",
+                           static_cast<long long>(x), static_cast<long long>(y), land);
+            }
+            where = fmt("%lld,%lld is land (island %u): sailing to the sea tile nearest to it, %lld,%lld\n",
+                        static_cast<long long>(x), static_cast<long long>(y), land,
+                        static_cast<long long>(sea->first), static_cast<long long>(sea->second));
+            x = sea->first;
+            y = sea->second;
+        }
         order.target = sim::Target::position(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y));
     }
     const bool ok = control_execute(order).accepted;
@@ -3139,6 +3179,9 @@ std::string MapViewer::control_sites(const std::vector<std::string>& args,
     }
     const auto isl = static_cast<std::uint16_t>(island);
     const sim::IslandMap& map = world.islands()[isl].map;
+    const bool no_city = std::none_of(world.cities().begin(), world.cities().end(), [&](const sim::City& c) {
+        return c.island == isl && c.owner == m_local_player;
+    });
     const assets::BuildingType& type = *m_buildings.by_id(*id);
     const std::string key = building_key(*id);
     enum class Score { Trees, Meadow, Water, Fields, Quarry, Market } score = Score::Market;
@@ -3220,7 +3263,9 @@ std::string MapViewer::control_sites(const std::vector<std::string>& args,
                 order.items = {sim::BuildItem{*id, static_cast<std::int32_t>(x), static_cast<std::int32_t>(y),
                                               static_cast<std::uint8_t>(rot), 0}};
                 const sim::BuildPlan plan = sim::plan_build(world, m_buildings, order);
-                if (plan.items.empty() || !(plan.items.front().ok() || sim::short_of_means(plan.items.front().refusal))) {
+                if (plan.items.empty() ||
+                    !(plan.items.front().ok() || sim::short_of_means(plan.items.front().refusal) ||
+                      (no_city && plan.items.front().refusal == sim::BuildRefusal::Territory))) {
                     continue;
                 }
                 std::uint32_t w = type.size_x;
@@ -3252,9 +3297,11 @@ std::string MapViewer::control_sites(const std::vector<std::string>& args,
     }
     static constexpr std::array<const char*, 6> kScore = {"trees", "meadow", "water", "free field land", "quarry tiles",
                                                           "minus distance to a market"};
-    std::string out = fmt("%s fits at %zu places on island %u; the best by %s in reach (radius %d) (x y rotation "
+    std::string out = fmt("%s fits at %zu places on island %u%s; the best by %s in reach (radius %d) (x y rotation "
                           "road score):\n",
-                          key.c_str(), sites.size(), isl, kScore[static_cast<std::size_t>(score)], r);
+                          key.c_str(), sites.size(), isl,
+                          no_city ? " (you have no city there yet: where it would fit on land of yours)" : "",
+                          kScore[static_cast<std::size_t>(score)], r);
     for (const Site& s : picked) {
         if (found != nullptr) {
             found->push_back(ControlSite{s.x, s.y, static_cast<std::uint8_t>(s.rotation), s.refusal});
@@ -3303,25 +3350,26 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
     // a building no carrier comes to is money lost. At most 40 places are tried.
     constexpr std::int32_t kRoadReach = 20;
     const sim::IslandMap& ground = world.islands()[isl].map;
-    // A house keeps out of the windows of the player's foresters (3 tiles around them) while another place
-    // is left: there it would stand on the trees the forester lives off.
-    std::vector<sim::TilePos> foresters;
-    if (const auto forester = building_arg("forester"); forester && type.prod_kind == prod::kHouse) {
-        for (const sim::Production& p : world.productions()) {
-            if (!p.used || p.island != isl || !ground.contains(p.x, p.y)) {
-                continue;
-            }
-            const sim::MapCell& cell = ground.top(p.x, p.y);
-            const assets::BuildingType* b = cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
-            if (b != nullptr && b->id == *forester && cell.owner == m_local_player) {
-                foresters.push_back(sim::TilePos{static_cast<std::int32_t>(p.x), static_cast<std::int32_t>(p.y)});
-            }
+    // While another place is left: a house keeps out of the windows of the player's foresters (3 tiles around
+    // them, so origins at most 4 apart), where it would stand on the trees the forester lives off; any other
+    // building keeps 6 tiles from one of its own kind, whose catchment it would share.
+    const bool is_house = type.prod_kind == prod::kHouse;
+    const std::optional<std::uint32_t> keep_off = is_house ? building_arg("forester") : id;
+    const std::int32_t keep_tiles = is_house ? 4 : 6;
+    std::vector<sim::TilePos> foresters;  // the buildings to keep off
+    for (const sim::Production& p : world.productions()) {
+        if (!keep_off || !p.used || p.island != isl || !ground.contains(p.x, p.y)) {
+            continue;
+        }
+        const sim::MapCell& cell = ground.top(p.x, p.y);
+        const assets::BuildingType* b = cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
+        if (b != nullptr && b->id == *keep_off && cell.owner == m_local_player) {
+            foresters.push_back(sim::TilePos{static_cast<std::int32_t>(p.x), static_cast<std::int32_t>(p.y)});
         }
     }
     const auto in_forester_window = [&](const ControlSite& s) {
-        // Both stand on 2x2 tiles: within 3 tiles of the forester means origins at most 4 apart.
         return std::any_of(foresters.begin(), foresters.end(), [&](const sim::TilePos& f) {
-            return std::max(std::abs(s.x - f.x), std::abs(s.y - f.y)) <= 4;
+            return std::max(std::abs(s.x - f.x), std::abs(s.y - f.y)) <= keep_tiles;
         });
     };
     auto best = sites.end();
@@ -3348,6 +3396,9 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
         if (best != sites.end() || foresters.empty()) {
             break;
         }
+    }
+    if (payable == 0 && sites.front().refusal == sim::BuildRefusal::Territory) {
+        return "error: no land of yours on that island yet (found a city there first)\n";
     }
     if (payable == 0) {
         return fmt("error: no place you can pay for now; the best, at %d,%d, is%s\n", sites.front().x, sites.front().y,
@@ -3377,6 +3428,12 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
     std::uint32_t w = type.size_x;
     std::uint32_t h = type.size_y;
     sim::rotated_size(type, best->rotation, w, h);
+    if (is_house) {
+        // What the house panel would show: without a chapel in reach it never rises.
+        out += control_coverage(isl, best->x, best->y, static_cast<std::int32_t>(w),
+                                static_cast<std::int32_t>(h)) +
+               "\n";
+    }
     if (road_beside(world.islands()[isl].map, m_buildings, best->x, best->y, w, h)) {
         return out + "road: already connected\n";
     }
@@ -3384,10 +3441,13 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
     if (!link) {
         return out + "road: no way found\n";
     }
+    const std::string bridges =
+        link->bridges == 0 ? std::string() : fmt(", %zu of them bridges (they cost wood)", link->bridges);
     return out + (link->placed == link->wanted
-                      ? fmt("road: %zu tiles to %d,%d\n", link->placed, link->to.x, link->to.y)
-                      : fmt("road: %zu of %zu tiles to %d,%d (%s: not connected yet, see fix-roads or road)\n",
-                            link->placed, link->wanted, link->to.x, link->to.y, link->refused.c_str()));
+                      ? fmt("road: %zu tiles to %d,%d%s\n", link->placed, link->to.x, link->to.y, bridges.c_str())
+                      : fmt("road: %zu of %zu tiles to %d,%d%s (%s: not connected yet, see fix-roads or road)\n",
+                            link->placed, link->wanted, link->to.x, link->to.y, bridges.c_str(),
+                            link->refused.c_str()));
 }
 
 std::string MapViewer::control_route(const std::vector<std::string>& args) {

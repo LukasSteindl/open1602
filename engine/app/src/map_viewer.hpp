@@ -210,6 +210,7 @@ private:
         std::size_t wanted = 0;
         sim::TilePos to;
         std::string refused;  ///< why tiles are missing, when some are
+        std::size_t bridges = 0;  ///< how many of the tiles laid are bridges
     };
     std::optional<ControlRoadLink> control_link_road(std::uint16_t island, std::int32_t x, std::int32_t y,
                                                      std::uint32_t w, std::uint32_t h, std::int32_t reach,
