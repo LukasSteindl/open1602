@@ -3146,6 +3146,32 @@ TEST_CASE("ai: an improved computer lands soldiers at its city where they can wa
     }
 }
 
+TEST_CASE("ai: a landing finds no beach on a coast walled all along") {
+    // The beach is where soldiers land against a city; a wall on a beach tile takes it, so a city
+    // whose whole coast is walled leaves the attacker no beach, and plan_landing ends the mission.
+    for (const bool walled : {false, true}) {
+        Game g;
+        g.buildings = make_buildings(kWallRecords);
+        sim::Simulation s(g.world, g.buildings, g.figures);
+        found_city(g, s);
+        const sim::City* city = computer_city(g);
+        REQUIRE(city != nullptr);
+        sim::IslandMap& map = g.world.island(city->island).map;
+        std::uint32_t walls = 0;
+        if (walled) {
+            for (std::int32_t y = 0; y < 50; ++y) {
+                walls += map.place(*g.buildings.by_id(22501), 46, y, 0, 0, kComputer, city->index).ok() ? 1U : 0U;
+            }
+            REQUIRE(walls > 40);
+        }
+        sim::ai::State state;
+        sim::ai::Engine engine(s, state);
+        sim::ai::AiPlayer p;
+        p.player = kHuman;  // the attacker
+        CHECK(engine.landing_beach(p, *city).has_value() == !walled);
+    }
+}
+
 TEST_CASE("ai: an improved computer moves its ship to where the soldiers at the Kontor can board it") {
     // Soldiers go on board only within the engine's boarding range of the ship. The ship lies off
     // the quay strip below the Kontor; walls close that strip off from the land behind the Kontor,

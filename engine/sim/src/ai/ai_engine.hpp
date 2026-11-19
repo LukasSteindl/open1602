@@ -309,6 +309,14 @@ public:
     /// off from the city's buildings, the water nearest to the ship from which they would land on
     /// land walkable to the city; nothing when they land there now or no such water is found.
     [[nodiscard]] std::optional<Target> landing_shore(const AiPlayer& p, const Ship& s, const City& c) const;
+    /// The beach tile (island coordinates) a landing against city `c` makes for: near its markets
+    /// (or its Kontor), away from hostile towers, soldiers and ships; none when no beach is free.
+    /// With `wall`, the hostile wall on the beach a breach shoots at, chosen the same way.
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_beach(const AiPlayer& p, const City& c,
+                                                                                     bool wall = false) const;
+    /// Open1602: a wall standing on the beach, and the ruin it leaves when shot down.
+    [[nodiscard]] bool beach_wall(std::uint16_t island, std::uint32_t x, std::uint32_t y) const;
+    [[nodiscard]] bool beach_gap(std::uint16_t island, std::uint32_t x, std::uint32_t y) const;
     /// Whether ship `s` sent on `mission` fights on its way (an attack move): raids, attacks and
     /// landings of improved computers, not while soldiers are aboard (TM).
     [[nodiscard]] bool attack_move_for(const Ship& s, std::uint8_t mission) const;
@@ -818,6 +826,8 @@ private:
     [[nodiscard]] const assets::FigureType* ship_type(const Ship& s) const;
     /// Health of a ship, 128 = undamaged.
     [[nodiscard]] std::uint32_t health128(const Ship& s) const;
+    /// Whether the ship is healthy enough for a job (kHealthy, as the logistics picks ships).
+    [[nodiscard]] bool healthy(const Ship& s) const;
     [[nodiscard]] bool ship_at_city(const Ship& s, const City& c) const;
     bool ship_idle(AiPlayer& p, const Ship& s);
     void send_to_city(AiPlayer& p, Ship& s, const City& c);
@@ -986,6 +996,8 @@ private:
     void recruit(AiPlayer& p);
     void buy_pirate_peace(AiPlayer& p);
     void ship_send(AiPlayer& p, Ship& s, const Target& t, std::uint8_t mission, std::uint32_t param);
+    /// The city a mission's parameter names (island << 8 | city).
+    [[nodiscard]] City* param_city(std::uint32_t param);
     void mission_end(AiPlayer& p, Ship& s, ShipNote& n);
     /// The soldiers board() orders aboard at `at`: those near its Kontor not headed into a building.
     [[nodiscard]] std::vector<std::uint32_t> boarders(const AiPlayer& p, const City& at);
@@ -995,6 +1007,8 @@ private:
     bool move_to_board(AiPlayer& p, Ship& s, ShipNote& n, const City& home);
     void missions(AiPlayer& p);
     void plan_landing(AiPlayer& p, Ship& s, ShipNote& n);
+    /// Open1602: a warship (or the troop ship itself) shoots a gap into a walled coast.
+    void breach(AiPlayer& p, Ship& s, ShipNote& n, const City& t);
     Ship* best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_same);
     bool attack_ok(AiPlayer& p, const City& t);
     void start_attack(AiPlayer& p, const City& t);
