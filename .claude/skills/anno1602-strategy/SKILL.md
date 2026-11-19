@@ -25,10 +25,22 @@ rise to settlers another 3 t, and one forester gives about 1 t a minute.
 
 - Build six or more foresters right after the market, spread out in untouched forest (section 6).
   A forester costs 50 gold and 2 t tools, no wood.
+- **A forester cuts its window bare in about eight minutes**, and then gives almost nothing (90 %
+  at the start, 50 % after seven minutes, 5 % after thirteen). Wood income does not last: keep
+  adding foresters in fresh forest, and once one stands bare, demolish it and build a house on its
+  tiles.
+- **Keep land for the town.** Foresters and farms take any free place, also the ones beside your
+  roads that houses need. Place them away from the market, and build the second market before
+  minute ten, while there is still wood for it (10 t): it opens new house land.
+- **Cloth decides whether you get settlers.** Check the island for meadow before you settle
+  (`sites sheep_farm I`); a forest island gives sheep farms 25 to 35 %. Without meadow buy cloth
+  from the first minutes (the game takes up to 50 for it) or settle elsewhere.
 - A house holds more people in every higher class (about 2 pioneers, 6 settlers), so a rise is the
-  cheapest way to grow: cloth and a chapel in reach come before more houses.
+  cheapest way to grow: cloth and a chapel in reach come before more houses. A pioneer house fills
+  in about three and a half minutes; a house that rose fills more slowly.
 - Stop buying wood and tools once your own production carries the town; the purchases alone can
-  turn the balance negative.
+  turn the balance negative. Give tools a price (80 to 100): without one you pay what the trader
+  asks.
 
 ## 0. What sank every agent so far
 

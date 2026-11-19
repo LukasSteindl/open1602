@@ -32,9 +32,12 @@ is won by the agent that looks little, decides once and acts in bulk.
 - **Let the game find the place.** `build NAME I auto` builds at the best place you can pay for and
   lays the road; this replaces reading the map, `sites`, `build` and `road`.
   - Without X Y the place has the best catchment of the island (trees, meadow, fish), which may lie
-    far from town. `build NAME I auto X Y` takes the place nearest to X Y: use it to put houses and
-    public buildings where you want them and to spread producers.
-  - It builds nothing when no road can reach a place, and says so.
+    far from town. `build NAME I auto X Y` takes the place nearest to X Y, within 8 tiles of it: use
+    it to put houses and public buildings where you want them and to spread producers.
+  - The road crosses a river with a wooden bridge by itself (that costs wood). It builds nothing
+    when no road can reach a place, and says so.
+  - Houses keep out of your foresters' windows while another place is left. Foresters do not keep
+    out of house land: place them with X Y away from where the town will grow.
 - **Do not check what an answer already told you.** `built 1 of 1` means it stands.
 
 PowerShell example of one step:
@@ -95,14 +98,19 @@ the game running at x8.
    ship has been inside its bounding box; `explore SHIP` (a still ship beside it) shows crops and
    ore. In a game alone `islands` prints crops even for islands marked `not discovered`: leave
    those lines unread until your ship has been there (the no-cheating rule).
-2. `kontor-sites SHIP I`: an `ok` place with free land and forest behind it. `ship_too_far`: sail
-   closer (within 16 tiles).
+   - **At the start no island is discovered**, and `kontor-sites` refuses an island you have not
+     seen. First `ship-move SHIP X Y` into the rectangle of the nearest big island (`islands` gives
+     each island's world position and size), `advance 60 until ship SHIP`, then go on.
+   - Before you settle, look at what the island gives: `sites sheep_farm I 3` (meadow for cloth;
+     without cloth there are no settlers), `sites forester I 3`, `sites fishers_hut I 3`.
+2. `kontor-sites SHIP I`: an `ok` place with free land and forest behind it. "the ship is too far
+   away": sail closer (within 16 tiles).
 3. `found SHIP I X Y`. The answer names the city (island and city number) and says whether the
    ship lies in reach.
 4. One batch: `ship-move SHIP city I C`, then `advance 120 until ship SHIP`, then `unload SHIP all`.
    Building materials must lie in the Kontor, not on the ship. The city's room per good is
-   limited (30 t at first; every market adds room) and the answer says what stayed on board.
-   Unload the rest when room is free.
+   limited (30 to 40 t at first, `cities I C` says it; every market adds room) and the answer says
+   what stayed on board. Unload the rest when room is free.
 5. One batch: `build marketplace I auto X Y` beside the Kontor, `build fishers_hut I auto`, and
    foresters: wood is what the first half hour runs on. `sites forester I 12` lists places with
    their tree score; build six or more over the first rounds, spread out, each with
@@ -116,8 +124,9 @@ the game running at x8.
 - A building is connected when a road tile, a market or the Kontor touches its edge (not
   diagonally). Carriers walk on roads. `alerts` lists `[ROAD]` for unconnected producers;
   `fix-roads I` mends houses.
-- Roads cannot cross slopes `/`, beach `b` or rock; a river needs a bridge. `road` answers
-  "no road path" when there is none. Place a coastal building only where a road can reach it.
+- Roads cannot cross slopes `/`, beach `b` or rock. Over a river `road` and `auto` lay a wooden
+  bridge. `road` answers "no road path" when there is
+  no way. Place a coastal building only where a road can reach it.
 - Land belongs to your city only within the circles of its markets, Kontors and towers. "outside
   the city" means: build a `marketplace` at the edge first (it reaches 16 tiles). `warehouse_1`
   stands on the coast only.
@@ -155,7 +164,10 @@ the game running at x8.
 - `threats` lists foreign soldiers on your islands, natives' guards included. Only soldiers of a
   player at war (`diplomacy`) are a danger.
 - `inhabitants` in `state` is the game's own figure: the people in your houses plus the workers of
-  your producers. It is a little higher than the classes of `cities` added up.
+  your producers (every forester, fisher or farm adds one at once). It is higher than the classes
+  of `cities` added up.
+- `economy` shows the trend of the whole stock: purchases and building count too, so "wood +6"
+  can hide foresters that give nothing. `production I idle` tells which producers stand.
 
 ## Ships and trade
 
@@ -181,6 +193,10 @@ the game running at x8.
 
 - The game does not wait for you. `advance N` only waits; pause and speed belong to the host (in
   a tournament to the referee, and your port refuses them).
+- **Count your turns.** At speed x2 a game minute lasts 30 s, so thirty game minutes are about
+  25 of your turns. Read the skills before the clock starts; when it runs, found at once. Per turn
+  send one batch that looks and acts, then one `advance`. If you script several rounds in one
+  shell command, never filter the answers: a hidden `error:` cost one player four minutes.
 - An order answers after about 2.5 s of game time, so that the next command sees its result. A
   batch waits once for all its orders: batching is how you keep up.
 - The answer comes from a copy of the game. When another player changed the same place in between,

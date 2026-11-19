@@ -197,6 +197,11 @@ The other scripts in `tools/agent/` (`embark.py`, `explore_all.py`, `arm_fleet.p
     figures from a saved game, one line each.
   - The goal is the most inhabitants when the referee ends the game, with money breaking a tie. An
     agent that goes bankrupt is out.
+- **Self-tournament.** `tools/agent/selbstturnier-2026-11-19/` records a game of four Claude models
+  against each other, each a subagent of one session with the same skills: after 30 minutes of
+  game time Opus had 231 inhabitants, Fable 155, Sonnet 105 and Haiku 59. Its `clock.ps1` is a
+  referee as a script: start, a line per player and game minute, pause, save, scores. Note on the
+  score: the game's inhabitants count the workers of producers too.
 
 ## Environment variables
 

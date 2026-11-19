@@ -1,0 +1,6 @@
+time_ms 1846250
+score player 0 money 15000 inhabitants 0 taxes 0 running_costs 0 military 0 sales 0 purchases 0 balance 0 cities 0 classes 0,0,0,0,0 name Referee
+score player 1 money 343 inhabitants 155 taxes 168 running_costs 175 military 0 sales 0 purchases 213 balance -220 cities 1 classes 34,83,0,0,0 name Fable
+score player 2 money 6415 inhabitants 231 taxes 317 running_costs 130 military 0 sales 0 purchases 181 balance 6 cities 1 classes 30,173,0,0,0 name Opus
+score player 3 money 9797 inhabitants 105 taxes 148 running_costs 105 military 0 sales 0 purchases 65 balance -22 cities 1 classes 83,0,0,0,0 name Sonnet
+score player 7 money 11881 inhabitants 59 taxes 60 running_costs 95 military 0 sales 6 purchases 0 balance -29 cities 1 classes 35,3,0,0,0 name Haiku
