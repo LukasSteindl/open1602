@@ -73,6 +73,9 @@ struct StanceStep {
     bool held = false;     ///< kept in pressure by the latch only
 };
 
+/// The holds, free or with soldiers aboard, of a ship that takes a landing party (best_armed_ship).
+inline constexpr std::uint32_t kLandingHolds = 3;
+
 /// What war_supplied's gold term and war_carried read.
 struct WarGold {
     bool improved = false;  ///< not Rules::bugs.classic_ai
@@ -82,6 +85,7 @@ struct WarGold {
     std::int32_t civil_income = 0;
     std::int32_t military_cost = 0;
     std::int32_t arming_budget = 0;
+    std::int64_t floor = 0;  ///< below the reserve: the broke line and the first landing's ship
 };
 
 /// Whether its income carries the army at war (ai_strategy.cpp).
@@ -595,6 +599,11 @@ private:
     /// Open1602: whether its income carries the army at war (civil income, upkeep within arming_budget).
     [[nodiscard]] bool war_carried(const AiPlayer& p) const;
     [[nodiscard]] WarGold war_gold_input(const AiPlayer& p) const;
+    /// What the first landing's ship costs: 0 with an idle armed ship, the yard's warship's price,
+    /// -1 without a yard (ai_strategy.cpp).
+    [[nodiscard]] std::int64_t landing_ship_cost(const AiPlayer& p) const;
+    /// Whether the computer's yard builds the small ships (ai_logistics.cpp).
+    [[nodiscard]] bool small_yard(const AiPlayer& p) const;
     /// Improved computers: settlers in the home city want a good whose crop none of the computer's
     /// islands grows, and it may found a colony for it.
     [[nodiscard]] bool colony_crop_missing(AiPlayer& p);

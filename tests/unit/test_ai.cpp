@@ -3386,10 +3386,12 @@ TEST_CASE("ai: an improved computer keeps pressing a rival until it likes it, th
 
 TEST_CASE("ai: an improved computer goes to war below its gold reserve only on an income that carries the war") {
     // war_supplied's gold term: the reserve in hand, or an income that carries the army's upkeep at
-    // war, the test war_plan makes before it declares. The original's computers pass it always.
+    // war, the test war_plan makes before it declares, with gold for the first landing. The original's computers pass
+    // it always.
     sim::ai::WarGold g;
-    g.money = 2000;
+    g.money = 3500;
     g.reserve = 5000;
+    g.floor = 3500;  // the broke line and the first landing's ship
     g.pays_upkeep = true;
     g.civil_income = 40;
     g.military_cost = 20;
@@ -3410,7 +3412,12 @@ TEST_CASE("ai: an improved computer goes to war below its gold reserve only on a
         // The reserve in hand passes whatever the income.
         g.money = 5000;
         CHECK(sim::ai::war_gold(g));
-        g.money = 2000;
+        // Below the floor an income does not do: the first landing would end the war.
+        g.civil_income = 40;
+        g.money = 3499;
+        CHECK(sim::ai::war_carried(g));
+        CHECK(sim::ai::war_gold(g) == !improved);
+        g.money = 3500;
         g.civil_income = 40;
         // Without upkeep (Rules) the income test does not apply.
         g.pays_upkeep = false;

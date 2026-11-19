@@ -52,6 +52,8 @@ constexpr std::int64_t kThreatRunwayMinutes = 90;
 constexpr std::int64_t kWarRunwayMinutes = 180;
 constexpr std::int64_t kArmingRunwayMinutes = 360;
 constexpr std::int64_t kWarDebt = -2000;
+// Below this, with its gold falling, a computer is broke and ends its war ("out of gold").
+constexpr std::int32_t kBrokeCash = 2000;
 
 const char* goal_name(std::uint8_t g) {
     switch (g) {
@@ -333,7 +335,7 @@ void Engine::plan_strategy(AiPlayer& p) {
     }
     // In debt, or losing gold with little left. Open1602: a war that gets somewhere, or a threat,
     // is worth a deficit for a while and a small debt (war_economy).
-    const bool broke = war_economy(p) ? money < kWarDebt : money < 0 || (net_income(p) < 0 && money < 2000);
+    const bool broke = war_economy(p) ? money < kWarDebt : money < 0 || (net_income(p) < 0 && money < kBrokeCash);
     war_plan(p, broke);
     alliances(p, st.next_ms - now_ms(), broke);
     if (broke) {
@@ -646,8 +648,9 @@ bool Engine::war_supplied(AiPlayer& p) {
     if (!war_gold(g)) {
         return false;
     }
-    log(p, "gold passes by income (cash %lld of %lld, upkeep %d, income %d)", static_cast<long long>(g.money),
-        static_cast<long long>(g.reserve), g.military_cost, g.civil_income);
+    log(p, "gold passes by income (cash %lld of %lld, floor %lld = broke line %d + ship %lld, upkeep %d, income %d)",
+        static_cast<long long>(g.money), static_cast<long long>(g.reserve), static_cast<long long>(g.floor), kBrokeCash,
+        static_cast<long long>(g.floor - kBrokeCash), g.military_cost, g.civil_income);
     return true;
 }
 
@@ -660,7 +663,38 @@ WarGold Engine::war_gold_input(const AiPlayer& p) const {
     g.civil_income = civil_income(p);
     g.military_cost = military_cost(p);
     g.arming_budget = arming_budget(p);
+    // The floor: the broke line, at which a war ends as soon as its gold falls, and the ship of the
+    // first landing when it has none to carry it.
+    g.floor = g.reserve;
+    const std::int64_t ship = landing_ship_cost(p);
+    if (ship >= 0) {
+        g.floor = std::min<std::int64_t>(g.reserve, kBrokeCash + ship);
+    }
     return g;
+}
+
+std::int64_t Engine::landing_ship_cost(const AiPlayer& p) const {
+    // An idle armed ship that takes a landing party, by best_armed_ship's test: none to buy.
+    for (const Ship& s : m_world.ships()) {
+        if (s.owner != p.player || s.sinking || s.trader || s.cart()) {
+            continue;
+        }
+        const ShipNote* n = nullptr;
+        for (const ShipNote& x : p.ships) {
+            n = x.id == s.id ? &x : n;
+        }
+        if (s.id != p.settle.ship && !s.held && s.cannons != 0 && (n == nullptr || (n->mission == 0 && !n->supply)) &&
+            free_holds(s) + soldiers_aboard(s) >= kLandingHolds) {
+            return 0;
+        }
+    }
+    // Else the warship its yard builds, at its price; without a yard none (-1).
+    if (!p.yard_valid) {
+        return -1;
+    }
+    const bool small = small_yard(p);
+    const assets::FigureType* f = m_sim.m_figures->get(figure::ship_figure(figure::kFirstWarship + (small ? 0U : 1U)));
+    return f != nullptr ? static_cast<std::int64_t>(f->ship.price) : -1;
 }
 
 bool Engine::war_carried(const AiPlayer& p) const {
@@ -678,7 +712,8 @@ bool war_gold(const WarGold& g) {
     // it comes and kept the gold under the reserve for hours, while a player with an income that
     // pays the army does not wait for a pile of gold first. The same test war_plan makes before it
     // declares (war_carried), so a war passed here is carried there too.
-    return !g.improved || g.money >= g.reserve || war_carried(g);
+    // Open1602: with gold for the first landing above the line at which the war would end at once.
+    return !g.improved || g.money >= g.reserve || (g.money >= g.floor && war_carried(g));
 }
 
 void Engine::start_war(AiPlayer& p, PlayerId target) {

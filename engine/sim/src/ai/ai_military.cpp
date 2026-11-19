@@ -1284,7 +1284,7 @@ Ship* Engine::best_armed_ship(AiPlayer& p, const Target& ref, std::uint32_t max_
         if (s->id == p.settle.ship || s->held || n.mission != 0 || n.supply || s->cannons == 0) {
             continue;
         }
-        if (free_holds(*s) + soldiers_aboard(*s) < 3) {
+        if (free_holds(*s) + soldiers_aboard(*s) < kLandingHolds) {
             continue;
         }
         const std::uint32_t score = health128(*s) / 16 + 2U * s->cannons;
