@@ -847,9 +847,6 @@ private:
         return kSteps[0];
     }
 
-    /// A spectator: no player of its own, it watches everyone's game.
-    [[nodiscard]] static bool watching(const PanelContext& c) { return c.local == sim::kNoPlayer; }
-
     void holds(ui::Panel& p, const sim::Ship& ship, const PanelContext& c, std::int32_t icon, std::int32_t bar,
                std::int32_t button, bool shown) {
         const std::size_t n = sim::usable_holds(ship, c.figures);
@@ -927,7 +924,7 @@ private:
                        idle && k.yard.has_value() && health < max_health, idle && k.pirates);
         m_ship.set_selected(kRoute, !ship.route.active);
         // A spectator (no player of its own) reads every ship's holds; its clicks give no orders.
-        holds(m_ship, ship, c, kHoldIcon, kHoldBar, kHoldButton, own || ship.for_sale || watching(c));
+        holds(m_ship, ship, c, kHoldIcon, kHoldBar, kHoldButton, own || ship.for_sale || spectating(c));
     }
 
     /// TRADER.GAD, the trade cart's window: its name and holds; stop while it drives, the exchange
@@ -945,7 +942,7 @@ private:
         p.set_visible(kCartRoute, own);
         p.set_visible(kCartRouteEditor, own);
         p.set_selected(kCartRoute, !ship.route.active);
-        holds(p, ship, c, kCartHoldIcon, kCartHoldBar, kCartHoldButton, own || watching(c));
+        holds(p, ship, c, kCartHoldIcon, kCartHoldBar, kCartHoldButton, own || spectating(c));
     }
 
     void clicked_cart(const ui::PanelEvent& e, const sim::Ship& ship, const PanelContext& c,
