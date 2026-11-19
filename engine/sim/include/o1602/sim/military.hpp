@@ -160,6 +160,9 @@ public:
     bool unload(const UnloadOrder& order);
     /// The cell where `ship`'s soldiers would land if it unloaded now (unload()), if any.
     [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_cell(const Ship& ship) const;
+    /// The same for a ship of `owner` on world tile (x, y).
+    [[nodiscard]] std::optional<std::pair<std::int32_t, std::int32_t>> landing_cell_at(std::int32_t x, std::int32_t y,
+                                                                                       PlayerId owner) const;
     /// Whether a soldier on cell (x, y) is near enough to `ship` to go on board (arrived()).
     [[nodiscard]] static bool boards_from(const Ship& ship, std::int32_t x, std::int32_t y) noexcept;
     /// The cell next to castle (x, y) on `island` where a released unit steps out, if any.

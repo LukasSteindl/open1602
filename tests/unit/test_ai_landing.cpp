@@ -25,6 +25,7 @@ constexpr std::uint32_t kKontor = 22101;
 constexpr std::uint32_t kMarket = 20809;
 constexpr std::uint32_t kHouse = 20605;
 constexpr std::uint32_t kWall = 22501;
+constexpr std::uint32_t kTree = 21304;
 constexpr std::uint16_t kSword = 1;
 constexpr std::uint16_t kShipFigure = 21;
 
@@ -50,6 +51,7 @@ assets::BuildingTable make_buildings() {
         "  Objekt: HAUS_PRODTYP\n    Kind: 13\n    BGruppe: 0\n    Radius: 6\n  EndObj\n"
         "  @Nummer: +1\n  Id: 22501\n  Kind: 4\n  Gfx: 60\n  Size: 1, 1\n  Maxenergy: 6\n  NoShotFlg: 1\n"
         "  Ruinenr: 255\n"
+        "  @Nummer: +1\n  Id: 21304\n  Kind: 10\n  Gfx: 70\n  Size: 1, 1\n  Maxenergy: 4\n  NoShotFlg: 1\n"
         "EndObj\n",
         types);
     auto table = assets::BuildingTable::from_cod(doc);
@@ -284,5 +286,63 @@ TEST_CASE("ai landing: an improved computer shoots a gap into a coast walled all
         run(s, 1'000);
     }
     CHECK(walls() < standing);  // a gap
+    CHECK(a.soldiers_on(kComputer, 1) > 0);
+}
+
+TEST_CASE("ai landing: an improved computer shoots trees behind the beach open to land") {
+    // A ring of forest behind the human's beach, wider than the unload range: the beach is free, but
+    // the soldiers find no cell to stand on. A ship fells the trees nearest to the beach.
+    Coast a;
+    a.figures = make_figures(true);
+    a.build(kKontor, 28, 14, kComputer, 0);
+    a.build(kMarket, 18, 14, kComputer, 0);
+    a.build(kKontor, 0, 14, kHuman, 1);
+    a.build(kMarket, 14, 6, kHuman, 1);
+    for (std::int32_t k = 0; k < 4; ++k) {
+        a.build(kHouse, 14 + 3 * k, 20, kHuman, 1);
+    }
+    sim::IslandMap& map = a.world.island(1).map;
+    const auto is_tree = [&](std::uint32_t x, std::uint32_t y) {
+        const sim::MapCell& c = a.world.islands()[1].map.top(x, y);
+        return !c.empty() && a.buildings.by_sprite(c.sprite) != nullptr && a.buildings.by_sprite(c.sprite)->id == kTree;
+    };
+    for (std::int32_t y = 0; y < 30; ++y) {
+        for (std::int32_t x = 1; x <= 10; ++x) {
+            if (map.top(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)).empty() ||
+                is_tree(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)) ||
+                a.buildings.by_sprite(map.top(static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y)).sprite)
+                        ->id == kGround) {
+                REQUIRE(map.place(*a.buildings.by_id(kTree), x, y, 0, 0, kHuman, 1).ok());
+            }
+        }
+    }
+    const auto trees = [&] {
+        std::uint32_t n = 0;
+        for (std::uint32_t y = 0; y < 30; ++y) {
+            for (std::uint32_t x = 1; x <= 10; ++x) {
+                n += is_tree(x, y) ? 1U : 0U;
+            }
+        }
+        return n;
+    };
+    const std::uint32_t planted = trees();
+    REQUIRE(planted > 250);
+    for (std::int32_t k = 0; k < 6; ++k) {
+        a.add(kComputer, 2 * (10 + 23) + k, 2 * (10 + 18), 0);
+    }
+    for (const auto& [x, y] : {std::pair{41, 15}, std::pair{42, 20}}) {
+        sim::Ship ship = sim::make_ship("Ship", static_cast<std::uint32_t>(x), static_cast<std::uint32_t>(y),
+                                        kShipFigure, kComputer, 2);
+        ship.cargo.resize(4);
+        ship.cannons = 4;
+        a.world.add_ship(ship);
+    }
+    REQUIRE(a.world.diplomacy().set_peace(a.world, kHuman, kComputer, sim::Treaty::None, a.world.time_ms()));
+    a.world.island(1).discover(kComputer);
+    sim::Simulation s(a.world, a.buildings, a.figures);
+    for (std::uint32_t t = 0; t < 8 * 60 && a.soldiers_on(kComputer, 1) == 0; ++t) {
+        run(s, 1'000);
+    }
+    CHECK(trees() < planted);  // felled
     CHECK(a.soldiers_on(kComputer, 1) > 0);
 }

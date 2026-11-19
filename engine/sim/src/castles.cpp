@@ -489,12 +489,17 @@ bool Military::board(Soldier& s, Ship& ship) {
 }
 
 std::optional<std::pair<std::int32_t, std::int32_t>> Military::landing_cell(const Ship& ship) const {
+    return landing_cell_at(ship.x, ship.y, ship.owner);
+}
+
+std::optional<std::pair<std::int32_t, std::int32_t>> Military::landing_cell_at(std::int32_t x, std::int32_t y,
+                                                                               PlayerId owner) const {
     // Land within 6 tiles of the ship (Balance::castle_unload_range): the nearest cell
     // soldiers can stand on. Open1602: not behind a wall of another player that stands between
     // the ship and the cell; the original lands them there too (OriginalBugs::land_behind_walls).
     const auto range = static_cast<std::int32_t>(m_world->balance().castle_unload_range);
-    const std::int32_t sx = 2 * ship.x + 1;
-    const std::int32_t sy = 2 * ship.y + 1;
+    const std::int32_t sx = 2 * x + 1;
+    const std::int32_t sy = 2 * y + 1;
     const bool over_walls = m_world->original_bugs().land_behind_walls;
     std::optional<std::pair<std::int32_t, std::int32_t>> landing;
     std::int32_t best = 0;
@@ -505,7 +510,7 @@ std::optional<std::pair<std::int32_t, std::int32_t>> Military::landing_cell(cons
             }
             const std::int32_t d = sea_distance(cx - sx, cy - sy);
             if (d <= 2 * range && (!landing || d < best) &&
-                (over_walls || !m_combat->land().wall_between(sx, sy, cx, cy, ship.owner))) {
+                (over_walls || !m_combat->land().wall_between(sx, sy, cx, cy, owner))) {
                 landing = std::pair{cx, cy};
                 best = d;
             }
