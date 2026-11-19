@@ -285,7 +285,7 @@ void MapViewer::control_pause(bool paused) {
 
 bool MapViewer::control_hides(std::uint16_t island) const {
     const auto& islands = m_state->world.islands();
-    return m_session && island < islands.size() && !islands[island].discovered_by(m_local_player);
+    return island < islands.size() && !islands[island].discovered_by(m_local_player);
 }
 
 sim::CommandResult MapViewer::control_execute(const sim::Command& command) {
@@ -506,7 +506,17 @@ void MapViewer::serve_control() {
             const std::string messages = control_events();
             request->answer(first + "\n" + control_state() + messages);
         }
-        return;  // the next commands wait until the game stands again
+        // Only the caller waits: other commands (a helper beside the agent, a look at the state) go on.
+    }
+    // wait-running: answered when the game runs, or when its time is over.
+    for (auto it = m_control_run_waits.begin(); it != m_control_run_waits.end();) {
+        const bool runs = !m_state->simulation.paused();
+        if (runs || SDL_GetTicks() >= it->real_until_ms) {
+            it->request->answer(runs ? "the game runs\n" : "error: the game still stands (call wait-running again)\n");
+            it = m_control_run_waits.erase(it);
+        } else {
+            ++it;
+        }
     }
     // A few per frame: an agent waits for each answer anyway.
     for (int n = 0; n < 16; ++n) {
@@ -523,8 +533,8 @@ void MapViewer::serve_control() {
         if (!answer.empty()) {
             request->answer(std::move(answer));
         }
-        if (m_control_advance || m_control_wait) {
-            break;
+        if (m_control_wait) {
+            break;  // a multiplayer order: the next commands see what it did
         }
     }
 }
@@ -537,6 +547,10 @@ void MapViewer::control_refuse_waiting() {
         }
         request->answer("error: the game is not running (menu, loading or a video)\n");
     }
+    for (const ControlRunWait& w : m_control_run_waits) {
+        w.request->answer("error: the game is not running (menu, loading or a video)\n");
+    }
+    m_control_run_waits.clear();
 }
 
 namespace {
@@ -550,7 +564,7 @@ bool control_reads_only(const std::vector<std::string>& args) {
         "goods",  "find-site", "kontor-sites", "threats", "units", "screenshot", "houses", "house-sites",
         "sites",  "alerts", "unconnected", "camera", "coverage", "production", "plan",     "say",
         "save",   "advance", "pause",     "resume",  "speed",      "autoplay", "chat",
-        "events", "economy", "forecast"};
+        "events", "economy", "forecast", "wait-running"};
     const std::string& cmd = args[0];
     return kReading.contains(cmd) || (cmd == "diplomacy" && args.size() == 1);
 }
@@ -585,7 +599,7 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
     }
     // A multiplayer game: no look at an island this player has not discovered (its land, the
     // others' buildings), as the game shows them none.
-    if (m_session) {
+    {
         const bool auto_build = cmd == "build" && args.size() > 3 && args[3] == "auto";
         const std::size_t at =
             cmd == "map" ? 1 : (cmd == "kontor-sites" || cmd == "sites" || cmd == "find-site" || auto_build) ? 2 : 0;
@@ -674,7 +688,24 @@ std::string MapViewer::control_command(const std::vector<std::string>& args,
         (void)control_execute(order);
         return fmt("speed x%lld\n", static_cast<long long>(s));
     }
+    if (cmd == "wait-running") {
+        // Before a referee starts the game: wait for it without looking again and again. Real time, as the
+        // game's own time stands.
+        std::int64_t seconds = 100;
+        if (args.size() > 2 || (args.size() == 2 && (!number(args, 1, seconds) || seconds < 1 || seconds > 100))) {
+            return "error: wait-running [SECONDS] (1 to 100 seconds of real time, default 100)\n";
+        }
+        if (!m_state->simulation.paused()) {
+            return "the game runs\n";
+        }
+        m_control_run_waits.push_back(
+            ControlRunWait{request, SDL_GetTicks() + static_cast<std::uint64_t>(seconds) * 1000});
+        return {};
+    }
     if (cmd == "advance") {
+        if (m_control_advance) {
+            return "error: another advance still waits (one at a time)\n";
+        }
         const char* usage = "error: advance SECONDS [nostop] [until ship ID] (1 to 3600 seconds of game time)\n";
         std::int64_t seconds = 0;
         if (!number(args, 1, seconds) || seconds < 1 || seconds > 3600) {
@@ -1577,7 +1608,9 @@ std::string MapViewer::control_help() const {
            "                                values in force (a PRICE outside the game's range is clamped)\n"
            "  advance SECONDS [nostop] [until ship ID]  pass that much game time and keep the run state; ends\n"
            "                                early at a fire/plague/attack message (nostop: not) or when the ship\n"
-           "                                is idle; after 100 s real time at most ('partial': call it again)\n"
+           "                                is idle; after 100 s real time at most ('partial': call it again);\n"
+           "                                only its caller waits, other connections are served meanwhile\n"
+           "  wait-running [SECONDS]        wait (real time, 100 s at most) until the game runs, e.g. for a referee\n"
            "  events                        the game's messages since the last advance or events\n"
            "  pause | resume | speed 1-8    the game starts paused when --control is given\n"
            "  autoplay on|off               the built-in computer plays your slot\n"
@@ -1683,7 +1716,7 @@ std::string MapViewer::control_cities(const std::vector<std::string>& args) cons
     if (args.size() < 3) {
         std::string out;
         for (const sim::City& c : world.cities()) {
-            if (c.owner != m_local_player && m_session) {
+            if (c.owner != m_local_player) {
                 // A multiplayer game: foreign cities only where a ship of this player has been, and
                 // without the count of their people, which no panel of the game shows the others.
                 if (!control_hides(c.island)) {
@@ -1830,7 +1863,7 @@ std::string MapViewer::control_islands(bool mine) const {
         const bool settled = std::any_of(world.cities().begin(), world.cities().end(), [&](const sim::City& c) {
             return c.island == i && c.owner == m_local_player;
         });
-        const bool crops_known = !m_session || isl.explored_by(m_local_player) || settled;
+        const bool crops_known = isl.explored_by(m_local_player) || settled;
         std::string crops;
         for (std::uint8_t w = assets::ware::kCornField; w <= assets::ware::kCocoaField; ++w) {
             const auto f = sim::island_fertility(world, isl, w);
@@ -3483,30 +3516,74 @@ std::string MapViewer::control_build_auto(const std::vector<std::string>& args) 
             return std::max(std::abs(s.x - f.x), std::abs(s.y - f.y)) <= keep_tiles;
         });
     };
-    auto best = sites.end();
-    std::size_t payable = 0;
-    for (const bool avoid : {true, false}) {
-        payable = 0;
-        for (auto s = sites.begin(); s != sites.end() && payable < 40; ++s) {
-            if (s->refusal != sim::BuildRefusal::None) {
-                continue;
-            }
-            ++payable;
-            if (avoid && in_forester_window(*s)) {
-                continue;
-            }
-            std::uint32_t sw = type.size_x;
-            std::uint32_t sh = type.size_y;
-            sim::rotated_size(type, s->rotation, sw, sh);
-            if (road_beside(ground, m_buildings, s->x, s->y, sw, sh) ||
-                control_link_road(isl, s->x, s->y, sw, sh, kRoadReach, true, true)) {
-                best = s;
-                break;
-            }
+    // Town land is for houses: a producer that lives off the land around it (forester, farm, pasture, hunter)
+    // keeps 8 tiles from the player's markets and Kontors while another place is left.
+    const bool off_town = *id == assets::id::kForester || type.prod_kind == prod::kFarm ||
+                          type.prod_kind == prod::kPasture || type.prod_kind == prod::kHunter;
+    std::vector<sim::TilePos> markets;
+    for (const sim::Production& p : world.productions()) {
+        if (!off_town || !p.used || p.island != isl || !ground.contains(p.x, p.y)) {
+            continue;
         }
-        if (best != sites.end() || foresters.empty()) {
+        const sim::MapCell& cell = ground.top(p.x, p.y);
+        const assets::BuildingType* b = cell.empty() ? nullptr : m_buildings.by_sprite(cell.sprite);
+        if (b != nullptr && cell.owner == m_local_player &&
+            (b->prod_kind == prod::kMarket || b->prod_kind == prod::kKontor)) {
+            markets.push_back(sim::TilePos{static_cast<std::int32_t>(p.x), static_cast<std::int32_t>(p.y)});
+        }
+    }
+    const auto in_town = [&](const ControlSite& s) {
+        return std::any_of(markets.begin(), markets.end(), [&](const sim::TilePos& m) {
+            return std::max(std::abs(s.x - m.x), std::abs(s.y - m.y)) <= 8;
+        });
+    };
+    // The places that can be paid, the better ones first (lower rank), in the order of the search within a
+    // rank. A house needs a market in reach (without one it gets no goods) and is better with a chapel.
+    struct Ranked {
+        int rank;
+        std::vector<ControlSite>::iterator site;
+    };
+    std::vector<Ranked> ranked;
+    std::size_t payable = 0;
+    std::size_t no_market = 0;
+    for (auto s = sites.begin(); s != sites.end(); ++s) {
+        if (s->refusal != sim::BuildRefusal::None) {
+            continue;
+        }
+        ++payable;
+        int rank = in_forester_window(*s) ? 2 : 0;
+        if (is_house) {
+            const std::string reach = control_coverage(isl, s->x, s->y, 2, 2);
+            if (reach.find("marketplace") == std::string::npos && reach.find("warehouse") == std::string::npos) {
+                ++no_market;
+                continue;
+            }
+            rank += reach.find("chapel") == std::string::npos && reach.find("church") == std::string::npos ? 1 : 0;
+        } else {
+            rank += in_town(*s) ? 1 : 0;
+        }
+        ranked.push_back(Ranked{rank, s});
+    }
+    std::stable_sort(ranked.begin(), ranked.end(), [](const Ranked& a, const Ranked& b) { return a.rank < b.rank; });
+    auto best = sites.end();
+    std::size_t tried = 0;
+    for (const Ranked& r : ranked) {
+        if (++tried > 40) {
+            break;  // the search for a road is the costly part
+        }
+        std::uint32_t sw = type.size_x;
+        std::uint32_t sh = type.size_y;
+        sim::rotated_size(type, r.site->rotation, sw, sh);
+        if (road_beside(ground, m_buildings, r.site->x, r.site->y, sw, sh) ||
+            control_link_road(isl, r.site->x, r.site->y, sw, sh, kRoadReach, true, true)) {
+            best = r.site;
             break;
         }
+    }
+    if (payable != 0 && no_market == payable) {
+        return fmt("error: no free place for a house with a market in reach %s (a house without one gets no "
+                   "goods): build a marketplace there first\n",
+                   near ? "within 8 tiles of that tile" : "on the island");
     }
     if (payable == 0 && sites.front().refusal == sim::BuildRefusal::Territory) {
         return "error: no land of yours on that island yet (found a city there first)\n";

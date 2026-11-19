@@ -1071,6 +1071,12 @@ private:
         std::string urgent;                       ///< that first message
     };
     std::optional<ControlAdvance> m_control_advance;
+    /// wait-running: answered when the game runs, or at its time (SDL_GetTicks()).
+    struct ControlRunWait {
+        std::shared_ptr<ControlServer::Request> request;
+        std::uint64_t real_until_ms = 0;
+    };
+    std::vector<ControlRunWait> m_control_run_waits;
     /// A multiplayer game: an answer that waits until the session carried out its orders.
     struct ControlWait {
         std::shared_ptr<ControlServer::Request> request;

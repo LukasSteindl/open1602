@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include "o1602/core/result.hpp"
 
@@ -53,6 +54,8 @@ public:
 private:
     ControlServer() = default;
     void run();
+    /// One connection: its line to the game, the answer back.
+    void serve(std::intptr_t socket);
 
     std::uint16_t m_port = 0;
     std::intptr_t m_socket = -1;
@@ -60,6 +63,12 @@ private:
     std::mutex m_mutex;
     std::deque<std::shared_ptr<Request>> m_waiting;
     std::thread m_thread;
+    /// The connections being served, each in its thread (touched by the accepting thread only).
+    struct Client {
+        std::thread thread;
+        std::shared_ptr<std::atomic<bool>> done;
+    };
+    std::vector<Client> m_clients;
 };
 
 }  // namespace o1602::app

@@ -161,7 +161,7 @@ core::Result<std::unique_ptr<ControlServer>> ControlServer::start(std::uint16_t 
     addr.sin_family = AF_INET;
     addr.sin_port = htons(port);
     addr.sin_addr.s_addr = htonl(INADDR_LOOPBACK);  // this computer only
-    if (::bind(s, reinterpret_cast<const sockaddr*>(&addr), sizeof addr) != 0 || ::listen(s, 4) != 0) {
+    if (::bind(s, reinterpret_cast<const sockaddr*>(&addr), sizeof addr) != 0 || ::listen(s, 16) != 0) {
         close_socket(s);
         return core::make_error(core::ErrorCode::PlatformError,
                                 "control port: cannot listen on 127.0.0.1:" + std::to_string(port) + " (in use?)");
@@ -177,6 +177,9 @@ ControlServer::~ControlServer() {
     m_stopping = true;
     if (m_thread.joinable()) {
         m_thread.join();
+    }
+    for (Client& c : m_clients) {
+        c.thread.join();  // each ends within moments once m_stopping is set
     }
     close_socket(static_cast<Socket>(m_socket));
     {
@@ -211,22 +214,46 @@ void ControlServer::run() {
         if (client == kNoSocket) {
             continue;
         }
-        // One command at a time: the next connection waits until this one has its answer, so
-        // the commands of one agent are carried out in the order it gives them.
-        bool bad = false;
-        if (auto line = read_line(client, bad)) {
-            auto request = std::make_shared<Request>(std::move(*line));
-            {
-                const std::lock_guard lock(m_mutex);
-                m_waiting.push_back(request);
+        // The threads that have finished.
+        for (auto it = m_clients.begin(); it != m_clients.end();) {
+            if (it->done->load()) {
+                it->thread.join();
+                it = m_clients.erase(it);
+            } else {
+                ++it;
             }
-            const auto text = request->wait(m_stopping);
-            write_all(client, text ? *text : std::string("error: the game ended\n"));
-        } else if (bad) {
-            write_all(client, "error: line too long or incomplete\n");
         }
-        close_socket(client);
+        // Every connection has a thread of its own, so a command that waits (advance) holds up nobody else;
+        // the commands of one agent still come one after the other, as it waits for each answer. Beyond 32
+        // waiting at once, the next is served here and the rest wait.
+        if (m_clients.size() >= 32) {
+            serve(static_cast<std::intptr_t>(client));
+            continue;
+        }
+        auto done = std::make_shared<std::atomic<bool>>(false);
+        m_clients.push_back(Client{std::thread([this, client, done] {
+                                       serve(static_cast<std::intptr_t>(client));
+                                       done->store(true);
+                                   }),
+                                   done});
     }
+}
+
+void ControlServer::serve(std::intptr_t socket) {
+    const auto client = static_cast<Socket>(socket);
+    bool bad = false;
+    if (auto line = read_line(client, bad)) {
+        auto request = std::make_shared<Request>(std::move(*line));
+        {
+            const std::lock_guard lock(m_mutex);
+            m_waiting.push_back(request);
+        }
+        const auto text = request->wait(m_stopping);
+        write_all(client, text ? *text : std::string("error: the game ended\n"));
+    } else if (bad) {
+        write_all(client, "error: line too long or incomplete\n");
+    }
+    close_socket(client);
 }
 
 }  // namespace o1602::app
